@@ -1,0 +1,3 @@
+title: "Test meta.yaml with list of recipes"
+recipes:
+  dict_object: 'recipe:recipes'

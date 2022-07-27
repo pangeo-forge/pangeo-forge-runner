@@ -1,0 +1,6 @@
+title: "Test meta.yaml with list of recipes"
+recipes:
+  - id: test_1
+    object: "recipe:test_1"
+  - id: test_2
+    object: "recipe:test_2"
