@@ -30,4 +30,6 @@ jobs:
         python -m pip install -e .
     - name: Test with pytest
       run: |
-        pytest tests/
+        pytest --cov=pangeo_forge_runner tests/
+    - name: Upload Coverage to Codecov
+      uses: codecov/codecov-action@v2
