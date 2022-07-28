@@ -56,7 +56,6 @@ class Feedstock:
         'object' keys *may* be present, but not guaranteed.
         """
         meta_copy = deepcopy(self.meta)
-        print(self.meta)
         if 'recipes' in self.meta and 'dict_object' in self.meta['recipes']:
             do = self.meta['recipes']['dict_object']
             # We have a dict_object, so let's parse the recipes, and provide
