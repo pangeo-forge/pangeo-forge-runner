@@ -26,7 +26,7 @@ logging.basicConfig(format="%(asctime)s %(msg)s", level=logging.DEBUG)
 log = logging
 
 
-def fetch(url, ref, checkout_path):
+def fetch(url, ref, checkout_path, quiet=True):
     """
     Fetch repo from url at ref, and check it out to checkout_path
 
@@ -42,9 +42,10 @@ def fetch(url, ref, checkout_path):
         spec = cp.detect(url, ref=ref)
         if spec is not None:
             picked_content_provider = cp
-            log.info(
-                "Picked {cp} content " "provider.\n".format(cp=cp.__class__.__name__)
-            )
+            if not quiet:
+                log.info(
+                    "Picked {cp} content " "provider.\n".format(cp=cp.__class__.__name__)
+                )
             break
 
     if picked_content_provider is None:
@@ -53,7 +54,8 @@ def fetch(url, ref, checkout_path):
     for log_line in picked_content_provider.fetch(
         spec, checkout_path, yield_output=True
     ):
-        log.info(log_line, extra=dict(phase="fetching"))
+        if not quiet:
+            log.info(log_line, extra=dict(phase="fetching"))
 
 
 def main():
@@ -62,6 +64,9 @@ def main():
     argparser.add_argument("--repo", help="URL to repo of feedstock to fetch")
     argparser.add_argument(
         "--ref", default=None, help="Ref to check out of the repo to build"
+    )
+    argparser.add_argument(
+        "--quiet", default=False, help="If true, suppress logs."
     )
 
     commands = argparser.add_subparsers(dest="command")
@@ -79,9 +84,11 @@ def main():
             fetch(args.repo, args.ref, checkout_dir)
             feedstock = Feedstock(Path(checkout_dir))
             expanded = feedstock.get_expanded_meta()
-            with open(args.out, "w") as f:
-                json.dump(expanded, f)
-
+            if args.out:
+                with open(args.out, "w") as f:
+                    json.dump(expanded, f)
+            else:
+                print(json.dumps(expanded))
 
 if __name__ == "__main__":
     main()
