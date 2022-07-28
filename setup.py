@@ -3,5 +3,8 @@ from setuptools import find_packages, setup
 setup(
     name='pangeo-forge-runner',
     version='0.1',
-    packages=find_packages()
+    packages=find_packages(),
+    entry_points={
+        'console_scripts': ['pangeo-forge-runner=pangeo_forge_runner.__main__:main']
+    }
 )
