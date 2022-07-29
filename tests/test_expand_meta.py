@@ -3,6 +3,8 @@ import json
 import os
 import subprocess
 
+import pytest
+
 invocations = [
     {
         "repo": "https://github.com/pangeo-forge/gpcp-feedstock",
@@ -12,7 +14,8 @@ invocations = [
 ]
 
 
-def test_expand_meta():
+@pytest.mark.parametrize("use_stdout", (True, False))
+def test_expand_meta(use_stdout):
     for invocation in invocations:
         _, tmp = tempfile.mkstemp()
         try:
@@ -20,12 +23,16 @@ def test_expand_meta():
                 'pangeo-forge-runner',
                 '--repo', invocation['repo'],
                 '--ref', invocation['ref'],
-                'expand-meta',
-                '--out', tmp
             ]
-            subprocess.check_call(cmd)
-            with open(tmp) as f:
-                assert json.load(f) == invocation['meta']
+            if use_stdout:
+                cmd += ['--no-logs', 'expand-meta']
+                out = subprocess.check_output(cmd)
+                assert json.loads(out) == invocation['meta']
+            else:
+                cmd += ['expand-meta', '--out', tmp]
+                subprocess.check_call(cmd)
+                with open(tmp) as f:
+                    assert json.load(f) == invocation['meta']
 
         finally:
             os.remove(tmp)
