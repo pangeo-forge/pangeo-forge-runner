@@ -65,9 +65,7 @@ def main():
     argparser.add_argument(
         "--ref", default=None, help="Ref to check out of the repo to build"
     )
-    argparser.add_argument(
-        "--quiet", default=False, help="If true, suppress logs."
-    )
+    argparser.add_argument("--logs", action=argparse.BooleanOptionalAction)
 
     commands = argparser.add_subparsers(dest="command")
 
@@ -81,7 +79,8 @@ def main():
 
     if args.command == "expand-meta":
         with tempfile.TemporaryDirectory() as checkout_dir:
-            fetch(args.repo, args.ref, checkout_dir)
+            quiet = False if args.logs else True
+            fetch(args.repo, args.ref, checkout_dir, quiet)
             feedstock = Feedstock(Path(checkout_dir))
             expanded = feedstock.get_expanded_meta()
             if args.out:
