@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 from .. import Feedstock
 import tempfile
 from .base import BaseCommand, common_aliases, common_flags
@@ -20,7 +21,12 @@ class ExpandMeta(BaseCommand):
             feedstock = Feedstock(Path(d))
             with redirect_stderr(self.log, {'status': 'running'}), redirect_stdout(self.log, {'status': 'running'}):
                 expanded = feedstock.get_expanded_meta()
-            self.log.info("Expansion complete", extra={
-                'status': 'completed',
-                'meta': expanded
-            })
+            if self.json_logs:
+                self.log.info("Expansion complete", extra={
+                    'status': 'completed',
+                    'meta': expanded
+                })
+            else:
+                self.log.info('Expansion complete\n', extra={'status': 'completed'})
+                self.log.info(json.dumps(expanded))
+

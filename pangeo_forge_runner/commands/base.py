@@ -136,21 +136,23 @@ class BaseCommand(Application):
     def initialize(self, argv=None):
         super().initialize(argv)
         self.load_config_file(self.config_file)
+        logHandler = logging.StreamHandler(sys.stdout)
+        self.log = logging.getLogger("pangeo-forge-runner")
+        self.log.handlers = []
+        self.log.addHandler(logHandler)
+        self.log.setLevel(self.log_level)
+
         if self.json_logs:
             # register JSON excepthook to avoid non-JSON output on errors
             sys.excepthook = self.json_excepthook
             # Need to reset existing handlers, or we repeat messages
-            logHandler = logging.StreamHandler(sys.stdout)
             formatter = jsonlogger.JsonFormatter()
             logHandler.setFormatter(formatter)
-            self.log = logging.getLogger("pangeo-forge-runner")
-            self.log.handlers = []
-            self.log.addHandler(logHandler)
-            self.log.setLevel(self.log_level)
         else:
             # due to json logger stuff above,
             # our log messages include carriage returns, newlines, etc.
             # remove the additional newline from the stream handler
-            self.log.handlers[0].terminator = ""
+            logHandler.terminator = ""
             # We don't want a [Repo2Docker] on all messages
-            self.log.handlers[0].formatter = logging.Formatter(fmt="%(message)s")
+            # We drop all 'extras' here as well
+            logHandler.formatter = logging.Formatter(fmt="%(message)s")

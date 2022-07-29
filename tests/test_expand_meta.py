@@ -10,7 +10,7 @@ invocations = [
 ]
 
 
-def test_expand_meta():
+def test_expand_meta_json():
     for invocation in invocations:
         cmd = [
             'pangeo-forge-runner',
@@ -29,4 +29,14 @@ def test_expand_meta():
         assert found_meta
 
 
-
+def test_expand_meta_no_json():
+    for invocation in invocations:
+        cmd = [
+            'pangeo-forge-runner',
+            'expand-meta',
+            '--repo', invocation['repo'],
+            '--ref', invocation['ref'],
+        ]
+        out = subprocess.check_output(cmd, encoding='utf-8')
+        last_line = out.splitlines()[-1]
+        assert json.loads(last_line) == invocation['meta']
