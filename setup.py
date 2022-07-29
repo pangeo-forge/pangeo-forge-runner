@@ -15,7 +15,8 @@ setup(
     install_requires=[
         'jupyter-repo2docker',
         'ruamel.yaml',
-        'pangeo-forge-recipes'
+        'pangeo-forge-recipes',
+        'traitlets'
     ],
     entry_points={
         'console_scripts': ['pangeo-forge-runner=pangeo_forge_runner.__main__:main']
