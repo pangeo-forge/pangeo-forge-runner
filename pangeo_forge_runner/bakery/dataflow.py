@@ -13,7 +13,9 @@ class DataflowBakery(LoggingConfigurable):
         allow_none=True,
         config=True,
         help="""
-        GCP Project to submit the Dataflow job into
+        GCP Project to submit the Dataflow job into.
+
+        Defaults to the output of `gcloud config get-value project` if unset.
         """
     )
 
@@ -76,6 +78,8 @@ class DataflowBakery(LoggingConfigurable):
         """
         if self.temp_bucket is None:
             raise ValueError('DataflowBakery.temp_bucket must be set')
+        if self.project_id is None:
+            raise ValueError('DataflowBakery.project_id must be set')
         return PipelineOptions(
             runner="DataflowRunner",
             project=self.project_id,
