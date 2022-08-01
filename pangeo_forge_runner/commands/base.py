@@ -6,6 +6,9 @@ import logging
 from pythonjsonlogger import jsonlogger
 
 
+# Common aliases we want to support in *all* commands
+# The key is what the commandline argument should be, and the
+# value is the traitlet config it will be translated to
 common_aliases = {
     'log-level': 'Application.log_level',
     'f': 'BaseCommand.config_file',
@@ -14,6 +17,10 @@ common_aliases = {
     'ref': 'BaseCommand.ref',
 }
 
+# Common flags we want to support in *all* commands.
+# The key is the name of the flag, and the value is a tuple
+# consisting of a dicitonary with the traitlet config that will be
+# set, and a helpful description to be printed in the commandline
 common_flags = {
     'json': (
         {'BaseCommand': {'json_logs': True}},
@@ -28,7 +35,7 @@ class BaseCommand(Application):
     Provides common traitlets everyone needs, and base methods for
     fetching a given repository.
 
-    Not directly instantiated!
+    Do not directly instantiate!
     """
     log_level = logging.INFO
 
@@ -80,13 +87,32 @@ class BaseCommand(Application):
             contentproviders.Git,
         ],
         config=True,
+        help="""
+        List of ContentProviders to use to fetch repo.
+
+        Uses ContentProviders from repo2docker for doing most of the work.
+        The ordering matters, and Git is used as the default for any URL
+        that we can not otherwise determine.
+
+        If we want to support additional contentproviders, ideally we can
+        contribute them upstream to repo2docker.
+        """
     )
 
     json_logs = Bool(
         False,
         config=True,
         help="""
-        Provide JSON formatted logging output
+        Provide JSON formatted logging output to stdout.
+
+        If set to True, *all* output will be emitted as one JSON object per
+        line.
+
+        Each line *will* have at least a 'status' field and a 'message' field.
+        Various other keys will also be present based on the command being called
+        and the value of 'status'.
+
+        TODO: This *must* get a JSON schema.
         """
     )
 
@@ -122,7 +148,8 @@ class BaseCommand(Application):
             self.log.info(log_line, extra=dict(status="fetching"))
 
     def json_excepthook(self, etype, evalue, traceback):
-        """Called on an uncaught exception when using json logging
+        """
+        Called on an uncaught exception when using json logging
 
         Avoids non-JSON output on errors when using --json-logs
         """
@@ -135,24 +162,30 @@ class BaseCommand(Application):
 
     def initialize(self, argv=None):
         super().initialize(argv)
+        # Load traitlets config from a config file if present
         self.load_config_file(self.config_file)
+
+        # The application communicates with the outside world via
+        # stdout, and we structure this communication via logging.
+        # So let's setup the default logger to log to stdout, rather
+        # than stderr.
         logHandler = logging.StreamHandler(sys.stdout)
         self.log = logging.getLogger("pangeo-forge-runner")
+
+        # Remove all existing handlers so we don't repeat messages
         self.log.handlers = []
         self.log.addHandler(logHandler)
         self.log.setLevel(self.log_level)
 
         if self.json_logs:
-            # register JSON excepthook to avoid non-JSON output on errors
+            # register JSON excepthook to avoid non-JSON output on uncaught exception
             sys.excepthook = self.json_excepthook
-            # Need to reset existing handlers, or we repeat messages
             formatter = jsonlogger.JsonFormatter()
             logHandler.setFormatter(formatter)
         else:
-            # due to json logger stuff above,
-            # our log messages include carriage returns, newlines, etc.
-            # remove the additional newline from the stream handler
+            # Since we also have JSON logging, we put newlines in our
+            # messages wherever explicitly needed. Avoid the logger
+            # adding its own, so we don't have unnecessary blank lines
             logHandler.terminator = ""
-            # We don't want a [Repo2Docker] on all messages
-            # We drop all 'extras' here as well
+            # Just put out the message here, nothing else.
             logHandler.formatter = logging.Formatter(fmt="%(message)s")

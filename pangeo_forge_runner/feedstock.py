@@ -5,9 +5,14 @@ from copy import deepcopy
 yaml = YAML()
 
 class Feedstock:
+    """
+    A Pangeo Forge feedstock
+    """
     def __init__(self, feedstock_dir: Path):
         """
-        met is parsed YAML from feedstock/meta.yaml
+        feedstock_dir: Path to an existing Feedstock repo
+
+        Expects meta.yaml to exist inside feedstock/meta.yaml in this dir
         """
         self.feedstock_dir = feedstock_dir
         with open(self.feedstock_dir / 'feedstock/meta.yaml') as f:
@@ -17,6 +22,11 @@ class Feedstock:
     def _import(self, spec):
         """
         Import & return given object from recipes/ in feedstock_dir
+
+        spec is of form <filename>:<object-name>, similar to what is used
+        elsewhere in python.
+
+        Each file is executed only once and cached.
         """
         if not hasattr(self, '_import_cache'):
             self._import_cache = {}
@@ -34,7 +44,7 @@ class Feedstock:
         """
         Parse the recipes defined in this feedstock & return them
 
-        *Executes arbitrary code* defined in the feedstock!!!
+        *Executes arbitrary code* defined in the feedstock recipes.
         """
         recipes = {}
         recipes_config = self.meta['recipes']
@@ -44,7 +54,7 @@ class Feedstock:
         elif isinstance(recipes_config, dict):
             recipes = self._import(recipes_config['dict_object'])
         else:
-            raise ValueError(f'Could not parse recipes config in meta.yaml')
+            raise ValueError('Could not parse recipes config in meta.yaml')
 
         return recipes
 
@@ -57,9 +67,9 @@ class Feedstock:
         """
         meta_copy = deepcopy(self.meta)
         if 'recipes' in self.meta and 'dict_object' in self.meta['recipes']:
-            do = self.meta['recipes']['dict_object']
             # We have a dict_object, so let's parse the recipes, and provide
-            # keep just the ids, discarding the values.
+            # keep just the ids, discarding the values - as the values do not
+            # actually serialize.
             recipes = self.parse_recipes()
             meta_copy['recipes'] = [{'id': k} for k, v in recipes.items()]
 
