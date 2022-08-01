@@ -1,5 +1,5 @@
 """
-Runner for baking pangeo-forge recipes in GCP DataFlow
+Bakery for baking pangeo-forge recipes in GCP DataFlow
 """
 from apache_beam.pipeline import PipelineOptions
 from traitlets.config import LoggingConfigurable
@@ -7,7 +7,7 @@ from traitlets import Unicode, Bool, default
 import subprocess
 
 
-class DataflowRunner(LoggingConfigurable):
+class DataflowBakery(LoggingConfigurable):
     project_id = Unicode(
         None,
         allow_none=True,
@@ -72,10 +72,10 @@ class DataflowRunner(LoggingConfigurable):
 
     def get_pipeline_options(self, job_name: str, container_image: str) -> PipelineOptions:
         """
-        Return PipelineOptions for use with this runner
+        Return PipelineOptions for use with this Bakery
         """
         if self.temp_bucket is None:
-            raise ValueError('DataflowRunner.temp_bucket must be set')
+            raise ValueError('DataflowBakery.temp_bucket must be set')
         return PipelineOptions(
             runner="DataflowRunner",
             project=self.project_id,

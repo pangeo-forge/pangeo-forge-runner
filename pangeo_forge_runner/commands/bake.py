@@ -9,7 +9,7 @@ import tempfile
 from .. import Feedstock
 from ..stream_capture import redirect_stderr, redirect_stdout
 from traitlets import Bool, Type
-from ..runners.dataflow import DataflowRunner
+from ..bakery.dataflow import DataflowBakery
 from pangeo_forge_recipes.storage import StorageConfig
 
 from ..storage import TargetStorage, InputCacheStorage, MetadataCacheStorage
@@ -17,7 +17,7 @@ from ..storage import TargetStorage, InputCacheStorage, MetadataCacheStorage
 
 class Bake(BaseCommand):
     """
-    Application to bake a pangeo forge recipe in a given runner
+    Application to bake a pangeo forge recipe in a given bakery
     """
     aliases = common_aliases
     flags = common_flags | {
@@ -37,12 +37,11 @@ class Bake(BaseCommand):
         """
     )
 
-    runner_class = Type(
-        default_value=DataflowRunner,
-        entry_point_group="pangeo_forge_runner.runners",
+    bakery_class = Type(
+        default_value=DataflowBakery,
         config=True,
         help="""
-        The class to use for configuring the runner when baking.
+        The bakery to use when baking
         """,
     )
 
@@ -58,7 +57,7 @@ class Bake(BaseCommand):
                 # Prune all recipes if we're asked to
                 recipes = {k: r.copy_pruned() for k, r in recipes.items()}
 
-            runner = self.runner_class(
+            bakery = self.bakery_class(
                 parent=self
             )
 
@@ -74,7 +73,7 @@ class Bake(BaseCommand):
                     input_cache_storage.get_forge_target(job_id=job_name),
                     metadata_cache_storage.get_forge_target(job_id=job_name)
                 )
-                pipeline_options = runner.get_pipeline_options(
+                pipeline_options = bakery.get_pipeline_options(
                     # FIXME: Put in repo / ref here
                     job_name=job_name,
                     # FIXME: Bring this in from meta

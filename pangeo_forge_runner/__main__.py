@@ -8,7 +8,7 @@ class App(Application):
 
     subcommands = {
         'expand-meta': (ExpandMeta, "Expand meta.yaml of a config file"),
-        'bake': (Bake, 'Bake a pangeo-forge recipe with a given runner')
+        'bake': (Bake, 'Bake a pangeo-forge recipe with a given Bakery')
     }
 
     def start(self):
