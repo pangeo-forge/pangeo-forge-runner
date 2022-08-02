@@ -79,7 +79,9 @@ class Bake(BaseCommand):
                     # FIXME: Bring this in from meta
                     container_image='pangeo/forge:8a862dc'
                 )
-                pipeline = Pipeline(options=pipeline_options)
+                # Set argv explicitly to empty so Apache Beam doesn't try to parse the commandline
+                # for pipeline options - we have traitlets doing that for us.
+                pipeline = Pipeline(options=pipeline_options, argv=[])
                 # Chain our recipe to the pipeline
                 pipeline | recipe.to_beam()
                 result = pipeline.run()

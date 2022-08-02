@@ -88,7 +88,11 @@ class DataflowBakery(LoggingConfigurable):
             raise ValueError('DataflowBakery.temp_bucket must be set')
         if self.project_id is None:
             raise ValueError('DataflowBakery.project_id must be set')
+
+        # Set flags explicitly to empty so Apache Beam doesn't try to parse the commandline
+        # for pipeline options - we have traitlets doing that for us.
         return PipelineOptions(
+            flags=[],
             runner="DataflowRunner",
             project=self.project_id,
             job_name=job_name,
