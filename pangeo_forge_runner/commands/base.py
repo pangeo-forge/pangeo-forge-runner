@@ -170,12 +170,15 @@ class BaseCommand(Application):
         # So let's setup the default logger to log to stdout, rather
         # than stderr.
         logHandler = logging.StreamHandler(sys.stdout)
-        self.log = logging.getLogger("pangeo-forge-runner")
+        self.log = logging.getLogger(__name__)
 
         # Remove all existing handlers so we don't repeat messages
         self.log.handlers = []
         self.log.addHandler(logHandler)
         self.log.setLevel(self.log_level)
+        # Don't propagate these to the root logger - Apache Beam fucks with the root logger,
+        # and we don't want duplicates
+        self.log.propagate = False
 
         if self.json_logs:
             # register JSON excepthook to avoid non-JSON output on uncaught exception
