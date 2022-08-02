@@ -1,4 +1,6 @@
 from pangeo_forge_runner.bakery.dataflow import DataflowBakery
+from traitlets import TraitError
+import pytest
 import shutil
 import uuid
 import subprocess
@@ -28,3 +30,11 @@ def test_default_gcp_project():
     finally:
         if current_project:
             subprocess.run(['gcloud', 'config', 'set', 'project', current_project])
+
+
+def test_temp_gcs_location_validation():
+    dfb = DataflowBakery()
+    with pytest.raises(TraitError):
+        dfb.temp_gcs_location = 'This Should be an Error'
+
+    dfb.temp_gcs_location = 'gs://this-should-not-error'

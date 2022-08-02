@@ -3,7 +3,7 @@ Bakery for baking pangeo-forge recipes in GCP DataFlow
 """
 from apache_beam.pipeline import PipelineOptions
 from traitlets.config import LoggingConfigurable
-from traitlets import Unicode, Bool, default
+from traitlets import Unicode, Bool, default, validate, TraitError
 import subprocess
 
 
@@ -59,24 +59,32 @@ class DataflowBakery(LoggingConfigurable):
         """
     )
 
-    temp_bucket = Unicode(
+    temp_gcs_location = Unicode(
         None,
         allow_none=True,
         config=True,
         help="""
-        Name of temporary staging GCS bucket to use.
+        GCS URL under which to put temporary files required to launch dataflow jobs
 
-        *Must* be set.
-
-        TODO: Find out what this is used for?
+        *Must* be set, and be a gs:// URL.
         """
     )
+
+    @validate('temp_gcs_location')
+    def _validate_temp_gcs_location(self, proposal):
+        """
+        Ensure that temp_gcs_location is a gs:// URL
+        """
+        if not proposal['value'].startswith('gs://'):
+            raise TraitError('DataflowBakery.temp_gcs_location must be a gs:// URL')
+        return proposal['value']
+
 
     def get_pipeline_options(self, job_name: str, container_image: str) -> PipelineOptions:
         """
         Return PipelineOptions for use with this Bakery
         """
-        if self.temp_bucket is None:
+        if self.temp_gcs_location is None:
             raise ValueError('DataflowBakery.temp_bucket must be set')
         if self.project_id is None:
             raise ValueError('DataflowBakery.project_id must be set')
@@ -84,8 +92,7 @@ class DataflowBakery(LoggingConfigurable):
             runner="DataflowRunner",
             project=self.project_id,
             job_name=job_name,
-            # TODO: Update temp bucket name once we move out of 'test' phase.
-            temp_location=self.temp_bucket,
+            temp_location=self.temp_gcs_location,
             use_public_ips=self.use_public_ips,
             region=self.region,
             # https://cloud.google.com/dataflow/docs/guides/using-custom-containers#usage
