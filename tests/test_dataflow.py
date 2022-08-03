@@ -64,3 +64,18 @@ def test_pipelineoptions():
     assert opts["sdk_container_image"] == "some-container:some-tag"
     assert opts["job_name"] == "job"
     assert opts["runner"] == "DataflowRunner"
+
+
+def test_required_params():
+    dfb = DataflowBakery()
+    dfb.project_id = None
+    dfb.temp_gcs_location = 'gs://test'
+
+    with pytest.raises(ValueError):
+        dfb.get_pipeline_options('test', 'test')
+
+    dfb.project_id = 'something'
+    dfb.temp_gcs_location = None
+
+    with pytest.raises(ValueError):
+        dfb.get_pipeline_options('test', 'test')
