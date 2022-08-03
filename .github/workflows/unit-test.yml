@@ -25,13 +25,16 @@ jobs:
       uses: 'google-github-actions/setup-gcloud@v0'
     - name: 'Setup minio + mc'
       run: |
-        wget https://dl.min.io/server/minio/release/linux-amd64/minio
+        wget --quiet https://dl.min.io/server/minio/release/linux-amd64/minio
         chmod +x minio
         mv minio /usr/local/bin/minio
 
-        wget https://dl.min.io/client/mc/release/linux-amd64/mc
+        wget --quiet https://dl.min.io/client/mc/release/linux-amd64/mc
         chmod +x mc
         mv mc /usr/local/bin/mc
+
+        minio --version
+        mc --version
 
     - name: Install dependencies & our package
       run: |
