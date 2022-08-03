@@ -170,7 +170,14 @@ class BaseCommand(Application):
         # So let's setup the default logger to log to stdout, rather
         # than stderr.
         logHandler = logging.StreamHandler(sys.stdout)
-        self.log = logging.getLogger(__name__)
+
+        # Calling logging.getLogger gives us the *root* logger, which we
+        # then futz with. Ideally, we'll call getLogger(__name__) which
+        # will give us a scoped logger. Unfortunately, apache_beam doesn't
+        # do this correctly and fucks with the root logger, and so must we
+        # if we want to be able to control all stdout from our CLI (to be JSON or
+        # otherwise). FIXME: No extra comes out here, just message
+        self.log = logging.getLogger()
 
         # Remove all existing handlers so we don't repeat messages
         self.log.handlers = []
