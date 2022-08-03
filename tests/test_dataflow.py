@@ -13,7 +13,7 @@ def test_default_gcp_project():
     # We want `gcloud` to actually be present in the environment
     assert shutil.which('gcloud')
 
-    # We fetch the currnet project (if it exists) to make sure we restore it after our test
+    # We fetch the current project (if it exists) to make sure we restore it after our test
     current_project = None
 
     proc = subprocess.run(['gcloud', 'config', 'get-value', 'project'], stdout=subprocess.PIPE)
@@ -79,3 +79,11 @@ def test_required_params():
 
     with pytest.raises(ValueError):
         dfb.get_pipeline_options('test', 'test')
+
+def test_missing_gcloud(mocker):
+    def find_nothing_which(cmd):
+        return False
+    mocker.patch('shutil.which', find_nothing_which)
+
+    dfb = DataflowBakery()
+    assert dfb.project_id is None

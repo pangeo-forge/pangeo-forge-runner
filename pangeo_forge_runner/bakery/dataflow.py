@@ -1,6 +1,7 @@
 """
 Bakery for baking pangeo-forge recipes in GCP DataFlow
 """
+import shutil
 from apache_beam.pipeline import PipelineOptions
 from .base import Bakery
 from traitlets import Unicode, Bool, default, validate, TraitError
@@ -24,13 +25,13 @@ class DataflowBakery(Bakery):
         """
         Set default project_id from `gcloud` if it is set
         """
-        try:
-            return subprocess.check_output(
-                ["gcloud", "config", "get-value", "project"],
-                encoding='utf-8'
-            ).strip()
-        except subprocess.CalledProcessError:
+        if not shutil.which('gcloud'):
+            # If `gcloud` is not installed, just do nothing
             return None
+        return subprocess.check_output(
+            ["gcloud", "config", "get-value", "project"],
+            encoding='utf-8'
+        ).strip()
 
     region = Unicode(
         "us-central1",
