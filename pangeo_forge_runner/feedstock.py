@@ -47,7 +47,7 @@ class Feedstock:
         *Executes arbitrary code* defined in the feedstock recipes.
         """
         recipes = {}
-        recipes_config = self.meta['recipes']
+        recipes_config = self.meta.get('recipes')
         if isinstance(recipes_config, list):
             for r in recipes_config:
                 recipes[r['id']] = self._import(r['object'])
