@@ -4,6 +4,11 @@ from traitlets.config import Application
 
 
 class App(Application):
+    """
+    Pangeo Forge Runner CLI
+
+    Primariily used to launch various subcommands
+    """
     raise_config_file_errors = True
 
     subcommands = {

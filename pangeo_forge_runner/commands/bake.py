@@ -18,7 +18,7 @@ from ..storage import TargetStorage, InputCacheStorage, MetadataCacheStorage
 
 class Bake(BaseCommand):
     """
-    Application to bake a pangeo forge recipe in a given bakery
+    Command to bake a pangeo forge recipe in a given bakery
     """
     aliases = common_aliases
     flags = common_flags | {
@@ -43,12 +43,23 @@ class Bake(BaseCommand):
         klass=Bakery,
         config=True,
         help="""
-        The bakery to use when baking
+        The Bakery to bake this recipe in.
+
+        The Bakery (and its configuration) determine which Apache Beam
+        Runner is used, and how options for it are specified.
+
+        Defaults to LocalDirectBakery, which bakes the recipe using Apache
+        Beam's "DirectRunner". It doesn't use Docker or the cloud, and runs
+        everything locally. Useful only for testing!
         """,
     )
 
     def start(self):
-
+        """
+        Start the baking process
+        """
+        # Create our storage configurations. Traitlets will do its magic, populate these
+        # with appropriate config from config file / commandline / defaults.
         target_storage = TargetStorage(parent=self)
         input_cache_storage = InputCacheStorage(parent=self)
         metadata_cache_storage = MetadataCacheStorage(parent=self)
@@ -57,6 +68,9 @@ class Bake(BaseCommand):
         self.log.info(f'Input Cache Storage is {input_cache_storage}\n', extra={'status': 'setup'})
         self.log.info(f'Metadata Cache Storage is {metadata_cache_storage}\n', extra={'status': 'setup'})
 
+        # Create a temporary directory where we fetch the feedstock repo and perform all operations
+        # FIXME: Support running this on an already existing repository, so users can run it
+        # as they develop their feedstock
         with tempfile.TemporaryDirectory() as d:
             self.fetch(d)
             feedstock = Feedstock(Path(d))
@@ -73,9 +87,9 @@ class Bake(BaseCommand):
                 parent=self
             )
 
-
-
             for name, recipe in recipes.items():
+                # Unique name for running this particular recipe.
+                # FIXME: Should include the name of repo / ref as well somehow
                 job_name=f'{name}-{recipe.sha256().hex()}-{int(datetime.now().timestamp())}'
 
                 recipe.storage_config = StorageConfig(
@@ -85,16 +99,20 @@ class Bake(BaseCommand):
                 )
 
                 pipeline_options = bakery.get_pipeline_options(
-                    # FIXME: Put in repo / ref here
                     job_name=job_name,
-                    # FIXME: Bring this in from meta
+                    # FIXME: Bring this in from meta.yaml?
                     container_image='pangeo/forge:8a862dc'
                 )
+
                 # Set argv explicitly to empty so Apache Beam doesn't try to parse the commandline
                 # for pipeline options - we have traitlets doing that for us.
                 pipeline = Pipeline(options=pipeline_options, argv=[])
-                # Chain our recipe to the pipeline
+                # Chain our recipe to the pipeline. This mutates the `pipeline` object!
                 pipeline | recipe.to_beam()
+
+                # Some bakeries are blocking - if Beam is configured to use them, calling
+                # pipeline.run() blocks. Some are not. We handle that here, and provide
+                # appropriate feedback to the user too.
                 if bakery.blocking:
                     self.log.info(f"Running job for recipe {name}\n",
                         extra={

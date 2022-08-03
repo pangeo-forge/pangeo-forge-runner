@@ -4,9 +4,11 @@ import sys
 
 class LoggingStream:
     """
-    Redirect a stream (stdout / stderr) to a python logger
+    File-like object that redirects to a python logger.
+
+    Minimal implementation used only to replace sys.stdout, stderr.
     """
-    def __init__(self, log: logging.Logger, level, extra: dict):
+    def __init__(self, log: logging.Logger, level: str, extra: dict):
         self.log = log
         self.level = level
         self.extra = extra

@@ -9,6 +9,9 @@ import subprocess
 
 
 class DataflowBakery(Bakery):
+    """
+    Bake a Pangeo Forge recipe on GCP Dataflow
+    """
     project_id = Unicode(
         None,
         allow_none=True,
@@ -17,6 +20,7 @@ class DataflowBakery(Bakery):
         GCP Project to submit the Dataflow job into.
 
         Defaults to the output of `gcloud config get-value project` if unset.
+        Must be set for the Bakery to function.
         """
     )
 
@@ -100,6 +104,7 @@ class DataflowBakery(Bakery):
             temp_location=self.temp_gcs_location,
             use_public_ips=self.use_public_ips,
             region=self.region,
+            # The v2 Runner is required to use custom container images
             # https://cloud.google.com/dataflow/docs/guides/using-custom-containers#usage
             experiments=["use_runner_v2"],
             sdk_container_image=container_image,

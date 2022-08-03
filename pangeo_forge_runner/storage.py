@@ -9,6 +9,9 @@ from pangeo_forge_recipes.storage import (
 
 
 class StorageTargetConfig(LoggingConfigurable):
+    """
+    Configuration for Storage Targets when a Pangeo Forge recipe is baked
+    """
     fsspec_class = Type(
         klass=AbstractFileSystem,
         config=True,
@@ -39,7 +42,9 @@ class StorageTargetConfig(LoggingConfigurable):
     pangeo_forge_target_class = Type(
         config=False,
         help="""
-        pangeo-forge-recipes class to instantiate
+        StorageConfig class from pangeo_forge_recipes to instantiate.
+
+        Should be set by subclasses.
         """
     )
 
@@ -55,16 +60,28 @@ class StorageTargetConfig(LoggingConfigurable):
         )
 
     def __str__(self):
+        """
+        Return sanitized string representation, stripped of possible secrets
+        """
         # Only show keys and type of values of args to fsspec, as they might contain secrets
         fsspec_args_filtered = ', '.join(f'{k}=<{type(v).__name__}>' for k, v in self.fsspec_args.items())
         return f'{self.pangeo_forge_target_class.__name__}({self.fsspec_class.__name__}({fsspec_args_filtered}, root_path="{self.root_path}")'
 
 
 class TargetStorage(StorageTargetConfig):
+    """
+    Storage configuration for where the baked data should be stored
+    """
     pangeo_forge_target_class = FSSpecTarget
 
 class InputCacheStorage(StorageTargetConfig):
+    """
+    Storage configuration for caching input files during recipe baking
+    """
     pangeo_forge_target_class = CacheFSSpecTarget
 
 class MetadataCacheStorage(StorageTargetConfig):
+    """
+    Storage configuration for caching metadata during recipe baking
+    """
     pangeo_forge_target_class = MetadataTarget
