@@ -7,7 +7,7 @@ from logging import LogRecord
 from traitlets import Unicode, Bool, default, validate, TraitError, Integer
 
 
-class LocalDirectRunner(Bakery):
+class LocalDirectBakery(Bakery):
     """
     Bake recipes on your local machine, without docker.
 

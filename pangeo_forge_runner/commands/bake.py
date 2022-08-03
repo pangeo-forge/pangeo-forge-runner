@@ -10,7 +10,7 @@ from .. import Feedstock
 from ..stream_capture import redirect_stderr, redirect_stdout
 from traitlets import Bool, Type
 from ..bakery.base import Bakery
-from ..bakery.local import LocalDirectRunner
+from ..bakery.local import LocalDirectBakery
 from pangeo_forge_recipes.storage import StorageConfig
 
 from ..storage import TargetStorage, InputCacheStorage, MetadataCacheStorage
@@ -39,7 +39,7 @@ class Bake(BaseCommand):
     )
 
     bakery_class = Type(
-        default_value=LocalDirectRunner,
+        default_value=LocalDirectBakery,
         klass=Bakery,
         config=True,
         help="""
