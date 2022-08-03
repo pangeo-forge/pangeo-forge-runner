@@ -140,7 +140,7 @@ class BaseCommand(Application):
                 break
 
         if picked_content_provider is None:
-            raise ValueError(f'Could not fetch {self.repo}')
+            raise ValueError(f'Could not fetch {self.repo}, no matching contentprovider found')
 
         for log_line in picked_content_provider.fetch(
             spec, target_path, yield_output=True
