@@ -187,6 +187,14 @@ class BaseCommand(Application):
         # and we don't want duplicates
         self.log.propagate = False
 
+        # Capture all warnings as well, and route them to our logger
+        # This makes sure we don't accidentally write warnings to stderr
+        # when calling this with --json
+        # FIXME: Some extras need to be set here
+        warnings_logger = logging.getLogger('py.warnings')
+        warnings_logger.parent = self.log
+        logging.captureWarnings(True)
+
         if self.json_logs:
             # register JSON excepthook to avoid non-JSON output on uncaught exception
             sys.excepthook = self.json_excepthook
