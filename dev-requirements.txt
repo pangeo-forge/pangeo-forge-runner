@@ -1,2 +1,5 @@
 pytest
 pytest-cov
+
+# These are used by the gpcp feedstock
+s3fs
