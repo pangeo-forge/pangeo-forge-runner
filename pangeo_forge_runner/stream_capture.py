@@ -14,9 +14,6 @@ class LoggingStream:
     def write(self, message):
         self.log.log(self.level, message, extra=self.extra)
 
-    def flush(self):
-        pass
-
 
 @contextlib.contextmanager
 def redirect_stdout(log: logging.Logger, extra: dict):

@@ -16,9 +16,10 @@ setup(
         'jupyter-repo2docker',
         'ruamel.yaml',
         'pangeo-forge-recipes',
-        'traitlets'
+        'traitlets',
+        'apache-beam[gcp]'
     ],
     entry_points={
-        'console_scripts': ['pangeo-forge-runner=pangeo_forge_runner.__main__:main']
+        'console_scripts': ['pangeo-forge-runner=pangeo_forge_runner.cli:main']
     }
 )

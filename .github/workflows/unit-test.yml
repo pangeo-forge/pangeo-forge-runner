@@ -21,6 +21,21 @@ jobs:
       uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
+    - name: 'Set up Cloud SDK'
+      uses: 'google-github-actions/setup-gcloud@v0'
+    - name: 'Setup minio + mc'
+      run: |
+        wget --quiet https://dl.min.io/server/minio/release/linux-amd64/minio
+        chmod +x minio
+        mv minio /usr/local/bin/minio
+
+        wget --quiet https://dl.min.io/client/mc/release/linux-amd64/mc
+        chmod +x mc
+        mv mc /usr/local/bin/mc
+
+        minio --version
+        mc --version
+
     - name: Install dependencies & our package
       run: |
         python -m pip install --upgrade pip
@@ -28,6 +43,6 @@ jobs:
         python -m pip install -e .
     - name: Test with pytest
       run: |
-        pytest -vvv --cov=pangeo_forge_runner tests/
+        pytest -vvv -s --cov=pangeo_forge_runner tests/
     - name: Upload Coverage to Codecov
       uses: codecov/codecov-action@v2

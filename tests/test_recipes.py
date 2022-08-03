@@ -1,3 +1,4 @@
+import pytest
 from pangeo_forge_runner import Feedstock
 from pathlib import Path
 from ruamel.yaml import YAML
@@ -34,3 +35,10 @@ def test_recipes_dict():
         meta = yaml.load(f)
         meta['recipes'] = [{'id': 'test_1'}, {'id': 'test_2'}]
         assert meta == feed.get_expanded_meta()
+
+
+def test_recipes_broken():
+    list_recipe = HERE / 'test-recipes/broken-recipe'
+    feed = Feedstock(list_recipe)
+    with pytest.raises(ValueError):
+        feed.parse_recipes()

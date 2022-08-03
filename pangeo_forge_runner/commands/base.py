@@ -140,7 +140,7 @@ class BaseCommand(Application):
                 break
 
         if picked_content_provider is None:
-            raise ValueError(f'Could not fetch {self.repo}')
+            raise ValueError(f'Could not fetch {self.repo}, no matching contentprovider found')
 
         for log_line in picked_content_provider.fetch(
             spec, target_path, yield_output=True
@@ -170,12 +170,30 @@ class BaseCommand(Application):
         # So let's setup the default logger to log to stdout, rather
         # than stderr.
         logHandler = logging.StreamHandler(sys.stdout)
-        self.log = logging.getLogger("pangeo-forge-runner")
+
+        # Calling logging.getLogger gives us the *root* logger, which we
+        # then futz with. Ideally, we'll call getLogger(__name__) which
+        # will give us a scoped logger. Unfortunately, apache_beam doesn't
+        # do this correctly and fucks with the root logger, and so must we
+        # if we want to be able to control all stdout from our CLI (to be JSON or
+        # otherwise). FIXME: No extra comes out here, just message
+        self.log = logging.getLogger()
 
         # Remove all existing handlers so we don't repeat messages
         self.log.handlers = []
         self.log.addHandler(logHandler)
         self.log.setLevel(self.log_level)
+        # Don't propagate these to the root logger - Apache Beam fucks with the root logger,
+        # and we don't want duplicates
+        self.log.propagate = False
+
+        # Capture all warnings as well, and route them to our logger
+        # This makes sure we don't accidentally write warnings to stderr
+        # when calling this with --json
+        # FIXME: Some extras need to be set here
+        warnings_logger = logging.getLogger('py.warnings')
+        warnings_logger.parent = self.log
+        logging.captureWarnings(True)
 
         if self.json_logs:
             # register JSON excepthook to avoid non-JSON output on uncaught exception

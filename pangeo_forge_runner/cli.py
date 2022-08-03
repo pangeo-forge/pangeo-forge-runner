@@ -1,4 +1,5 @@
 from .commands.expand_meta import ExpandMeta
+from .commands.bake import Bake
 from traitlets.config import Application
 
 
@@ -7,6 +8,7 @@ class App(Application):
 
     subcommands = {
         'expand-meta': (ExpandMeta, "Expand meta.yaml of a config file"),
+        'bake': (Bake, 'Bake a pangeo-forge recipe with a given Bakery')
     }
 
     def start(self):
@@ -17,7 +19,3 @@ class App(Application):
 def main():
     app = App()
     app.start()
-
-
-if __name__ == "__main__":
-    main()
