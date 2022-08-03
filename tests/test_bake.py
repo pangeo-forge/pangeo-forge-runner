@@ -46,7 +46,6 @@ def test_gpcp_bake(minio):
             "-f",
             f.name,
         ]
-        print(f.name)
         proc = subprocess.run(cmd)
 
         assert proc.returncode == 0
@@ -61,6 +60,7 @@ def test_gpcp_bake(minio):
         assert gpcp.title == 'Global Precipitation Climatatology Project (GPCP) Climate Data Record (CDR), Daily V1.3'
         # --prune prunes to two time steps by default, so we expect 2 items here
         assert len(gpcp.precip) == 2
+        print(gpcp)
 
         # `mc` isn't the best way, but we want to display all the files in our minio
         with tempfile.TemporaryDirectory() as mcd:
