@@ -2,12 +2,12 @@
 Bakery for baking pangeo-forge recipes in GCP DataFlow
 """
 from apache_beam.pipeline import PipelineOptions
-from traitlets.config import LoggingConfigurable
+from .base import Bakery
 from traitlets import Unicode, Bool, default, validate, TraitError
 import subprocess
 
 
-class DataflowBakery(LoggingConfigurable):
+class DataflowBakery(Bakery):
     project_id = Unicode(
         None,
         allow_none=True,

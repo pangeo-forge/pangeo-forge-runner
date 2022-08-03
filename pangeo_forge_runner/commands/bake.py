@@ -9,7 +9,8 @@ import tempfile
 from .. import Feedstock
 from ..stream_capture import redirect_stderr, redirect_stdout
 from traitlets import Bool, Type
-from ..bakery.dataflow import DataflowBakery
+from ..bakery.base import Bakery
+from ..bakery.local import LocalDirectRunner
 from pangeo_forge_recipes.storage import StorageConfig
 
 from ..storage import TargetStorage, InputCacheStorage, MetadataCacheStorage
@@ -38,7 +39,8 @@ class Bake(BaseCommand):
     )
 
     bakery_class = Type(
-        default_value=DataflowBakery,
+        default_value=LocalDirectRunner,
+        klass=Bakery,
         config=True,
         help="""
         The bakery to use when baking
@@ -67,7 +69,7 @@ class Bake(BaseCommand):
                 # Prune all recipes if we're asked to
                 recipes = {k: r.copy_pruned() for k, r in recipes.items()}
 
-            bakery = self.bakery_class(
+            bakery: Bakery = self.bakery_class(
                 parent=self
             )
 
@@ -82,7 +84,6 @@ class Bake(BaseCommand):
                     metadata_cache_storage.get_forge_target(job_name=job_name)
                 )
 
-
                 pipeline_options = bakery.get_pipeline_options(
                     # FIXME: Put in repo / ref here
                     job_name=job_name,
@@ -94,16 +95,27 @@ class Bake(BaseCommand):
                 pipeline = Pipeline(options=pipeline_options, argv=[])
                 # Chain our recipe to the pipeline
                 pipeline | recipe.to_beam()
-                result = pipeline.run()
-                job_id = result.job_id()
-                self.log.info(
-                    f"Submitted job {job_id} for recipe {name}",
-                    extra={
-                        'job_id': job_id,
-                        'recipe': name,
-                        'status': 'submitted'
-                    }
-                )
+                if bakery.blocking:
+                    self.log.info(f"Running job for recipe {name}\n",
+                        extra={
+                            'recipe': 'name',
+                            'status': 'running'
+                        }
+                    )
+                    pipeline.run()
+                else:
+                    result = pipeline.run()
+                    job_id = result.job_id()
+                    self.log.info(
+                        f"Submitted job {job_id} for recipe {name}",
+                        extra={
+                            'job_id': job_id,
+                            'recipe': name,
+                            'status': 'submitted'
+                        }
+                    )
+
+
 
 
 
