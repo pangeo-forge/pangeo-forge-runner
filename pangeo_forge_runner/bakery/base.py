@@ -1,6 +1,7 @@
+from apache_beam.pipeline import PipelineOptions
 from traitlets import Bool
 from traitlets.config import LoggingConfigurable
-from apache_beam.pipeline import PipelineOptions
+
 
 class Bakery(LoggingConfigurable):
     """
@@ -18,7 +19,7 @@ class Bakery(LoggingConfigurable):
         Set to True if this Bakery will default block calls to pipeline.run()
 
         Not configurable, should be overriden only by subclasses.
-        """
+        """,
     )
 
     def get_pipeline_options(
@@ -32,4 +33,4 @@ class Bakery(LoggingConfigurable):
                          if the Bakery supports using docker images
 
         """
-        raise NotImplementedError('Override get_pipeline_options in subclass')
+        raise NotImplementedError("Override get_pipeline_options in subclass")

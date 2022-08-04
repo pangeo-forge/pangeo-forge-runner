@@ -1,1 +1,1 @@
-from .feedstock import Feedstock # noqa
+from .feedstock import Feedstock  # noqa

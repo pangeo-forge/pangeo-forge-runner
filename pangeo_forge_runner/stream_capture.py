@@ -2,12 +2,14 @@ import contextlib
 import logging
 import sys
 
+
 class LoggingStream:
     """
     File-like object that redirects to a python logger.
 
     Minimal implementation used only to replace sys.stdout, stderr.
     """
+
     def __init__(self, log: logging.Logger, level: str, extra: dict):
         self.log = log
         self.level = level

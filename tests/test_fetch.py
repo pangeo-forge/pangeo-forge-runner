@@ -1,6 +1,8 @@
 import pytest
 from repo2docker import contentproviders
+
 from pangeo_forge_runner.commands.base import BaseCommand
+
 
 def test_bad_cp():
     """
@@ -12,6 +14,6 @@ def test_bad_cp():
     bc = BaseCommand()
     bc.content_providers.remove(contentproviders.Git)
 
-    bc.repo = 'https://example.com'
+    bc.repo = "https://example.com"
     with pytest.raises(ValueError):
-        bc.fetch('/tmp')
+        bc.fetch("/tmp")

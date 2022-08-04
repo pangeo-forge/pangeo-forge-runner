@@ -1,32 +1,28 @@
-from traitlets.config import Application
-from traitlets import Unicode, List, Bool
-from repo2docker import contentproviders
-import sys
 import logging
-from pythonjsonlogger import jsonlogger
+import sys
 
+from pythonjsonlogger import jsonlogger
+from repo2docker import contentproviders
+from traitlets import Bool, List, Unicode
+from traitlets.config import Application
 
 # Common aliases we want to support in *all* commands
 # The key is what the commandline argument should be, and the
 # value is the traitlet config it will be translated to
 common_aliases = {
-    'log-level': 'Application.log_level',
-    'f': 'BaseCommand.config_file',
-    'config': 'BaseCommand.config_file',
-    'repo': 'BaseCommand.repo',
-    'ref': 'BaseCommand.ref',
+    "log-level": "Application.log_level",
+    "f": "BaseCommand.config_file",
+    "config": "BaseCommand.config_file",
+    "repo": "BaseCommand.repo",
+    "ref": "BaseCommand.ref",
 }
 
 # Common flags we want to support in *all* commands.
 # The key is the name of the flag, and the value is a tuple
 # consisting of a dicitonary with the traitlet config that will be
 # set, and a helpful description to be printed in the commandline
-common_flags = {
-    'json': (
-        {'BaseCommand': {'json_logs': True}},
-        "Generate JSON output"
-    )
-}
+common_flags = {"json": ({"BaseCommand": {"json_logs": True}}, "Generate JSON output")}
+
 
 class BaseCommand(Application):
     """
@@ -37,6 +33,7 @@ class BaseCommand(Application):
 
     Do not directly instantiate!
     """
+
     log_level = logging.INFO
 
     repo = Unicode(
@@ -49,7 +46,7 @@ class BaseCommand(Application):
         using Repo2Docker ContentProviders. By default, this includes Git
         repos, Mercurial Repos, Zenodo, Figshare, Dataverse, Hydroshare,
         Swhid and local file paths.
-        """
+        """,
     )
 
     ref = Unicode(
@@ -61,15 +58,15 @@ class BaseCommand(Application):
 
         Optional, only used for some methods of fetching (such as git or
         mercurial)
-        """
+        """,
     )
 
     config_file = Unicode(
-        'pangeo_forge_runner_config.py',
+        "pangeo_forge_runner_config.py",
         config=True,
         help="""
         Load traitlet config from this file if it exists
-        """
+        """,
     )
 
     # Content providers from repo2docker are *solely* used to check out a repo
@@ -96,7 +93,7 @@ class BaseCommand(Application):
 
         If we want to support additional contentproviders, ideally we can
         contribute them upstream to repo2docker.
-        """
+        """,
     )
 
     json_logs = Bool(
@@ -113,9 +110,8 @@ class BaseCommand(Application):
         and the value of 'status'.
 
         TODO: This *must* get a JSON schema.
-        """
+        """,
     )
-
 
     def fetch(self, target_path):
         """
@@ -134,13 +130,16 @@ class BaseCommand(Application):
             if spec is not None:
                 picked_content_provider = cp
                 self.log.info(
-                    "Picked {cp} content " "provider.\n".format(cp=cp.__class__.__name__),
-                    extra={'status': 'fetching'}
+                    "Picked {cp} content "
+                    "provider.\n".format(cp=cp.__class__.__name__),
+                    extra={"status": "fetching"},
                 )
                 break
 
         if picked_content_provider is None:
-            raise ValueError(f'Could not fetch {self.repo}, no matching contentprovider found')
+            raise ValueError(
+                f"Could not fetch {self.repo}, no matching contentprovider found"
+            )
 
         for log_line in picked_content_provider.fetch(
             spec, target_path, yield_output=True
@@ -191,7 +190,7 @@ class BaseCommand(Application):
         # This makes sure we don't accidentally write warnings to stderr
         # when calling this with --json
         # FIXME: Some extras need to be set here
-        warnings_logger = logging.getLogger('py.warnings')
+        warnings_logger = logging.getLogger("py.warnings")
         warnings_logger.parent = self.log
         logging.captureWarnings(True)
 

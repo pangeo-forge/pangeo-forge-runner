@@ -2,16 +2,19 @@
 Bakery for baking pangeo-forge recipes in GCP DataFlow
 """
 import shutil
-from apache_beam.pipeline import PipelineOptions
-from .base import Bakery
-from traitlets import Unicode, Bool, default, validate, TraitError
 import subprocess
+
+from apache_beam.pipeline import PipelineOptions
+from traitlets import Bool, TraitError, Unicode, default, validate
+
+from .base import Bakery
 
 
 class DataflowBakery(Bakery):
     """
     Bake a Pangeo Forge recipe on GCP Dataflow
     """
+
     project_id = Unicode(
         None,
         allow_none=True,
@@ -21,7 +24,7 @@ class DataflowBakery(Bakery):
 
         Defaults to the output of `gcloud config get-value project` if unset.
         Must be set for the Bakery to function.
-        """
+        """,
     )
 
     @default("project_id")
@@ -29,12 +32,11 @@ class DataflowBakery(Bakery):
         """
         Set default project_id from `gcloud` if it is set
         """
-        if not shutil.which('gcloud'):
+        if not shutil.which("gcloud"):
             # If `gcloud` is not installed, just do nothing
             return None
         return subprocess.check_output(
-            ["gcloud", "config", "get-value", "project"],
-            encoding='utf-8'
+            ["gcloud", "config", "get-value", "project"], encoding="utf-8"
         ).strip()
 
     region = Unicode(
@@ -42,7 +44,7 @@ class DataflowBakery(Bakery):
         config=True,
         help="""
         GCP Region to submit the Dataflow jobs into
-        """
+        """,
     )
 
     machine_type = Unicode(
@@ -50,7 +52,7 @@ class DataflowBakery(Bakery):
         config=True,
         help="""
         GCP Machine type to use for the Dataflow jobs
-        """
+        """,
     )
 
     use_public_ips = Bool(
@@ -61,7 +63,7 @@ class DataflowBakery(Bakery):
 
         Set to false for projects that have policies against VM
         instances having their own public IPs
-        """
+        """,
     )
 
     temp_gcs_location = Unicode(
@@ -72,27 +74,28 @@ class DataflowBakery(Bakery):
         GCS URL under which to put temporary files required to launch dataflow jobs
 
         *Must* be set, and be a gs:// URL.
-        """
+        """,
     )
 
-    @validate('temp_gcs_location')
+    @validate("temp_gcs_location")
     def _validate_temp_gcs_location(self, proposal):
         """
         Ensure that temp_gcs_location is a gs:// URL
         """
-        if not proposal['value'].startswith('gs://'):
-            raise TraitError('DataflowBakery.temp_gcs_location must be a gs:// URL')
-        return proposal['value']
+        if not proposal["value"].startswith("gs://"):
+            raise TraitError("DataflowBakery.temp_gcs_location must be a gs:// URL")
+        return proposal["value"]
 
-
-    def get_pipeline_options(self, job_name: str, container_image: str) -> PipelineOptions:
+    def get_pipeline_options(
+        self, job_name: str, container_image: str
+    ) -> PipelineOptions:
         """
         Return PipelineOptions for use with this Bakery
         """
         if self.temp_gcs_location is None:
-            raise ValueError('DataflowBakery.temp_bucket must be set')
+            raise ValueError("DataflowBakery.temp_bucket must be set")
         if self.project_id is None:
-            raise ValueError('DataflowBakery.project_id must be set')
+            raise ValueError("DataflowBakery.project_id must be set")
 
         # Set flags explicitly to empty so Apache Beam doesn't try to parse the commandline
         # for pipeline options - we have traitlets doing that for us.
@@ -112,6 +115,5 @@ class DataflowBakery(Bakery):
             save_main_session=True,
             # this might solve serialization issues; cf. https://beam.apache.org/blog/beam-2.36.0/
             pickle_library="cloudpickle",
-            machine_type=self.machine_type
+            machine_type=self.machine_type,
         )
-

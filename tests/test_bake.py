@@ -1,6 +1,7 @@
+import json
 import subprocess
 import tempfile
-import json
+
 import xarray as xr
 
 
@@ -52,12 +53,15 @@ def test_gpcp_bake(minio):
 
         # Open the generated dataset with xarray!
         gpcp = xr.open_dataset(
-            config['TargetStorage']['root_path'],
-            backend_kwargs={ "storage_options": fsspec_args },
+            config["TargetStorage"]["root_path"],
+            backend_kwargs={"storage_options": fsspec_args},
             engine="zarr",
         )
 
-        assert gpcp.title == 'Global Precipitation Climatatology Project (GPCP) Climate Data Record (CDR), Daily V1.3'
+        assert (
+            gpcp.title
+            == "Global Precipitation Climatatology Project (GPCP) Climate Data Record (CDR), Daily V1.3"
+        )
         # --prune prunes to two time steps by default, so we expect 2 items here
         assert len(gpcp.precip) == 2
         print(gpcp)

@@ -2,8 +2,9 @@
 Bakery for baking pangeo-forge recipes in Direct Runner
 """
 from apache_beam.pipeline import PipelineOptions
-from .base import Bakery
 from traitlets import Integer
+
+from .base import Bakery
 
 
 class LocalDirectBakery(Bakery):
