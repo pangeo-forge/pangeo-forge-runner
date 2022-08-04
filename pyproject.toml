@@ -1,0 +1,3 @@
+[tool.isort]
+# Prevent isort & black from fighting each otherd
+profile = "black"
