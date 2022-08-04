@@ -1,0 +1,6 @@
+autodoc-traits
+myst-parser
+pre-commit
+pydata-sphinx-theme
+sphinx>=1.7
+sphinx-copybutton
