@@ -1,0 +1,8 @@
+[flake8]
+# Ignore style and complexity
+# E: style errors
+# W: style warnings
+# C: complexity
+ignore = E, C, W, D400
+# For any traitlet _config.py files
+builtins = c, get_config
