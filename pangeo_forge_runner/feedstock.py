@@ -15,10 +15,10 @@ class Feedstock:
         """
         feedstock_dir: Path to an existing Feedstock repo
 
-        Expects meta.yaml to exist inside feedstock/meta.yaml in this dir
+        Expects meta.yaml to exist inside in this dir
         """
         self.feedstock_dir = feedstock_dir
-        with open(self.feedstock_dir / "feedstock/meta.yaml") as f:
+        with open(self.feedstock_dir / "meta.yaml") as f:
             self.meta = yaml.load(f)
 
     def _import(self, spec):
@@ -34,7 +34,7 @@ class Feedstock:
             self._import_cache = {}
         module, export = spec.split(":")
         if module not in self._import_cache:
-            filename = self.feedstock_dir / "feedstock" / f"{module}.py"
+            filename = self.feedstock_dir / f"{module}.py"
             with open(filename) as f:
                 ns = {}
                 exec(f.read(), ns)

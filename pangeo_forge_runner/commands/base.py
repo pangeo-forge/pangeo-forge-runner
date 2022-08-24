@@ -15,6 +15,7 @@ common_aliases = {
     "config": "BaseCommand.config_file",
     "repo": "BaseCommand.repo",
     "ref": "BaseCommand.ref",
+    "feedstock-subdir": "Basecommand.feedstock_subdir",
 }
 
 # Common flags we want to support in *all* commands.
@@ -58,6 +59,14 @@ class BaseCommand(Application):
 
         Optional, only used for some methods of fetching (such as git or
         mercurial)
+        """,
+    )
+
+    feedstock_subdir = Unicode(
+        "feedstock",
+        config=True,
+        help="""
+        Subdirectory inside the repository containing the `meta.yaml` file
         """,
     )
 
