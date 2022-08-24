@@ -49,7 +49,6 @@ class Bake(BaseCommand):
 
         The Bakery (and its configuration) determine which Apache Beam
         Runner is used, and how options for it are specified.
-
         Defaults to LocalDirectBakery, which bakes the recipe using Apache
         Beam's "DirectRunner". It doesn't use Docker or the cloud, and runs
         everything locally. Useful only for testing!
@@ -82,7 +81,7 @@ class Bake(BaseCommand):
         # as they develop their feedstock
         with tempfile.TemporaryDirectory() as d:
             self.fetch(d)
-            feedstock = Feedstock(Path(d))
+            feedstock = Feedstock(Path(d) / self.feedstock_subdir)
 
             self.log.info("Parsing recipes...", extra={"status": "running"})
             with redirect_stderr(self.log, {"status": "running"}), redirect_stdout(

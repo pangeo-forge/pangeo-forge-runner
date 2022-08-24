@@ -21,7 +21,7 @@ class ExpandMeta(BaseCommand):
     def start(self):
         with tempfile.TemporaryDirectory() as d:
             self.fetch(d)
-            feedstock = Feedstock(Path(d))
+            feedstock = Feedstock(Path(d) / self.feedstock_subdir)
             with redirect_stderr(self.log, {"status": "running"}), redirect_stdout(
                 self.log, {"status": "running"}
             ):
