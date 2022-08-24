@@ -34,7 +34,7 @@ def test_recipes_dict():
 
 
 def test_recipes_broken():
-    list_recipe = HERE / "test-recipes/broken-recipe"
+    list_recipe = HERE / "test-recipes/broken-recipe/feedstock"
     feed = Feedstock(list_recipe)
     with pytest.raises(ValueError):
         feed.parse_recipes()
