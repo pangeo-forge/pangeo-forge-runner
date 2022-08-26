@@ -56,7 +56,8 @@ class Bake(BaseCommand):
     )
 
     recipe_id = Unicode(
-        default_value="",
+        None,
+        allow_none=True,
         config=True,
         help="""
         Optionally pass this value to run only this recipe_id from the feedstock.
