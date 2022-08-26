@@ -15,7 +15,7 @@ common_aliases = {
     "config": "BaseCommand.config_file",
     "repo": "BaseCommand.repo",
     "ref": "BaseCommand.ref",
-    "feedstock-subdir": "Basecommand.feedstock_subdir",
+    "feedstock-subdir": "BaseCommand.feedstock_subdir",
 }
 
 # Common flags we want to support in *all* commands.
