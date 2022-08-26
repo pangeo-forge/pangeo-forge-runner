@@ -7,7 +7,7 @@ from pathlib import Path
 
 from apache_beam import Pipeline
 from pangeo_forge_recipes.storage import StorageConfig
-from traitlets import Bool, Type
+from traitlets import Bool, Type, Unicode
 
 from .. import Feedstock
 from ..bakery.base import Bakery
@@ -55,6 +55,16 @@ class Bake(BaseCommand):
         """,
     )
 
+    recipe_id = Unicode(
+        default_value="",
+        config=True,
+        help="""
+        Optionally pass this value to run only this recipe_id from the feedstock.
+
+        If empty, all recipes from the feedstock will be run.
+        """
+    )
+
     def start(self):
         """
         Start the baking process
@@ -88,6 +98,10 @@ class Bake(BaseCommand):
                 self.log, {"status": "running"}
             ):
                 recipes = feedstock.parse_recipes()
+
+            if self.recipe_id:
+                self.log.info(f"Baking only recipe_id='{self.recipe_id}'")
+                recipes = {k: r for k, r in recipes.items() if k == self.recipe_id}
 
             if self.prune:
                 # Prune all recipes if we're asked to
