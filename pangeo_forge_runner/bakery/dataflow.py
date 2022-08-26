@@ -83,7 +83,7 @@ class DataflowBakery(Bakery):
         config=True,
         help="""
         If using GCP service account creds, specify the service account email address here.
-        """
+        """,
     )
 
     @validate("temp_gcs_location")
