@@ -10,7 +10,7 @@ setup(
     long_description_content_type="text/markdown",
     author="Yuvi Panda",
     author_email="yuvipanda@gmail.com",
-    version="0.3",
+    version="0.4",
     packages=find_packages(),
     install_requires=[
         "jupyter-repo2docker",
