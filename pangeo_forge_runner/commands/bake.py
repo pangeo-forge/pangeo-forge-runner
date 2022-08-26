@@ -63,7 +63,7 @@ class Bake(BaseCommand):
         Optionally pass this value to run only this recipe_id from the feedstock.
 
         If empty, all recipes from the feedstock will be run.
-        """
+        """,
     )
 
     def start(self):
