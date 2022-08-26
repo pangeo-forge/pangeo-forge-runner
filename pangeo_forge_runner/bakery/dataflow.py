@@ -82,9 +82,27 @@ class DataflowBakery(Bakery):
         allow_none=True,
         config=True,
         help="""
-        If using GCP service account creds, specify the service account email address here.
+        If using GCP service account creds, specifies the service account email address
+        associated with those creds.
+
+        Defaults to the output of `gcloud config get-value account` if unset.
+        If using GCP service account creds, must be set to avoid permissions issues
+        during pipeline execution.
         """,
     )
+
+    @default("service_account_email")
+    def _default_service_account_email(self):
+        """
+        Set default service_account_email from `gcloud` if it is set
+        """
+        if not shutil.which("gcloud"):
+            # If `gcloud` is not installed, just do nothing
+            return None
+        return subprocess.check_output(
+            ["gcloud", "config", "get-value", "account"], encoding="utf-8"
+        ).strip()
+
 
     @validate("temp_gcs_location")
     def _validate_temp_gcs_location(self, proposal):
