@@ -77,6 +77,15 @@ class DataflowBakery(Bakery):
         """,
     )
 
+    service_account_email = Unicode(
+        None,
+        allow_none=True,
+        config=True,
+        help="""
+        If using GCP service account creds, specify the service account email address here.
+        """
+    )
+
     @validate("temp_gcs_location")
     def _validate_temp_gcs_location(self, proposal):
         """
@@ -99,7 +108,7 @@ class DataflowBakery(Bakery):
 
         # Set flags explicitly to empty so Apache Beam doesn't try to parse the commandline
         # for pipeline options - we have traitlets doing that for us.
-        return PipelineOptions(
+        opts = PipelineOptions(
             flags=[],
             runner="DataflowRunner",
             project=self.project_id,
@@ -117,3 +126,6 @@ class DataflowBakery(Bakery):
             pickle_library="cloudpickle",
             machine_type=self.machine_type,
         )
+        if self.service_account_email:
+            opts.update({"service_account_email": self.service_account_email})
+        return opts
