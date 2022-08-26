@@ -103,7 +103,6 @@ class DataflowBakery(Bakery):
             ["gcloud", "config", "get-value", "account"], encoding="utf-8"
         ).strip()
 
-
     @validate("temp_gcs_location")
     def _validate_temp_gcs_location(self, proposal):
         """
