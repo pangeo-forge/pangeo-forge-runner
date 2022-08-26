@@ -108,7 +108,7 @@ class DataflowBakery(Bakery):
 
         # Set flags explicitly to empty so Apache Beam doesn't try to parse the commandline
         # for pipeline options - we have traitlets doing that for us.
-        opts = PipelineOptions(
+        opts = dict(
             flags=[],
             runner="DataflowRunner",
             project=self.project_id,
@@ -128,4 +128,4 @@ class DataflowBakery(Bakery):
         )
         if self.service_account_email:
             opts.update({"service_account_email": self.service_account_email})
-        return opts
+        return PipelineOptions(**opts)
