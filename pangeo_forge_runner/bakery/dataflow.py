@@ -1,7 +1,6 @@
 """
 Bakery for baking pangeo-forge recipes in GCP DataFlow
 """
-import json
 import shutil
 import subprocess
 
@@ -72,8 +71,6 @@ class DataflowBakery(Bakery):
         config=True,
         help="""
         Custom labels to attach to job resources.
-
-        Keys and values must be JSON-serializable.
         """,
     )
 
@@ -154,7 +151,7 @@ class DataflowBakery(Bakery):
             # this might solve serialization issues; cf. https://beam.apache.org/blog/beam-2.36.0/
             pickle_library="cloudpickle",
             machine_type=self.machine_type,
-            labels=json.dumps(self.labels),
+            labels=self.labels,
         )
         if self.service_account_email:
             opts.update({"service_account_email": self.service_account_email})
