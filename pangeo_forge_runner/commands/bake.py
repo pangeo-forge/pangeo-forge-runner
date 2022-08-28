@@ -66,6 +66,17 @@ class Bake(BaseCommand):
         """,
     )
 
+    job_name = Unicode(
+        None,
+        allow_none=True,
+        config=True,
+        help="""
+        Optionally pass a custom job name for the job run.
+
+        If empty, a name will be generated for the job below.
+        """,
+    )
+
     def start(self):
         """
         Start the baking process
@@ -112,19 +123,20 @@ class Bake(BaseCommand):
 
             for name, recipe in recipes.items():
                 # Unique name for running this particular recipe.
-                # FIXME: Should include the name of repo / ref as well somehow
-                job_name = (
-                    f"{name}-{recipe.sha256().hex()}-{int(datetime.now().timestamp())}"
-                )
+                if not self.job_name:
+                    # FIXME: Should include the name of repo / ref as well somehow
+                    self.job_name = (
+                        f"{name}-{recipe.sha256().hex()}-{int(datetime.now().timestamp())}"
+                    )
 
                 recipe.storage_config = StorageConfig(
-                    target_storage.get_forge_target(job_name=job_name),
-                    input_cache_storage.get_forge_target(job_name=job_name),
-                    metadata_cache_storage.get_forge_target(job_name=job_name),
+                    target_storage.get_forge_target(job_name=self.job_name),
+                    input_cache_storage.get_forge_target(job_name=self.job_name),
+                    metadata_cache_storage.get_forge_target(job_name=self.job_name),
                 )
 
                 pipeline_options = bakery.get_pipeline_options(
-                    job_name=job_name,
+                    job_name=self.job_name,
                     # FIXME: Bring this in from meta.yaml?
                     container_image="pangeo/forge:8a862dc",
                 )
