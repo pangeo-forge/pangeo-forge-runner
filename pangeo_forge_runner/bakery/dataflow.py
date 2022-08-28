@@ -77,6 +77,32 @@ class DataflowBakery(Bakery):
         """,
     )
 
+    service_account_email = Unicode(
+        None,
+        allow_none=True,
+        config=True,
+        help="""
+        If using GCP service account creds, specifies the service account email address
+        associated with those creds.
+
+        Defaults to the output of `gcloud config get-value account` if unset.
+        If using GCP service account creds, must be set to avoid permissions issues
+        during pipeline execution.
+        """,
+    )
+
+    @default("service_account_email")
+    def _default_service_account_email(self):
+        """
+        Set default service_account_email from `gcloud` if it is set
+        """
+        if not shutil.which("gcloud"):
+            # If `gcloud` is not installed, just do nothing
+            return None
+        return subprocess.check_output(
+            ["gcloud", "config", "get-value", "account"], encoding="utf-8"
+        ).strip()
+
     @validate("temp_gcs_location")
     def _validate_temp_gcs_location(self, proposal):
         """
@@ -99,7 +125,7 @@ class DataflowBakery(Bakery):
 
         # Set flags explicitly to empty so Apache Beam doesn't try to parse the commandline
         # for pipeline options - we have traitlets doing that for us.
-        return PipelineOptions(
+        opts = dict(
             flags=[],
             runner="DataflowRunner",
             project=self.project_id,
@@ -117,3 +143,6 @@ class DataflowBakery(Bakery):
             pickle_library="cloudpickle",
             machine_type=self.machine_type,
         )
+        if self.service_account_email:
+            opts.update({"service_account_email": self.service_account_email})
+        return PipelineOptions(**opts)
