@@ -15,5 +15,5 @@ def test_bad_cp():
     bc.content_providers.remove(contentproviders.Git)
 
     bc.repo = "https://example.com"
-    with pytest.raises(FileNotFoundError):
+    with pytest.raises(ValueError):
         bc.fetch("/tmp")
