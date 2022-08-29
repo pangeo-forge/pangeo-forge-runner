@@ -2,10 +2,12 @@ import json
 import subprocess
 import tempfile
 
+import pytest
 import xarray as xr
 
 
-def test_gpcp_bake(minio):
+@pytest.mark.parametrize("recipe_id", [None, "gpcp"])
+def test_gpcp_bake(minio, recipe_id):
     fsspec_args = {
         "key": minio["username"],
         "secret": minio["password"],
@@ -33,6 +35,9 @@ def test_gpcp_bake(minio):
             "root_path": "s3://gpcp/metadata-cache/",
         },
     }
+
+    if recipe_id:
+        config["Bake"].update({"recipe_id": recipe_id})
 
     with tempfile.NamedTemporaryFile("w", suffix=".json") as f:
         json.dump(config, f)
