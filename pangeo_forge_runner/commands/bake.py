@@ -152,10 +152,11 @@ class Bake(BaseCommand):
                 # Some bakeries are blocking - if Beam is configured to use them, calling
                 # pipeline.run() blocks. Some are not. We handle that here, and provide
                 # appropriate feedback to the user too.
+                extra = {"recipe": name, "job_name": job_name}
                 if bakery.blocking:
                     self.log.info(
                         f"Running job for recipe {name}\n",
-                        extra={"recipe": "name", "status": "running"},
+                        extra=extra | {"status": "running"},
                     )
                     pipeline.run()
                 else:
@@ -163,5 +164,5 @@ class Bake(BaseCommand):
                     job_id = result.job_id()
                     self.log.info(
                         f"Submitted job {job_id} for recipe {name}",
-                        extra={"job_id": job_id, "recipe": name, "status": "submitted"},
+                        extra=extra | {"job_id": job_id, "status": "submitted"},
                     )

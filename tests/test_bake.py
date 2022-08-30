@@ -7,17 +7,19 @@ import xarray as xr
 
 
 @pytest.mark.parametrize(
-    "recipe_id,expected_error",
+    "recipe_id, expected_error, custom_job_name",
     (
-        [None, None],
-        ["gpcp", None],
+        [None, None, None],
+        ["gpcp", None, None],
         [
             "invalid_recipe_id",
             "ValueError: self.recipe_id='invalid_recipe_id' not in ['gpcp']",
+            None,
         ],
+        [None, None, "special-name-for-job"],
     ),
 )
-def test_gpcp_bake(minio, recipe_id, expected_error):
+def test_gpcp_bake(minio, recipe_id, expected_error, custom_job_name):
     fsspec_args = {
         "key": minio["username"],
         "secret": minio["password"],
@@ -48,6 +50,8 @@ def test_gpcp_bake(minio, recipe_id, expected_error):
 
     if recipe_id:
         config["Bake"].update({"recipe_id": recipe_id})
+    if custom_job_name:
+        config["Bake"].update({"job_name": custom_job_name})
 
     with tempfile.NamedTemporaryFile("w", suffix=".json") as f:
         json.dump(config, f)
@@ -59,17 +63,28 @@ def test_gpcp_bake(minio, recipe_id, expected_error):
             "https://github.com/pangeo-forge/gpcp-feedstock.git",
             "--ref",
             "2cde04745189665a1f5a05c9eae2a98578de8b7f",
+            "--json",
             "-f",
             f.name,
         ]
         proc = subprocess.run(cmd, capture_output=True)
+        stdout = proc.stdout.decode().splitlines()
 
         if expected_error:
             assert proc.returncode == 1
-            proc.stdout.decode().splitlines()[-1] == expected_error
+            stdout[-1] == expected_error
 
         else:
             assert proc.returncode == 0
+
+            for line in stdout:
+                if "Running job for recipe gpcp" in line:
+                    job_name = json.loads(line)["job_name"]
+
+            if custom_job_name:
+                assert job_name == custom_job_name
+            else:
+                assert job_name.startswith("gpcp-")
 
             # Open the generated dataset with xarray!
             gpcp = xr.open_dataset(
