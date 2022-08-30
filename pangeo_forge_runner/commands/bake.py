@@ -132,7 +132,7 @@ class Bake(BaseCommand):
                 recipe.storage_config = StorageConfig(
                     target_storage.get_forge_target(job_name=job_name),
                     input_cache_storage.get_forge_target(job_name=job_name),
-                    metadata_cache_storage.get_forge_target(job_name=self.job_name),
+                    metadata_cache_storage.get_forge_target(job_name=job_name),
                 )
 
                 pipeline_options = bakery.get_pipeline_options(
