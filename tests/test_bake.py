@@ -1,7 +1,7 @@
 import json
-from re import sub
 import subprocess
 import tempfile
+from re import sub
 
 import pytest
 import xarray as xr
@@ -12,8 +12,11 @@ import xarray as xr
     (
         [None, None],
         ["gpcp", None],
-        ["invalid_recipe_id", "ValueError: self.recipe_id='invalid_recipe_id' not in ['gpcp']"],
-    )
+        [
+            "invalid_recipe_id",
+            "ValueError: self.recipe_id='invalid_recipe_id' not in ['gpcp']",
+        ],
+    ),
 )
 def test_gpcp_bake(minio, recipe_id, expected_error):
     fsspec_args = {
