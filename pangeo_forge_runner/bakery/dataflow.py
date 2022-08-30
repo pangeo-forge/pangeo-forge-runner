@@ -77,6 +77,41 @@ class DataflowBakery(Bakery):
         """,
     )
 
+    service_account_email = Unicode(
+        None,
+        allow_none=True,
+        config=True,
+        help="""
+        If using a GCP service account to deploy Dataflow jobs, this option specifies the
+        service account email address, which must be set to avoid permissions issues during
+        pipeline execution. If you are using GCP user creds, do not set this value.
+
+        Defaults to the output of `gcloud config get-value account` if this value is a
+        service account email address. If this value is a user email address, defaults
+        to `None`.
+        """,
+    )
+
+    @default("service_account_email")
+    def _default_service_account_email(self):
+        """
+        Set default service_account_email from `gcloud` if it is set
+        """
+        if not shutil.which("gcloud"):
+            # If `gcloud` is not installed, just do nothing
+            return None
+        current_account = subprocess.check_output(
+            ["gcloud", "config", "get-value", "account"], encoding="utf-8"
+        ).strip()
+        return (
+            # If logged into `gcloud` with a user account, setting this option will result in an
+            # error such as `Current user cannot act as service account` when the Dataflow job is
+            # deployed. So only set a default value here if `gcloud` account is a service account.
+            current_account
+            if current_account.endswith(".iam.gserviceaccount.com")
+            else None
+        )
+
     @validate("temp_gcs_location")
     def _validate_temp_gcs_location(self, proposal):
         """
@@ -99,7 +134,7 @@ class DataflowBakery(Bakery):
 
         # Set flags explicitly to empty so Apache Beam doesn't try to parse the commandline
         # for pipeline options - we have traitlets doing that for us.
-        return PipelineOptions(
+        opts = dict(
             flags=[],
             runner="DataflowRunner",
             project=self.project_id,
@@ -117,3 +152,6 @@ class DataflowBakery(Bakery):
             pickle_library="cloudpickle",
             machine_type=self.machine_type,
         )
+        if self.service_account_email:
+            opts.update({"service_account_email": self.service_account_email})
+        return PipelineOptions(**opts)
