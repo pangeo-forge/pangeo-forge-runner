@@ -8,36 +8,50 @@ from traitlets import TraitError
 from pangeo_forge_runner.bakery.dataflow import DataflowBakery
 
 
-def test_default_gcp_project():
+@pytest.mark.parametrize(
+    "property, attr_name, new_value, should_set_as_default",
+    (
+        ["project", "project_id", str(uuid.uuid4()), True],
+        [
+            "account",
+            "service_account_email",
+            "bot@project.iam.gserviceaccount.com",
+            True,
+        ],
+        ["account", "service_account_email", "user@university.edu", False],
+    ),
+)
+def test_default_gcp_props(property, attr_name, new_value, should_set_as_default):
     """
-    Test using `gcloud` to determine currently active project
+    Test using `gcloud` to determine currently active properties
     """
     # We want `gcloud` to actually be present in the environment
     assert shutil.which("gcloud")
 
     # We fetch the current project (if it exists) to make sure we restore it after our test
-    current_project = None
+    current_value = None
 
     proc = subprocess.run(
-        ["gcloud", "config", "get-value", "project"], stdout=subprocess.PIPE
+        ["gcloud", "config", "get-value", property], stdout=subprocess.PIPE
     )
     if proc.returncode == 0:
-        current_project = proc.stdout.decode().strip()
-
-    new_project = str(uuid.uuid4())
+        current_value = proc.stdout.decode().strip()
 
     try:
         # Set stdin to /dev/null so `gcloud` doesn't ask us 'why are you setting project to something you can not access?'
         subprocess.run(
-            ["gcloud", "config", "set", "project", new_project],
+            ["gcloud", "config", "set", property, new_value],
             check=True,
             stdin=subprocess.DEVNULL,
         )
         dfb = DataflowBakery()
-        assert dfb.project_id == new_project
+        if should_set_as_default:
+            assert getattr(dfb, attr_name) == new_value
+        else:
+            assert getattr(dfb, attr_name) is None
     finally:
-        if current_project:
-            subprocess.run(["gcloud", "config", "set", "project", current_project])
+        if current_value:
+            subprocess.run(["gcloud", "config", "set", property, current_value])
 
 
 def test_temp_gcs_location_validation():

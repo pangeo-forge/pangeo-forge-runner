@@ -112,6 +112,8 @@ class Bake(BaseCommand):
                 recipes = feedstock.parse_recipes()
 
             if self.recipe_id:
+                if self.recipe_id not in recipes:
+                    raise ValueError(f"{self.recipe_id=} not in {list(recipes)}")
                 self.log.info(f"Baking only recipe_id='{self.recipe_id}'")
                 recipes = {k: r for k, r in recipes.items() if k == self.recipe_id}
 
