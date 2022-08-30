@@ -125,7 +125,9 @@ class Bake(BaseCommand):
                 # Unique name for running this particular recipe.
                 if not self.job_name:
                     # FIXME: Should include the name of repo / ref as well somehow
-                    self.job_name = f"{name}-{recipe.sha256().hex()}-{int(datetime.now().timestamp())}"
+                    job_name = f"{name}-{recipe.sha256().hex()}-{int(datetime.now().timestamp())}"
+                else:
+                    job_name = self.job_name
 
                 recipe.storage_config = StorageConfig(
                     target_storage.get_forge_target(job_name=self.job_name),
