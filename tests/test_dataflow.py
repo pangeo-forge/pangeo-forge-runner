@@ -9,13 +9,14 @@ from pangeo_forge_runner.bakery.dataflow import DataflowBakery
 
 
 @pytest.mark.parametrize(
-    "property,attr_name",
+    "property, attr_name, new_value, should_set_as_default",
     (
-        ["project", "project_id"],
-        ["account", "service_account_email"],
+        ["project", "project_id", str(uuid.uuid4()), True],
+        ["account", "service_account_email", "bot@project.iam.gserviceaccount.com", True],
+        ["account", "service_account_email", "user@university.edu", False],
     ),
 )
-def test_default_gcp_props(property, attr_name):
+def test_default_gcp_props(property, attr_name, new_value, should_set_as_default):
     """
     Test using `gcloud` to determine currently active properties
     """
@@ -31,8 +32,6 @@ def test_default_gcp_props(property, attr_name):
     if proc.returncode == 0:
         current_value = proc.stdout.decode().strip()
 
-    new_value = str(uuid.uuid4())
-
     try:
         # Set stdin to /dev/null so `gcloud` doesn't ask us 'why are you setting project to something you can not access?'
         subprocess.run(
@@ -41,7 +40,10 @@ def test_default_gcp_props(property, attr_name):
             stdin=subprocess.DEVNULL,
         )
         dfb = DataflowBakery()
-        assert getattr(dfb, attr_name) == new_value
+        if should_set_as_default:
+            assert getattr(dfb, attr_name) == new_value
+        else:
+            assert getattr(dfb, attr_name) is None
     finally:
         if current_value:
             subprocess.run(["gcloud", "config", "set", property, current_value])

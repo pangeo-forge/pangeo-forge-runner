@@ -99,9 +99,14 @@ class DataflowBakery(Bakery):
         if not shutil.which("gcloud"):
             # If `gcloud` is not installed, just do nothing
             return None
-        return subprocess.check_output(
+        current_account = subprocess.check_output(
             ["gcloud", "config", "get-value", "account"], encoding="utf-8"
         ).strip()
+        return (
+            current_account
+            if current_account.endswith(".iam.gserviceaccount.com")
+            else None
+        )
 
     @validate("temp_gcs_location")
     def _validate_temp_gcs_location(self, proposal):
