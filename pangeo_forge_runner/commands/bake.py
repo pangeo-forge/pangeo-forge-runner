@@ -66,6 +66,17 @@ class Bake(BaseCommand):
         """,
     )
 
+    job_name = Unicode(
+        None,
+        allow_none=True,
+        config=True,
+        help="""
+        Optionally pass a custom job name for the job run.
+
+        If `None` (the default), a unique name will be generated for the job.
+        """,
+    )
+
     def start(self):
         """
         Start the baking process
@@ -114,10 +125,11 @@ class Bake(BaseCommand):
 
             for name, recipe in recipes.items():
                 # Unique name for running this particular recipe.
-                # FIXME: Should include the name of repo / ref as well somehow
-                job_name = (
-                    f"{name}-{recipe.sha256().hex()}-{int(datetime.now().timestamp())}"
-                )
+                if not self.job_name:
+                    # FIXME: Should include the name of repo / ref as well somehow
+                    job_name = f"{name}-{recipe.sha256().hex()}-{int(datetime.now().timestamp())}"
+                else:
+                    job_name = self.job_name
 
                 recipe.storage_config = StorageConfig(
                     target_storage.get_forge_target(job_name=job_name),
@@ -140,10 +152,11 @@ class Bake(BaseCommand):
                 # Some bakeries are blocking - if Beam is configured to use them, calling
                 # pipeline.run() blocks. Some are not. We handle that here, and provide
                 # appropriate feedback to the user too.
+                extra = {"recipe": name, "job_name": job_name}
                 if bakery.blocking:
                     self.log.info(
                         f"Running job for recipe {name}\n",
-                        extra={"recipe": "name", "status": "running"},
+                        extra=extra | {"status": "running"},
                     )
                     pipeline.run()
                 else:
@@ -151,5 +164,5 @@ class Bake(BaseCommand):
                     job_id = result.job_id()
                     self.log.info(
                         f"Submitted job {job_id} for recipe {name}",
-                        extra={"job_id": job_id, "recipe": name, "status": "submitted"},
+                        extra=extra | {"job_id": job_id, "status": "submitted"},
                     )
