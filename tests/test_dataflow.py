@@ -12,7 +12,12 @@ from pangeo_forge_runner.bakery.dataflow import DataflowBakery
     "property, attr_name, new_value, should_set_as_default",
     (
         ["project", "project_id", str(uuid.uuid4()), True],
-        ["account", "service_account_email", "bot@project.iam.gserviceaccount.com", True],
+        [
+            "account",
+            "service_account_email",
+            "bot@project.iam.gserviceaccount.com",
+            True,
+        ],
         ["account", "service_account_email", "user@university.edu", False],
     ),
 )
