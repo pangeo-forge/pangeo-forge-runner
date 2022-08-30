@@ -138,7 +138,7 @@ class Bake(BaseCommand):
                 )
 
                 pipeline_options = bakery.get_pipeline_options(
-                    job_name=self.job_name,
+                    job_name=job_name,
                     # FIXME: Bring this in from meta.yaml?
                     container_image="pangeo/forge:8a862dc",
                 )
