@@ -1,7 +1,6 @@
 import json
 import subprocess
 import tempfile
-from re import sub
 
 import pytest
 import xarray as xr
