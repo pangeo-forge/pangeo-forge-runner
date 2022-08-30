@@ -1,5 +1,4 @@
 import json
-from re import sub
 import subprocess
 import tempfile
 
