@@ -73,7 +73,7 @@ class Bake(BaseCommand):
         help="""
         Optionally pass a custom job name for the job run.
 
-        If empty, a unique name will be generated for the job.
+        If `None` (the default), a unique name will be generated for the job.
         """,
     )
 
