@@ -1,4 +1,5 @@
 import json
+from re import sub
 import subprocess
 import tempfile
 
@@ -6,8 +7,15 @@ import pytest
 import xarray as xr
 
 
-@pytest.mark.parametrize("recipe_id", [None, "gpcp"])
-def test_gpcp_bake(minio, recipe_id):
+@pytest.mark.parametrize(
+    "recipe_id,expected_error",
+    (
+        [None, None],
+        ["gpcp", None],
+        ["invalid_recipe_id", "ValueError: self.recipe_id='invalid_recipe_id' not in ['gpcp']"],
+    )
+)
+def test_gpcp_bake(minio, recipe_id, expected_error):
     fsspec_args = {
         "key": minio["username"],
         "secret": minio["password"],
@@ -52,40 +60,45 @@ def test_gpcp_bake(minio, recipe_id):
             "-f",
             f.name,
         ]
-        proc = subprocess.run(cmd)
+        proc = subprocess.run(cmd, capture_output=True)
 
-        assert proc.returncode == 0
+        if expected_error:
+            assert proc.returncode == 1
+            proc.stdout.decode().splitlines()[-1] == expected_error
 
-        # Open the generated dataset with xarray!
-        gpcp = xr.open_dataset(
-            config["TargetStorage"]["root_path"],
-            backend_kwargs={"storage_options": fsspec_args},
-            engine="zarr",
-        )
+        else:
+            assert proc.returncode == 0
 
-        assert (
-            gpcp.title
-            == "Global Precipitation Climatatology Project (GPCP) Climate Data Record (CDR), Daily V1.3"
-        )
-        # --prune prunes to two time steps by default, so we expect 2 items here
-        assert len(gpcp.precip) == 2
-        print(gpcp)
+            # Open the generated dataset with xarray!
+            gpcp = xr.open_dataset(
+                config["TargetStorage"]["root_path"],
+                backend_kwargs={"storage_options": fsspec_args},
+                engine="zarr",
+            )
 
-        # `mc` isn't the best way, but we want to display all the files in our minio
-        with tempfile.TemporaryDirectory() as mcd:
-            cmd = [
-                "mc",
-                "--config-dir",
-                mcd,
-                "alias",
-                "set",
-                "local",
-                minio["endpoint"],
-                minio["username"],
-                minio["password"],
-            ]
+            assert (
+                gpcp.title
+                == "Global Precipitation Climatatology Project (GPCP) Climate Data Record (CDR), Daily V1.3"
+            )
+            # --prune prunes to two time steps by default, so we expect 2 items here
+            assert len(gpcp.precip) == 2
+            print(gpcp)
 
-            subprocess.run(cmd, check=True)
+            # `mc` isn't the best way, but we want to display all the files in our minio
+            with tempfile.TemporaryDirectory() as mcd:
+                cmd = [
+                    "mc",
+                    "--config-dir",
+                    mcd,
+                    "alias",
+                    "set",
+                    "local",
+                    minio["endpoint"],
+                    minio["username"],
+                    minio["password"],
+                ]
 
-            cmd = ["mc", "--config-dir", mcd, "ls", "--recursive", "local"]
-            subprocess.run(cmd, check=True)
+                subprocess.run(cmd, check=True)
+
+                cmd = ["mc", "--config-dir", mcd, "ls", "--recursive", "local"]
+                subprocess.run(cmd, check=True)
