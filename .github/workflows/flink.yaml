@@ -50,7 +50,7 @@ jobs:
       run: |
         helm repo add minio https://charts.min.io/
         helm install minio minio/minio \
-          --set rootUser=root,rootPassword=root
+          --set rootUser=root,rootPassword=root || true
 
         kubectl get pod -A
         kubectl get svc -A
