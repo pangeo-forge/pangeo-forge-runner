@@ -80,7 +80,7 @@ jobs:
     - name: Install socat so kubectl port-forward will work
       run: |
         # Not sure if this is why kubectl proxy isn't working, but let's try
-        apt update --yes && apt install --yes socat
+        sudo apt update --yes && sudo apt install --yes socat
 
     - name: Test with pytest
       run: |
