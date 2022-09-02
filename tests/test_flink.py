@@ -54,7 +54,7 @@ def test_flink_bake(minio):
 
         # We should have some kinda 'has this completed?' check here
         # Instead, I just wait for 2min
-        time.sleep(60 * 2)
+        time.sleep(60 * 10)
         # Open the generated dataset with xarray!
         gpcp = xr.open_dataset(
             config["TargetStorage"]["root_path"],
