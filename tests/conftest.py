@@ -9,7 +9,7 @@ import pytest
 
 
 # Stolen from https://stackoverflow.com/a/28950776
-@pytest.fixture()
+@pytest.fixture(scope="session")
 def local_ip():
     """
     Return IP of current machine
