@@ -24,15 +24,29 @@ jobs:
         traefik-enabled: false
         docker-enabled: true
 
-    - name: Setup FlinkOperator
+    - name: Setup CertManager
       run: |
         # Setup cert-manager, required by Flink Operator
         CERT_MANAGER_VERSION=1.9.1
-        kubectl apply --wait -f https://github.com/jetstack/cert-manager/releases/download/v${CERT_MANAGER_VERSION}/cert-manager.yaml
+        kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v${CERT_MANAGER_VERSION}/cert-manager.yaml
 
+    - name: Wait for CertManager to be ready
+      uses: jupyterhub/action-k8s-await-workloads@v1
+      with:
+        timeout: 150
+        max-restarts: 1
+
+    - name: Setup FlinkOperator
+      run: |
         FLINK_OPERATOR_VERSION=1.1.0
         helm repo add flink-operator-repo https://downloads.apache.org/flink/flink-kubernetes-operator-${FLINK_OPERATOR_VERSION}
         helm install flink-kubernetes-operator flink-operator-repo/flink-kubernetes-operator --wait
 
         kubectl get pod -A
         kubectl get crd -A
+
+    - name: Wait for FlinkOperator to be ready
+      uses: jupyterhub/action-k8s-await-workloads@v1
+      with:
+        timeout: 150
+        max-restarts: 1
