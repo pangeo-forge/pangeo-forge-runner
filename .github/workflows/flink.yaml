@@ -78,4 +78,5 @@ jobs:
 
     - name: Test with pytest
       run: |
-        pytest -vvv -s --cov=pangeo_forge_runner tests/test_flink.py
+        pytest -vvv -s --cov=pangeo_forge_runner tests/test_flink.py || true
+        k get pod -A
