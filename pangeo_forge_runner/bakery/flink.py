@@ -49,6 +49,10 @@ class FlinkOperatorBakery(Bakery):
     installed
     """
 
+    # Not actually, but we don't have a job_id to return.
+    # that looks like just a dataflow concept, we'll have to refactor
+    blocking = True
+
     flink_version = Unicode(
         "1.15",
         config=True,
