@@ -143,7 +143,7 @@ class FlinkOperatorBakery(Bakery):
             cmd = ["kubectl", "apply", "--wait", "-f", f.name]
             subprocess.check_call(cmd)
 
-        time.sleep(2)
+        time.sleep(5)
         # Wait for the cluster to be ready
         cmd = [
             "kubectl",

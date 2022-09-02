@@ -86,3 +86,4 @@ jobs:
       run: |
         pytest -vvv -s --cov=pangeo_forge_runner tests/test_flink.py || true
         kubectl get pod -A
+        kubectl describe pod
