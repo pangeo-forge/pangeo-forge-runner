@@ -3,6 +3,7 @@ Bakery for baking pangeo-forge recipes in GCP DataFlow
 """
 import hashlib
 import json
+import shutil
 import subprocess
 import tempfile
 
@@ -101,6 +102,10 @@ class FlinkBakery(Bakery):
         """
         Return PipelineOptions for use with this Bakery
         """
+
+        # We use `kubectl` to talk to kubernetes, so let's make sure it exists
+        if shutil.which("kubectl") is None:
+            raise ValueError("kubectl is required for FlinkBakery to work")
 
         # Flink cluster names have a 45 char limit
         cluster_name = generate_hashed_slug(job_name, 45)
