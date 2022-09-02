@@ -132,7 +132,10 @@ class FlinkOperatorBakery(Bakery):
             )
             f.flush()
             # FIXME: Add a timeout here?
-            cmd = ["kubectl", "apply", "-f", f.name]
+            # --wait is needed even though we have a kubectl wait below.
+            # Without it, kubectl wait tries to read the CRD before it has *any* status
+            # fields and fails miserably
+            cmd = ["kubectl", "apply", "--wait", "-f", f.name]
             subprocess.check_call(cmd)
 
         # Wait for the cluster to be ready
@@ -141,6 +144,8 @@ class FlinkOperatorBakery(Bakery):
             "wait",
             f"flinkdeployments.flink.apache.org/{cluster_name}",
             "--for=jsonpath=.status.jobManagerDeploymentStatus=READY",
+            # FIXME: Parameterize this wait time
+            "--timeout=5m",
         ]
         subprocess.check_call(cmd)
 
