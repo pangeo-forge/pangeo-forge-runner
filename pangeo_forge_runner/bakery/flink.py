@@ -90,10 +90,10 @@ class FlinkOperatorBakery(Bakery):
                 "flinkVersion": flink_version_str,
                 "flinkConfiguration": self.flink_configuration,
                 "serviceAccount": "flink",
-                "jobManager": {"resource": {"memory": "2048m", "cpu": 1}},
+                "jobManager": {"resource": {"memory": "1024m", "cpu": 0.2}},
                 "taskManager": {
                     "replicas": 5,
-                    "resource": {"memory": "2048m", "cpu": 1},
+                    "resource": {"memory": "1024m", "cpu": 0.2},
                     "podTemplate": {
                         "spec": {
                             "containers": [
