@@ -40,9 +40,12 @@ def generate_hashed_slug(slug, limit=63, hash_length=6):
     ).lower()
 
 
-class FlinkBakery(Bakery):
+class FlinkOperatorBakery(Bakery):
     """
-    Bake a Pangeo Forge recipe on a Flink cluster
+    Bake a Pangeo Forge recipe on a Flink cluster based on the Apache Flink k8s Operator
+
+    Requires a kubernetes cluster with https://github.com/apache/flink-kubernetes-operator
+    installed
     """
 
     flink_version = Unicode(
