@@ -46,22 +46,6 @@ jobs:
         kubectl get pod -A
         kubectl get crd -A
 
-    - name: Setup minio
-      run: |
-        helm repo add minio https://charts.min.io/
-        # rootPassword needs to be at least 8 chars long!
-        helm install minio minio/minio \
-          --wait \
-          --set rootUser=root \
-          --set rootPassword=rootpassword \
-          --set mode=standalone \
-          --set replicas=1 \
-          --set persistence.enabled=false \
-          --set resources.requests.memory=32Mi
-
-        kubectl get pod -A
-        kubectl get svc -A
-
     - name: 'Set up Cloud SDK'
       uses: 'google-github-actions/setup-gcloud@v0'
 
