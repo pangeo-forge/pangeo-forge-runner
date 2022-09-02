@@ -97,9 +97,9 @@ class FlinkOperatorBakery(Bakery):
                                     "image": worker_image,
                                     "ports": [{"containerPort": 50000}],
                                     "readinessProbe": {
+                                        # Don't mark this container as ready until the beam SDK harnass starts
                                         "tcpSocket": {"port": 50000},
-                                        "initialDelaySeconds": 30,
-                                        "periodSeconds": 60,
+                                        "periodSeconds": 10,
                                     },
                                     "command": ["/opt/apache/beam/boot"],
                                     "args": ["--worker_pool"],
