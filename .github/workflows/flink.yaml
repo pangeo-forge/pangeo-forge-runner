@@ -35,6 +35,7 @@ jobs:
       with:
         timeout: 150
         max-restarts: 1
+        namespace: cert-manager
 
     - name: Setup FlinkOperator
       run: |
