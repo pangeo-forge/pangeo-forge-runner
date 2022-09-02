@@ -45,23 +45,5 @@ jobs:
       run: |
         pytest -vvv -s --cov=pangeo_forge_runner tests/
 
-    # Starts a k8s cluster with NetworkPolicy enforcement and installs both
-    # kubectl and helm
-    #
-    # ref: https://github.com/jupyterhub/action-k3s-helm/
-    - uses: jupyterhub/action-k3s-helm@v3
-      with:
-        metrics-enabled: false
-        traefik-enabled: false
-        docker-enabled: true
-
-    - name: Setup FlinkOperator
-      run: |
-        helm repo add flink-operator-repo https://downloads.apache.org/flink/flink-kubernetes-operator-1.1.0
-        helm install flink-kubernetes-operator flink-operator-repo/flink-kubernetes-operator --wait
-
-        kubectl get pod -A
-        kubectl get crd -A
-
     - name: Upload Coverage to Codecov
       uses: codecov/codecov-action@v2
