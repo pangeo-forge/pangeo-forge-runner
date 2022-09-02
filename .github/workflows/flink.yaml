@@ -28,7 +28,7 @@ jobs:
       run: |
         # Setup cert-manager, required by Flink Operator
         CERT_MANAGER_VERSION=1.9.1
-        kubectl create -f https://github.com/jetstack/cert-manager/releases/download/v${CERT_MANAGER_VERSION}/cert-manager.yaml
+        kubectl apply --wait -f https://github.com/jetstack/cert-manager/releases/download/v${CERT_MANAGER_VERSION}/cert-manager.yaml
 
         FLINK_OPERATOR_VERSION=1.1.0
         helm repo add flink-operator-repo https://downloads.apache.org/flink/flink-kubernetes-operator-${FLINK_OPERATOR_VERSION}
