@@ -1,6 +1,7 @@
 import json
 import subprocess
 import tempfile
+import time
 
 import xarray as xr
 
@@ -51,6 +52,9 @@ def test_flink_bake(minio):
 
         assert proc.returncode == 0
 
+        # We should have some kinda 'has this completed?' check here
+        # Instead, I just wait for 2min
+        time.sleep(60 * 5)
         # Open the generated dataset with xarray!
         gpcp = xr.open_dataset(
             config["TargetStorage"]["root_path"],
