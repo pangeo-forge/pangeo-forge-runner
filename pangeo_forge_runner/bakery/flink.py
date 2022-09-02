@@ -8,7 +8,7 @@ import subprocess
 import tempfile
 
 from apache_beam.pipeline import PipelineOptions
-from traitlets import Unicode
+from traitlets import Dict, Unicode
 
 from .base import Bakery
 
@@ -51,10 +51,22 @@ class FlinkOperatorBakery(Bakery):
     flink_version = Unicode(
         "1.15",
         config=True,
-        description="""
+        help="""
         Version of Flink to use.
 
         Must be a version supported by the Flink Operator installed in the cluster
+        """,
+    )
+
+    flink_configuration = Dict(
+        {"taskmanager.numberOfTaskSlots": "2"},
+        config=True,
+        help="""
+        Properties to set as Flink configuration.
+
+        See https://nightlies.apache.org/flink/flink-docs-stable/docs/deployment/config/
+        for full list of configuration options. Make sure you are looking at the right
+        setup for the version of Flink you are using.
         """,
     )
 
@@ -71,7 +83,7 @@ class FlinkOperatorBakery(Bakery):
             "spec": {
                 "image": image,
                 "flinkVersion": flink_version_str,
-                "flinkConfiguration": {"taskmanager.numberOfTaskSlots": "2"},
+                "flinkConfiguration": self.flink_configuration,
                 "serviceAccount": "flink",
                 "jobManager": {"resource": {"memory": "2048m", "cpu": 1}},
                 "taskManager": {
