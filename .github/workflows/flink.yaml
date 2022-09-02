@@ -46,8 +46,18 @@ jobs:
         kubectl get pod -A
         kubectl get crd -A
 
-    - name: Wait for FlinkOperator to be ready
-      uses: jupyterhub/action-k8s-await-workloads@v1
+    - name: 'Set up Cloud SDK'
+      uses: 'google-github-actions/setup-gcloud@v0'
+
+
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v3
       with:
-        timeout: 150
-        max-restarts: 1
+        python-version: 3.9
+
+
+    - name: Install dependencies & our package
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install -r dev-requirements.txt
+        python -m pip install -e .
