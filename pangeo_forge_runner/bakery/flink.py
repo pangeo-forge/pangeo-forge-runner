@@ -6,6 +6,7 @@ import json
 import shutil
 import subprocess
 import tempfile
+import time
 
 from apache_beam.pipeline import PipelineOptions
 from traitlets import Dict, Unicode
@@ -138,6 +139,7 @@ class FlinkOperatorBakery(Bakery):
             cmd = ["kubectl", "apply", "--wait", "-f", f.name]
             subprocess.check_call(cmd)
 
+        time.sleep(2)
         # Wait for the cluster to be ready
         cmd = [
             "kubectl",
