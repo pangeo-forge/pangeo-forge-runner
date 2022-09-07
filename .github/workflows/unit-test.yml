@@ -41,9 +41,11 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install -r dev-requirements.txt
         python -m pip install -e .
+
     - name: Test with pytest
       run: |
-        pytest -vvv -s --cov=pangeo_forge_runner tests/
+        # Test everything except the flink tests
+        pytest -vvv -s --cov=pangeo_forge_runner --ignore=tests/test_flink.py tests/
 
     - name: Upload Coverage to Codecov
       uses: codecov/codecov-action@v2
