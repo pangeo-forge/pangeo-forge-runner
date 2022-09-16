@@ -75,6 +75,54 @@ class FlinkOperatorBakery(Bakery):
         """,
     )
 
+    job_manager_resources = Dict(
+        {},
+        config=True,
+        help="""
+        Memory & CPU resources to give to the jobManager pod.
+
+        Passed through to .spec.jobManager.resource in the FlinkDeployment CRD.
+
+        See https://nightlies.apache.org/flink/flink-kubernetes-operator-docs-main/docs/custom-resource/reference/#resource
+        for accepted keys and what they mean. Specifically, note that this is *not*
+        specified the same way as kubernetes resource requests in general.
+        """,
+    )
+
+    task_manager_resources = Dict(
+        {},
+        config=True,
+        help="""
+        Memory & CPU resources to give to the taskManager container.
+
+        Passed through to .spec.taskManager.resource in the FlinkDeployment CRD.
+
+        Note this is just the resources for the *taskManager* container only - not
+        for the beam executor container where our python code is actually executed.
+        That is managed via beam_executor_resources.
+
+        See https://nightlies.apache.org/flink/flink-kubernetes-operator-docs-main/docs/custom-resource/reference/#resource
+        for accepted keys and what they mean. Specifically, note that this is *not*
+        specified the same way as kubernetes resource requests in general.
+        """,
+    )
+
+    beam_executor_resources = Dict(
+        {},
+        config=True,
+        help="""
+        Resources to be given the beam executor container.
+
+        Passed through to the kubernetes specification for the container that
+        actually runs the custom python code we have. See
+        https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#resource-requests-and-limits-of-pod-and-container
+        for possible options.
+
+        Note that this is *not* specified the same way as other resource
+        request config on this class.
+        """,
+    )
+
     def make_flink_deployment(self, name: str, worker_image: str):
         """
         Return YAML for a FlinkDeployment
@@ -90,10 +138,10 @@ class FlinkOperatorBakery(Bakery):
                 "flinkVersion": flink_version_str,
                 "flinkConfiguration": self.flink_configuration,
                 "serviceAccount": "flink",
-                "jobManager": {"resource": {"memory": "1024m", "cpu": 0.2}},
+                "jobManager": {"resource": self.job_manager_resources},
                 "taskManager": {
                     "replicas": 5,
-                    "resource": {"memory": "1024m", "cpu": 0.2},
+                    "resource": self.task_manager_resources,
                     "podTemplate": {
                         "spec": {
                             "containers": [
@@ -106,6 +154,7 @@ class FlinkOperatorBakery(Bakery):
                                         "tcpSocket": {"port": 50000},
                                         "periodSeconds": 10,
                                     },
+                                    "resources": self.beam_executor_resources,
                                     "command": ["/opt/apache/beam/boot"],
                                     "args": ["--worker_pool"],
                                 }
