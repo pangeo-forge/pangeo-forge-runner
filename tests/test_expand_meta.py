@@ -14,19 +14,13 @@ invocations = [
             "provenance": {
                 "providers": [
                     {
-                        "name": "NOAA NCEI",
-                        "description": "National Oceanographic & Atmospheric Administration National Centers for Environmental Information",
-                        "roles": ["host", "licensor"],
-                        "url": "https://www.ncei.noaa.gov/products/global-precipitation-climatology-project",
-                    },
-                    {
-                        "name": "University of Maryland",
-                        "description": "University of Maryland College Park Earth System Science Interdisciplinary Center (ESSIC) and Cooperative Institute for Climate and Satellites (CICS).\n",
-                        "roles": ["producer"],
-                        "url": "http://gpcp.umd.edu/",
-                    },
+                        "name": "ECCC",
+                        "description": "Environment and Climate Change Canada",
+                        "roles": ["producer", "licensor"],
+                        "url": "https://dd.weather.gc.ca/model_riops/",
+                    }
                 ],
-                "license": "No constraints on data access or use.",
+                "license": "CC-BY-4.0",
             },
             "maintainers": [
                 {
