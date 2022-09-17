@@ -76,7 +76,7 @@ class FlinkOperatorBakery(Bakery):
     )
 
     job_manager_resources = Dict(
-        {},
+        {"memory": "1024m"},
         config=True,
         help="""
         Memory & CPU resources to give to the jobManager pod.
@@ -86,11 +86,13 @@ class FlinkOperatorBakery(Bakery):
         See https://nightlies.apache.org/flink/flink-kubernetes-operator-docs-main/docs/custom-resource/reference/#resource
         for accepted keys and what they mean. Specifically, note that this is *not*
         specified the same way as kubernetes resource requests in general.
+
+        Note that at least memory *must* be set.
         """,
     )
 
     task_manager_resources = Dict(
-        {},
+        {"memory": "1024m"},
         config=True,
         help="""
         Memory & CPU resources to give to the taskManager container.
@@ -104,6 +106,8 @@ class FlinkOperatorBakery(Bakery):
         See https://nightlies.apache.org/flink/flink-kubernetes-operator-docs-main/docs/custom-resource/reference/#resource
         for accepted keys and what they mean. Specifically, note that this is *not*
         specified the same way as kubernetes resource requests in general.
+
+        Note that at least memory *must* be set.
         """,
     )
 
