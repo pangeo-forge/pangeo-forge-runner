@@ -142,7 +142,24 @@ class FlinkOperatorBakery(Bakery):
                 "flinkVersion": flink_version_str,
                 "flinkConfiguration": self.flink_configuration,
                 "serviceAccount": "flink",
-                "jobManager": {"resource": self.job_manager_resources},
+                "jobManager": {
+                    "resource": self.job_manager_resources,
+                    "podTemplate": {
+                        "spec": {
+                            "containers": [
+                                {
+                                    "name": "flink-main-container",
+                                    "env": [
+                                        {
+                                            "name": "JAVA_OPTS",
+                                            "value": "-Dsun.zip.disableMemoryMapping=true",
+                                        }
+                                    ],
+                                },
+                            ]
+                        }
+                    },
+                },
                 "taskManager": {
                     "replicas": 5,
                     "resource": self.task_manager_resources,
@@ -161,7 +178,7 @@ class FlinkOperatorBakery(Bakery):
                                     "resources": self.beam_executor_resources,
                                     "command": ["/opt/apache/beam/boot"],
                                     "args": ["--worker_pool"],
-                                }
+                                },
                             ]
                         }
                     },
