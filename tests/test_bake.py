@@ -62,7 +62,7 @@ def test_gpcp_bake(minio, recipe_id, expected_error, custom_job_name):
             "--repo",
             "https://github.com/pforgetest/gpcp-from-gcs-feedstock.git",
             "--ref",
-            "2cde04745189665a1f5a05c9eae2a98578de8b7f",
+            "9d1ee3ce1705df49b67f2d92d97b1cd9599f05d5",
             "--json",
             "-f",
             f.name,
