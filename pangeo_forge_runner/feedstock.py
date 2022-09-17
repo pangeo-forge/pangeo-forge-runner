@@ -1,5 +1,8 @@
+import os
+from contextlib import contextmanager
 from copy import deepcopy
 from pathlib import Path
+from textwrap import dedent
 
 from ruamel.yaml import YAML
 
@@ -62,6 +65,44 @@ class Feedstock:
             raise ValueError("Could not parse recipes config in meta.yaml")
 
         return recipes
+
+    @contextmanager
+    def generate_setup_py(self):
+        """
+        Auto-generate a setup.py file for use with apache beam.
+
+        Beam sends all the user code we need to workers by creating an
+        sdist off a python package. However, our feedstocks only have a
+        few python files (at best) - mostly just one (recipe.py). We do not
+        want to impose creating a setup.py file manually for all our users,
+        so instead we autogenerate one here.
+        """
+        file = dedent(
+            """
+        import setuptools
+
+        setuptools.setup(
+            name='recipe',
+            version='0.1',
+            # FIXME: Support all the files we need to here!
+            py_modules=["recipe"]
+        )
+        """
+        )
+
+        setup_path = self.feedstock_dir / "setup.py"
+        with open(setup_path, "w") as f:
+            f.write(file)
+
+        readme_path = self.feedstock_dir / "readme.md"
+
+        with open(readme_path, "w") as f:
+            f.write("")
+
+        try:
+            yield str(setup_path)
+        finally:
+            os.remove(setup_path)
 
     def get_expanded_meta(self):
         """
