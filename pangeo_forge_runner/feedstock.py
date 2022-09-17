@@ -37,7 +37,10 @@ class Feedstock:
             filename = self.feedstock_dir / f"{module}.py"
             with open(filename) as f:
                 ns = {}
-                exec(f.read(), ns)
+                # compiling makes debugging easier: https://stackoverflow.com/a/437857
+                # Without compiling first, `inspect.getsource()` will not work, and
+                # pangeo-forge-recipes uses it to hash recipes!
+                exec(compile(source=f.read(), filename=filename, mode="exec"), ns)
                 self._import_cache[module] = ns
 
         return self._import_cache[module][export]
