@@ -148,10 +148,15 @@ class FlinkOperatorBakery(Bakery):
                         "spec": {
                             "containers": [
                                 {
+                                    # The container config is merged with the main flink container
+                                    # based on this name. So the operator sets up most of the config,
+                                    # and we can just override it here.
                                     "name": "flink-main-container",
                                     "env": [
                                         {
                                             "name": "JAVA_OPTS",
+                                            # Set JVM Option without which the jobmanager seems to *segfault*
+                                            # when given an sdist made by python?!
                                             "value": "-Dsun.zip.disableMemoryMapping=true",
                                         }
                                     ],
