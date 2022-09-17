@@ -10,10 +10,10 @@ import xarray as xr
     "recipe_id, expected_error, custom_job_name",
     (
         [None, None, None],
-        ["gpcp", None, None],
+        ["gpcp-from-gcs", None, None],
         [
             "invalid_recipe_id",
-            "ValueError: self.recipe_id='invalid_recipe_id' not in ['gpcp']",
+            "ValueError: self.recipe_id='invalid_recipe_id' not in ['gpcp-from-gcs']",
             None,
         ],
         [None, None, "special-name-for-job"],
@@ -62,7 +62,7 @@ def test_gpcp_bake(minio, recipe_id, expected_error, custom_job_name):
             "--repo",
             "https://github.com/pforgetest/gpcp-from-gcs-feedstock.git",
             "--ref",
-            "9d1ee3ce1705df49b67f2d92d97b1cd9599f05d5",
+            "4f41e02512b2078c8bdb286368a1a9d878b5cec2",
             "--json",
             "-f",
             f.name,
@@ -84,7 +84,7 @@ def test_gpcp_bake(minio, recipe_id, expected_error, custom_job_name):
             if custom_job_name:
                 assert job_name == custom_job_name
             else:
-                assert job_name.startswith("gpcp-")
+                assert job_name.startswith("gpcp-from-gcs-")
 
             # Open the generated dataset with xarray!
             gpcp = xr.open_dataset(

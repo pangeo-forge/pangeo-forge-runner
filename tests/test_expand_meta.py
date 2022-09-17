@@ -4,7 +4,7 @@ import subprocess
 invocations = [
     {
         "repo": "https://github.com/pforgetest/gpcp-from-gcs-feedstock.git",
-        "ref": "9d1ee3ce1705df49b67f2d92d97b1cd9599f05d5",
+        "ref": "4f41e02512b2078c8bdb286368a1a9d878b5cec2",
         "meta": {
             "title": "Global Precipitation Climatology Project",
             "description": "Global Precipitation Climatology Project (GPCP) Daily Version 1.3 gridded, merged ty satellite/gauge precipitation Climate data Record (CDR) from 1996 to present.\n",
