@@ -3,7 +3,7 @@ import subprocess
 
 invocations = [
     {
-        "repo": "https://github.com/pangeo-forge/gpcp-feedstock",
+        "repo": "https://github.com/pforgetest/gpcp-from-gcs-feedstock.git",
         "ref": "2cde04745189665a1f5a05c9eae2a98578de8b7f",
         "meta": {
             "title": "Global Precipitation Climatology Project",
