@@ -29,7 +29,7 @@ class LocalDirectBakery(Bakery):
     )
 
     def get_pipeline_options(
-        self, job_name: str, container_image: str
+        self, job_name: str, container_image: str, extra_options: dict
     ) -> PipelineOptions:
         """
         Return PipelineOptions for use with this Bakery
@@ -44,4 +44,5 @@ class LocalDirectBakery(Bakery):
             save_main_session=True,
             # this might solve serialization issues; cf. https://beam.apache.org/blog/beam-2.36.0/
             pickle_library="cloudpickle",
+            **extra_options
         )

@@ -150,32 +150,34 @@ class Bake(BaseCommand):
                     metadata_cache_storage.get_forge_target(job_name=job_name),
                 )
 
-                pipeline_options = bakery.get_pipeline_options(
-                    job_name=job_name,
-                    # FIXME: Bring this in from meta.yaml?
-                    container_image=self.container_image,
-                )
-
-                # Set argv explicitly to empty so Apache Beam doesn't try to parse the commandline
-                # for pipeline options - we have traitlets doing that for us.
-                pipeline = Pipeline(options=pipeline_options, argv=[])
-                # Chain our recipe to the pipeline. This mutates the `pipeline` object!
-                pipeline | recipe.to_beam()
-
-                # Some bakeries are blocking - if Beam is configured to use them, calling
-                # pipeline.run() blocks. Some are not. We handle that here, and provide
-                # appropriate feedback to the user too.
-                extra = {"recipe": name, "job_name": job_name}
-                if bakery.blocking:
-                    self.log.info(
-                        f"Running job for recipe {name}\n",
-                        extra=extra | {"status": "running"},
+                with feedstock.generate_setup_py() as setup_path:
+                    pipeline_options = bakery.get_pipeline_options(
+                        job_name=job_name,
+                        # FIXME: Bring this in from meta.yaml?
+                        container_image="pangeo/forge:8a862dc",
+                        extra_options={"setup_file": setup_path},
                     )
-                    pipeline.run()
-                else:
-                    result = pipeline.run()
-                    job_id = result.job_id()
-                    self.log.info(
-                        f"Submitted job {job_id} for recipe {name}",
-                        extra=extra | {"job_id": job_id, "status": "submitted"},
-                    )
+
+                    # Set argv explicitly to empty so Apache Beam doesn't try to parse the commandline
+                    # for pipeline options - we have traitlets doing that for us.
+                    pipeline = Pipeline(options=pipeline_options, argv=[])
+                    # Chain our recipe to the pipeline. This mutates the `pipeline` object!
+                    pipeline | recipe.to_beam()
+
+                    # Some bakeries are blocking - if Beam is configured to use them, calling
+                    # pipeline.run() blocks. Some are not. We handle that here, and provide
+                    # appropriate feedback to the user too.
+                    extra = {"recipe": name, "job_name": job_name}
+                    if bakery.blocking:
+                        self.log.info(
+                            f"Running job for recipe {name}\n",
+                            extra=extra | {"status": "running"},
+                        )
+                        pipeline.run()
+                    else:
+                        result = pipeline.run()
+                        job_id = result.job_id()
+                        self.log.info(
+                            f"Submitted job {job_id} for recipe {name}",
+                            extra=extra | {"job_id": job_id, "status": "submitted"},
+                        )

@@ -23,7 +23,7 @@ class Bakery(LoggingConfigurable):
     )
 
     def get_pipeline_options(
-        self, job_name: str, container_image: str
+        self, job_name: str, container_image: str, extra_options: dict
     ) -> PipelineOptions:
         """
         Return a PipelineOptions object that will configure a Pipeline to run on this Bakery

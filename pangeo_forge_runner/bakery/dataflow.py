@@ -122,7 +122,7 @@ class DataflowBakery(Bakery):
         return proposal["value"]
 
     def get_pipeline_options(
-        self, job_name: str, container_image: str
+        self, job_name: str, container_image: str, extra_options: dict
     ) -> PipelineOptions:
         """
         Return PipelineOptions for use with this Bakery
@@ -151,6 +151,7 @@ class DataflowBakery(Bakery):
             # this might solve serialization issues; cf. https://beam.apache.org/blog/beam-2.36.0/
             pickle_library="cloudpickle",
             machine_type=self.machine_type,
+            **extra_options
         )
         if self.service_account_email:
             opts.update({"service_account_email": self.service_account_email})
