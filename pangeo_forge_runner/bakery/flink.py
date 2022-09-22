@@ -76,7 +76,7 @@ class FlinkOperatorBakery(Bakery):
     )
 
     job_manager_resources = Dict(
-        {"memory": "1024m"},
+        {"memory": "1024m", "cpu": 0.2},
         config=True,
         help="""
         Memory & CPU resources to give to the jobManager pod.
@@ -92,7 +92,7 @@ class FlinkOperatorBakery(Bakery):
     )
 
     task_manager_resources = Dict(
-        {"memory": "1024m"},
+        {"memory": "1024m", "cpu": 0.2},
         config=True,
         help="""
         Memory & CPU resources to give to the taskManager container.
