@@ -1,5 +1,21 @@
 # Run a recipe on a Flink cluster on AWS
 
+`pangeo-forge-runner` supports baking your recipes on Apache Flink using
+the [Apache Flink Runner](https://beam.apache.org/documentation/runners/flink/)
+for Beam. After looking at various options, we have settled on supporting
+Flink on Kubernetes using Apache's [Flink Operator](https://nightlies.apache.org/flink/flink-kubernetes-operator-docs-main/).
+This would allow baking recipes on *any* Kubernetes cluster!
+
+In this tutorial, we'll bake a recipe on a Amazon [EKS](https://aws.amazon.com/eks/)
+kubernetes cluster!
+
+## Setting up the cluster
+
+You need an EKS cluster with [Apache Flink Operator](https://nightlies.apache.org/flink/flink-kubernetes-operator-docs-main/)
+installed. Setting that up is out of the scope for this tutorial, but you can find some
+useful terraform scripts for that [here](https://github.com/yuvipanda/pangeo-forge-cloud-federation/)
+if you wish.
+
 ## Setting up your local machine
 
 1. Install required tools on your machine.
@@ -54,7 +70,7 @@ pangeo-forge-runner bake --repo <url-to-github-repo> --ref <name-of-branch-or-co
 You can add `--prune` if you want to only test the recipe and run just the first
 few steps.
 
-This might take a minute to submit, and you should start seeing
+This might take a minute to submit.
 
 ## Access the Flink Dashboard
 
