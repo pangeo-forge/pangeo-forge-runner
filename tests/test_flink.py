@@ -53,8 +53,8 @@ def test_flink_bake(minio):
         assert proc.returncode == 0
 
         # We should have some kinda 'has this completed?' check here
-        # Instead, I just wait for 90s
-        time.sleep(90)
+        # Instead, I just wait for 2min
+        time.sleep(60 * 2)
         # Open the generated dataset with xarray!
         gpcp = xr.open_dataset(
             config["TargetStorage"]["root_path"],
