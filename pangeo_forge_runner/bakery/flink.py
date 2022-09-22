@@ -229,7 +229,8 @@ class FlinkOperatorBakery(Bakery):
         listen_address = line.split(" ")[2]
         # Use rsplit in case we listen on ipv6 stuff in the future
         listen_port = listen_address.rsplit(":", 1)[1]
-        print(f"You can see the flink dashboard at http://127.0.0.1:{listen_port}")
+
+        print(f"You can run '{' '.join(cmd)}' to make the Flink Dashboard available!")
 
         # Set flags explicitly to empty so Apache Beam doesn't try to parse the commandline
         # for pipeline options - we have traitlets doing that for us.

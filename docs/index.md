@@ -9,6 +9,14 @@
 Commandline tool to manage [pangeo-forge](https://pangeo-forge.readthedocs.io/en/latest/)
 feedstocks
 
+## Tutorials
+
+```{toctree}
+:maxdepth: 1
+
+tutorial/flink
+```
+
 ## Contents
 
 ```{toctree}
