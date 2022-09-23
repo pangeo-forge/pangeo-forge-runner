@@ -133,6 +133,10 @@ class FlinkOperatorBakery(Bakery):
         """
         image = f"flink:{self.flink_version}"
         flink_version_str = f'v{self.flink_version.replace(".", "_")}'
+
+        # FIXME: parameterize beam version
+        jobserver_image = f"apache/beam_flink{self.flink_version}_job_server:2.41.0"
+
         return {
             "apiVersion": "flink.apache.org/v1beta1",
             "kind": "FlinkDeployment",
@@ -142,7 +146,28 @@ class FlinkOperatorBakery(Bakery):
                 "flinkVersion": flink_version_str,
                 "flinkConfiguration": self.flink_configuration,
                 "serviceAccount": "flink",
-                "jobManager": {"resource": self.job_manager_resources},
+                "jobManager": {
+                    "resource": self.job_manager_resources,
+                    "podTemplate": {
+                        "spec": {
+                            "containers": [
+                                {
+                                    "name": "beam-jobserver",
+                                    "image": jobserver_image,
+                                    "ports": [{"containerPort": 8099}],
+                                    "readinessProbe": {
+                                        # Don't mark this container as ready until the beam SDK harnass starts
+                                        "tcpSocket": {"port": 8099},
+                                        "periodSeconds": 10,
+                                    },
+                                    "args": [
+                                        "--flink-master=127.0.0.1:8081",
+                                    ],
+                                }
+                            ]
+                        }
+                    },
+                },
                 "taskManager": {
                     "replicas": 5,
                     "resource": self.task_manager_resources,
@@ -215,9 +240,9 @@ class FlinkOperatorBakery(Bakery):
             "--pod-running-timeout=2m0s",
             "--address",
             "127.0.0.1",  # Just ipv4 tx
-            f"svc/{cluster_name}-rest",
+            f"deployment/{cluster_name}",
             # 0 will allocate a random local port
-            "0:8081",
+            "0:8099",
         ]
         # Let's read out the line of output from kubectl so we can figure out what port
         # `kubectl` has bound to
@@ -236,10 +261,9 @@ class FlinkOperatorBakery(Bakery):
         # for pipeline options - we have traitlets doing that for us.
         opts = dict(
             flags=[],
-            runner="FlinkRunner",
+            runner="PortableRunner",
             # FIXME: This should be the deployed flink master URL
-            flink_master=f"127.0.0.1:{listen_port}",
-            flink_submit_uber_jar=True,
+            job_endpoint=f"127.0.0.1:{listen_port}",
             environment_type="EXTERNAL",
             environment_config="0.0.0.0:50000",
             # https://cloud.google.com/dataflow/docs/resources/faq#how_do_i_handle_nameerrors
