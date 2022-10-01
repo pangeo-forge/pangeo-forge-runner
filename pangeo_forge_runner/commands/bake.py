@@ -77,6 +77,17 @@ class Bake(BaseCommand):
         """,
     )
 
+    container_image = Unicode(
+        None,
+        allow_none=False,
+        config=True,
+        help="""
+        Container image to use for this job.
+
+        Must be available from a public repository.
+        """,
+    )
+
     def start(self):
         """
         Start the baking process
@@ -140,7 +151,7 @@ class Bake(BaseCommand):
                 pipeline_options = bakery.get_pipeline_options(
                     job_name=job_name,
                     # FIXME: Bring this in from meta.yaml?
-                    container_image="pangeo/forge:8a862dc",
+                    container_image=self.container_image,
                 )
 
                 # Set argv explicitly to empty so Apache Beam doesn't try to parse the commandline
