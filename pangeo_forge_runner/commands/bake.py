@@ -78,13 +78,14 @@ class Bake(BaseCommand):
     )
 
     container_image = Unicode(
-        None,
-        allow_none=False,
+        "pangeo/forge:2022.09.21",
         config=True,
         help="""
         Container image to use for this job.
 
-        Must be available from a public repository.
+        Should be accessible to whatever Beam runner is being used.
+
+        Note that some runners (like the local one) may not support this!
         """,
     )
 
