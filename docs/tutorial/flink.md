@@ -38,11 +38,12 @@ the data should *end up in*. In our case, we will use S3. You must already have
 created an S3 bucket for this to work.
 
 ```python
-# Let's put all our data into s3, partitioned by the id of each job we run
-BUCKET_PREFIX = "s3://<bucket-name>/<some-prefix>/{job_id}"
+# Let's put all our data into s3!
+BUCKET_PREFIX = "s3://<bucket-name>/<some-prefix>/"
 
 c.TargetStorage.fsspec_class = "s3fs.S3FileSystem"
-c.TargetStorage.root_path = f"{BUCKET_PREFIX}/output"
+# Target output should be partitioned by job id
+c.TargetStorage.root_path = f"{BUCKET_PREFIX}/{{job}}/output"
 c.TargetStorage.fsspec_args = {
     "key": "<your-aws-access-key>",
     "secret": "<your-aws-access-secret>",
@@ -51,11 +52,14 @@ c.TargetStorage.fsspec_args = {
 
 c.InputCacheStorage.fsspec_class = c.TargetStorage.fsspec_class
 c.InputCacheStorage.fsspec_args = c.TargetStorage.fsspec_args
+# Input data cache should *not* be partitioned by job id, as we want to get the datafile
+# from the source only once
 c.InputCacheStorage.root_path = f"{BUCKET_PREFIX}/cache/input"
 
 c.MetadataCacheStorage.fsspec_class = c.TargetStorage.fsspec_class
 c.MetadataCacheStorage.fsspec_args = c.TargetStorage.fsspec_args
-c.MetadataCacheStorage.root_path = f"{BUCKET_PREFIX}/cache/metadata"
+# Metadata cache should be per job, as kwargs changing can change metadata
+c.MetadataCacheStorage.root_path = f"{BUCKET_PREFIX}/{{job}}/cache/metadata"
 ```
 
 
