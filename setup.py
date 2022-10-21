@@ -10,7 +10,7 @@ setup(
     long_description_content_type="text/markdown",
     author="Yuvi Panda",
     author_email="yuvipanda@gmail.com",
-    version="0.6.1",
+    version="0.6.2",
     packages=find_packages(),
     install_requires=[
         "jupyter-repo2docker",
@@ -19,7 +19,7 @@ setup(
         "traitlets",
         # Matches the version of apache_beam in the default image,
         # specified in bake.py's container_image traitlet default
-        "apache-beam[gcp]==2.41.0",
+        "apache-beam[gcp]==2.42.0",
     ],
     entry_points={
         "console_scripts": ["pangeo-forge-runner=pangeo_forge_runner.cli:main"]
