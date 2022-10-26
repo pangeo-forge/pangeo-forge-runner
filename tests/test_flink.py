@@ -42,9 +42,9 @@ def test_flink_bake(minio):
             "pangeo-forge-runner",
             "bake",
             "--repo",
-            "https://github.com/pangeo-forge/gpcp-feedstock.git",
+            "https://github.com/pforgetest/gpcp-from-gcs-feedstock.git",
             "--ref",
-            "2cde04745189665a1f5a05c9eae2a98578de8b7f",
+            "4f41e02512b2078c8bdb286368a1a9d878b5cec2",
             "-f",
             f.name,
         ]
