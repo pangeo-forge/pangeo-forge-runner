@@ -154,7 +154,7 @@ class Bake(BaseCommand):
                     pipeline_options = bakery.get_pipeline_options(
                         job_name=job_name,
                         # FIXME: Bring this in from meta.yaml?
-                        container_image="pangeo/forge:8a862dc",
+                        container_image=self.container_image,
                         extra_options={"setup_file": setup_path},
                     )
 
