@@ -97,13 +97,13 @@ def test_required_params():
     dfb.temp_gcs_location = "gs://test"
 
     with pytest.raises(ValueError):
-        dfb.get_pipeline_options("test", "test")
+        dfb.get_pipeline_options("test", "test", {})
 
     dfb.project_id = "something"
     dfb.temp_gcs_location = None
 
     with pytest.raises(ValueError):
-        dfb.get_pipeline_options("test", "test")
+        dfb.get_pipeline_options("test", "test", {})
 
 
 def test_missing_gcloud(mocker):
