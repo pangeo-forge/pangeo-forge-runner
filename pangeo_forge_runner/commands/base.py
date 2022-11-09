@@ -225,9 +225,5 @@ class BaseCommand(Application):
             formatter = jsonlogger.JsonFormatter()
             logHandler.setFormatter(formatter)
         else:
-            # Since we also have JSON logging, we put newlines in our
-            # messages wherever explicitly needed. Avoid the logger
-            # adding its own, so we don't have unnecessary blank lines
-            logHandler.terminator = ""
             # Just put out the message here, nothing else.
             logHandler.formatter = logging.Formatter(fmt="%(message)s")
