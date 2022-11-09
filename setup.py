@@ -12,6 +12,7 @@ setup(
     author_email="yuvipanda@gmail.com",
     version="0.7.0",
     packages=find_packages(),
+    python_requires=">=3.9",
     install_requires=[
         "jupyter-repo2docker",
         "ruamel.yaml",

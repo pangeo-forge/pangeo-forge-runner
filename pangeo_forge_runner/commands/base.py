@@ -2,6 +2,7 @@ import logging
 import os
 import sys
 import tempfile
+from collections.abc import Generator
 from contextlib import contextmanager
 
 from pythonjsonlogger import jsonlogger
@@ -126,7 +127,7 @@ class BaseCommand(Application):
     )
 
     @contextmanager
-    def fetch(self):
+    def fetch(self) -> Generator[str, None, None]:
         """
         Fetch repo from configured url at ref, and return a directory where it can be accessed.
 
