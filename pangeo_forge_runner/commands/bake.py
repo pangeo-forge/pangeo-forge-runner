@@ -1,7 +1,6 @@
 """
 Command to run a pangeo-forge recipe
 """
-import tempfile
 from datetime import datetime
 from pathlib import Path
 
@@ -111,12 +110,8 @@ class Bake(BaseCommand):
             extra={"status": "setup"},
         )
 
-        # Create a temporary directory where we fetch the feedstock repo and perform all operations
-        # FIXME: Support running this on an already existing repository, so users can run it
-        # as they develop their feedstock
-        with tempfile.TemporaryDirectory() as d:
-            self.fetch(d)
-            feedstock = Feedstock(Path(d) / self.feedstock_subdir)
+        with self.fetch() as checkout_dir:
+            feedstock = Feedstock(Path(checkout_dir) / self.feedstock_subdir)
 
             self.log.info("Parsing recipes...", extra={"status": "running"})
             with redirect_stderr(self.log, {"status": "running"}), redirect_stdout(
