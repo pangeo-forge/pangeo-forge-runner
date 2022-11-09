@@ -1,3 +1,6 @@
+import os
+import tempfile
+
 import pytest
 from repo2docker import contentproviders
 
@@ -16,4 +19,20 @@ def test_bad_cp():
 
     bc.repo = "https://example.com"
     with pytest.raises(ValueError):
-        bc.fetch("/tmp")
+        with bc.fetch() as _:
+            pass
+
+
+def test_local():
+    """
+    Test that local directories are just treated as nops
+    """
+    with tempfile.TemporaryDirectory() as d:
+        bc = BaseCommand()
+        bc.repo = d
+
+        with bc.fetch() as checkout_dir:
+            assert checkout_dir != d
+
+        # Make sure the directory isn't deleted either by the end!
+        assert os.path.exists(d)

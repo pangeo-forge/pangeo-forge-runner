@@ -1,9 +1,6 @@
 """
 Command to run a pangeo-forge recipe
 """
-import os
-import shutil
-import tempfile
 from datetime import datetime
 from pathlib import Path
 
@@ -113,16 +110,7 @@ class Bake(BaseCommand):
             extra={"status": "setup"},
         )
 
-        if os.path.exists(self.repo):
-            # Trying to build a local path, so no fetching is necessary
-            cleanup_after = False
-            checkout_dir = self.repo
-        else:
-            cleanup_after = True
-            checkout_dir = tempfile.gettempdir()
-            self.fetch(checkout_dir)
-
-        try:
+        with self.fetch() as checkout_dir:
             feedstock = Feedstock(Path(checkout_dir) / self.feedstock_subdir)
 
             self.log.info("Parsing recipes...", extra={"status": "running"})
@@ -186,7 +174,3 @@ class Bake(BaseCommand):
                         f"Submitted job {job_id} for recipe {name}",
                         extra=extra | {"job_id": job_id, "status": "submitted"},
                     )
-
-        finally:
-            if cleanup_after:
-                shutil.rmtree(checkout_dir)
