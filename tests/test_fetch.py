@@ -32,7 +32,7 @@ def test_local():
         bc.repo = d
 
         with bc.fetch() as checkout_dir:
-            assert checkout_dir != d
+            assert checkout_dir == d
 
         # Make sure the directory isn't deleted either by the end!
         assert os.path.exists(d)
