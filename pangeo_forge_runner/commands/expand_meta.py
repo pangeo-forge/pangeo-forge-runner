@@ -1,4 +1,6 @@
 import json
+import os
+import shutil
 import tempfile
 from pathlib import Path
 
@@ -19,9 +21,17 @@ class ExpandMeta(BaseCommand):
     flags = common_flags
 
     def start(self):
-        with tempfile.TemporaryDirectory() as d:
-            self.fetch(d)
-            feedstock = Feedstock(Path(d) / self.feedstock_subdir)
+        if os.path.exists(self.repo):
+            # Trying to build a local path, so no fetching is necessary
+            cleanup_after = False
+            checkout_dir = self.repo
+        else:
+            cleanup_after = True
+            checkout_dir = tempfile.gettempdir()
+            self.fetch(checkout_dir)
+
+        try:
+            feedstock = Feedstock(Path(checkout_dir) / self.feedstock_subdir)
             with redirect_stderr(self.log, {"status": "running"}), redirect_stdout(
                 self.log, {"status": "running"}
             ):
@@ -34,3 +44,7 @@ class ExpandMeta(BaseCommand):
             else:
                 self.log.info("Expansion complete\n", extra={"status": "completed"})
                 self.log.info(json.dumps(expanded))
+
+        finally:
+            if cleanup_after:
+                shutil.rmtree(checkout_dir)
