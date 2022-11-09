@@ -10,7 +10,7 @@ setup(
     long_description_content_type="text/markdown",
     author="Yuvi Panda",
     author_email="yuvipanda@gmail.com",
-    version="0.7.0",
+    version="0.7.1",
     packages=find_packages(),
     python_requires=">=3.9",
     install_requires=[
