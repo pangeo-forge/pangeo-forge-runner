@@ -125,8 +125,14 @@ class Bake(BaseCommand):
                 recipes = {k: r for k, r in recipes.items() if k == self.recipe_id}
 
             if self.prune:
-                # Prune all recipes if we're asked to
-                recipes = {k: r.copy_pruned() for k, r in recipes.items()}
+                # Prune recipes to only run on certain items if we are asked to
+                if hasattr(recipes.items[0], "copy_pruned"):
+                    # pangeo-forge-recipes version < 0.10 has a `copy_pruned` method
+                    recipes = {k: r.copy_pruned() for k, r in recipes.items()}
+                else:
+                    raise NotImplementedError(
+                        "Pruning is not implementead yet for newer versions of pangeo-forge-recipes yet"
+                    )
 
             bakery: Bakery = self.bakery_class(parent=self)
 
@@ -134,7 +140,7 @@ class Bake(BaseCommand):
                 # Unique name for running this particular recipe.
                 if not self.job_name:
                     # FIXME: Should include the name of repo / ref as well somehow
-                    job_name = f"{name}-{recipe.sha256.hex()}-{int(datetime.now().timestamp())}"
+                    job_name = f"{name}-{int(datetime.now().timestamp())}"
                 else:
                     job_name = self.job_name
 
