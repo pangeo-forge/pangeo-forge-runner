@@ -6,23 +6,17 @@ import pytest
 import xarray as xr
 
 
-def pip_install(pkg):
-    proc = subprocess.run(f"pip install -U '{pkg}'".split())
-    assert proc.returncode == 0
-
-
-@pytest.fixture(params=["0.9.x", "beam-refactor"])
-def feedstock_ref(request):
-    ref: str = request.param
-    pfr = "pangeo-forge-recipes"
-    before = subprocess.check_output(f"pip freeze | grep {pfr}").strip()
-    if ref == "0.9.x":
-        pip_install(f"{pfr}=={ref.replace('x', '*')}")
-    elif ref == "beam-refactor":
-        pip_install(f"https://github.com/pangeo-forge/{pfr}.git@{ref}")
-    yield ref
-    # for idempotence, re-install whichever version was there before the test
-    pip_install(before)
+@pytest.fixture
+def recipes_version_ref():
+    # FIXME: recipes version matrix is currently determined by github workflows matrix
+    # in the future, it should be set by pangeo-forge-runner venv feature?
+    pip_list = subprocess.check_output("pip list".split()).decode("utf-8").splitlines()
+    recipes_version = [
+        p.split()[-1] for p in pip_list if p.startswith("pangeo-forge-recipes")
+    ][0]
+    # for now, beam-refactor is unreleased, so installing from the the dev branch does not include
+    # the branch name as part of the installed version name. therefore, we just assume with 'else'
+    return "0.9.x" if recipes_version.startswith("0.9") else "beam-refactor"
 
 
 @pytest.mark.parametrize(
@@ -38,7 +32,9 @@ def feedstock_ref(request):
         [None, None, "special-name-for-job"],
     ),
 )
-def test_gpcp_bake(minio, recipe_id, expected_error, custom_job_name, feedstock_ref):
+def test_gpcp_bake(
+    minio, recipe_id, expected_error, custom_job_name, recipes_version_ref
+):
     fsspec_args = {
         "key": minio["username"],
         "secret": minio["password"],
@@ -81,7 +77,9 @@ def test_gpcp_bake(minio, recipe_id, expected_error, custom_job_name, feedstock_
             "--repo",
             "https://github.com/pforgetest/gpcp-from-gcs-feedstock.git",
             "--ref",
-            feedstock_ref,
+            # in the test feedstock, tags are named for the recipes version
+            # which was used to write the recipe module
+            recipes_version_ref,
             "--json",
             "-f",
             f.name,
