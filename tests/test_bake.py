@@ -6,19 +6,36 @@ import pytest
 import xarray as xr
 
 
+def pip_install(pkg):
+    proc = subprocess.run(f"pip install -U '{pkg}'".split())
+    assert proc.returncode == 0
+
+
+@pytest.fixture(params=["0.9.x", "beam-refactor"])
+def feedstock_ref(request):
+    ref: str = request.param
+    pfr = "pangeo-forge-recipes"
+    before = subprocess.check_output(f"pip freeze | grep {pfr}").strip()
+    if ref == "0.9.x":
+        pip_install(f"{pfr}=={ref.replace('x', '*')}")
+    elif ref == "beam-refactor":
+        pip_install(f"https://github.com/pangeo-forge/{pfr}.git@{ref}")
+    yield ref
+    # for idempotence, re-install whichever version was there before the test
+    pip_install(before)
+
+
 @pytest.mark.parametrize(
-    "recipe_id, expected_error, custom_job_name, feedstock_ref",
+    "recipe_id, expected_error, custom_job_name",
     (
-        [None, None, None, "0.9.x"],
-        ["gpcp-from-gcs", None, None, "0.9.x"],
+        [None, None, None],
+        ["gpcp-from-gcs", None, None],
         [
             "invalid_recipe_id",
             "ValueError: self.recipe_id='invalid_recipe_id' not in ['gpcp-from-gcs']",
             None,
-            "0.9.x",
         ],
-        [None, None, "special-name-for-job", "0.9.x"],
-        [None, None, None, "beam-refactor"],
+        [None, None, "special-name-for-job"],
     ),
 )
 def test_gpcp_bake(minio, recipe_id, expected_error, custom_job_name, feedstock_ref):
