@@ -4,8 +4,7 @@ Command to run a pangeo-forge recipe
 from datetime import datetime
 from pathlib import Path
 
-from apache_beam import Pipeline
-from pangeo_forge_recipes.storage import StorageConfig
+from apache_beam import Pipeline, PTransform
 from traitlets import Bool, Type, Unicode
 
 from .. import Feedstock
@@ -139,12 +138,6 @@ class Bake(BaseCommand):
                 else:
                     job_name = self.job_name
 
-                recipe.storage_config = StorageConfig(
-                    target_storage.get_forge_target(job_name=job_name),
-                    input_cache_storage.get_forge_target(job_name=job_name),
-                    metadata_cache_storage.get_forge_target(job_name=job_name),
-                )
-
                 pipeline_options = bakery.get_pipeline_options(
                     job_name=job_name,
                     # FIXME: Bring this in from meta.yaml?
@@ -155,7 +148,22 @@ class Bake(BaseCommand):
                 # for pipeline options - we have traitlets doing that for us.
                 pipeline = Pipeline(options=pipeline_options, argv=[])
                 # Chain our recipe to the pipeline. This mutates the `pipeline` object!
-                pipeline | recipe.to_beam()
+                # We expect `recipe` to either be a beam PTransform, or an object with a 'to_beam'
+                # method that returns a transform.
+                if isinstance(recipe, PTransform):
+                    # This means we are in pangeo-forge-recipes >=0.9
+                    pipeline | recipe
+                elif hasattr(recipe, "to_beam"):
+                    # We are in pangeo-forge-recipes <=0.9
+                    # The import has to be here, as this import is not valid in pangeo-forge-recipes>=0.9
+                    from pangeo_forge_recipes.storage import StorageConfig
+
+                    recipe.storage_config = StorageConfig(
+                        target_storage.get_forge_target(job_name=job_name),
+                        input_cache_storage.get_forge_target(job_name=job_name),
+                        metadata_cache_storage.get_forge_target(job_name=job_name),
+                    )
+                    pipeline | recipe.to_beam()
 
                 # Some bakeries are blocking - if Beam is configured to use them, calling
                 # pipeline.run() blocks. Some are not. We handle that here, and provide
