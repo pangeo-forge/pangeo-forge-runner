@@ -7,19 +7,21 @@ import xarray as xr
 
 
 @pytest.mark.parametrize(
-    "recipe_id, expected_error, custom_job_name",
+    "recipe_id, expected_error, custom_job_name, feedstock_ref",
     (
-        [None, None, None],
-        ["gpcp-from-gcs", None, None],
+        [None, None, None, "0.9.x"],
+        ["gpcp-from-gcs", None, None, "0.9.x"],
         [
             "invalid_recipe_id",
             "ValueError: self.recipe_id='invalid_recipe_id' not in ['gpcp-from-gcs']",
             None,
+            "0.9.x",
         ],
-        [None, None, "special-name-for-job"],
+        [None, None, "special-name-for-job", "0.9.x"],
+        [None, None, None, "beam-refactor"],
     ),
 )
-def test_gpcp_bake(minio, recipe_id, expected_error, custom_job_name):
+def test_gpcp_bake(minio, recipe_id, expected_error, custom_job_name, feedstock_ref):
     fsspec_args = {
         "key": minio["username"],
         "secret": minio["password"],
@@ -62,7 +64,7 @@ def test_gpcp_bake(minio, recipe_id, expected_error, custom_job_name):
             "--repo",
             "https://github.com/pforgetest/gpcp-from-gcs-feedstock.git",
             "--ref",
-            "4f41e02512b2078c8bdb286368a1a9d878b5cec2",
+            feedstock_ref,
             "--json",
             "-f",
             f.name,
