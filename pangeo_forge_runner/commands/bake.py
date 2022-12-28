@@ -110,7 +110,9 @@ class Bake(BaseCommand):
         )
 
         with self.fetch() as checkout_dir:
-            feedstock = Feedstock(Path(checkout_dir) / self.feedstock_subdir)
+            feedstock = Feedstock(
+                Path(checkout_dir) / self.feedstock_subdir, prune=self.prune
+            )
 
             self.log.info("Parsing recipes...", extra={"status": "running"})
             with redirect_stderr(self.log, {"status": "running"}), redirect_stdout(
@@ -126,13 +128,9 @@ class Bake(BaseCommand):
 
             if self.prune:
                 # Prune recipes to only run on certain items if we are asked to
-                if hasattr(recipes.items()[0], "copy_pruned"):
+                if hasattr(list(recipes.items())[0], "copy_pruned"):
                     # pangeo-forge-recipes version < 0.10 has a `copy_pruned` method
                     recipes = {k: r.copy_pruned() for k, r in recipes.items()}
-                else:
-                    raise NotImplementedError(
-                        "Pruning is not implementead yet for newer versions of pangeo-forge-recipes yet"
-                    )
 
             bakery: Bakery = self.bakery_class(parent=self)
 

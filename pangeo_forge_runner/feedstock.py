@@ -1,7 +1,10 @@
+import ast
 from copy import deepcopy
 from pathlib import Path
 
 from ruamel.yaml import YAML
+
+from .recipe_rewriter import RecipeRewriter
 
 yaml = YAML()
 
@@ -11,15 +14,18 @@ class Feedstock:
     A Pangeo Forge feedstock
     """
 
-    def __init__(self, feedstock_dir: Path):
+    def __init__(self, feedstock_dir: Path, prune: bool = False):
         """
         feedstock_dir: Path to an existing Feedstock repo
+        prune: Set to true if the recipe should be pruned for testing
 
         Expects meta.yaml to exist inside in this dir
         """
         self.feedstock_dir = feedstock_dir
         with open(self.feedstock_dir / "meta.yaml") as f:
             self.meta = yaml.load(f)
+
+        self.prune = prune
 
     def _import(self, spec):
         """
@@ -40,7 +46,9 @@ class Feedstock:
                 # compiling makes debugging easier: https://stackoverflow.com/a/437857
                 # Without compiling first, `inspect.getsource()` will not work, and
                 # pangeo-forge-recipes uses it to hash recipes!
-                exec(compile(source=f.read(), filename=filename, mode="exec"), ns)
+                recipe_ast = ast.parse(source=f.read(), filename=filename, mode="exec")
+                rewritten_ast = RecipeRewriter(prune=self.prune).visit(recipe_ast)
+                exec(compile(source=rewritten_ast, filename=filename, mode="exec"), ns)
                 self._import_cache[module] = ns
 
         return self._import_cache[module][export]
