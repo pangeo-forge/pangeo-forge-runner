@@ -140,11 +140,18 @@ class Bake(BaseCommand):
 
             bakery: Bakery = self.bakery_class(parent=self)
 
+            # Check for a requirements.txt file and send it to beam if we have one
+            requirements_path = feedstock.feedstock_dir / "requirements.txt"
+            extra_options = {}
+            if requirements_path.exists():
+                extra_options["requirements_file"] = str(requirements_path)
+
             for name, recipe in recipes.items():
                 pipeline_options = bakery.get_pipeline_options(
                     job_name=self.job_name,
                     # FIXME: Bring this in from meta.yaml?
                     container_image=self.container_image,
+                    extra_options=extra_options,
                 )
 
                 # Set argv explicitly to empty so Apache Beam doesn't try to parse the commandline
