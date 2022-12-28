@@ -38,9 +38,9 @@ class RecipeRewriter(NodeTransformer):
     def visit_Import(self, node: Import) -> Import:
         for name in node.names:
             if name.asname:
-                self._import_aliases.setdefault(name.name, []).append(name.asname)
+                self._import_aliases[name.asname] = name.name
             else:
-                self._import_aliases.setdefault(name.name, []).append(name.name)
+                self._import_aliases[name.name] = name.name
 
         return node
 
@@ -113,13 +113,14 @@ class RecipeRewriter(NodeTransformer):
         """
         if isinstance(node.func, Attribute):
             # FIXME: Support it being imported as from apache_beam import Create too
-            # We are looking for beam.Create or apache_beam.Create calls
-            if "apache_beam" not in self._import_aliases:
-                # if beam hasn't been imported, just exit
+            if "apache_beam" not in self._import_aliases.values():
+                # if beam hasn't been imported, don't rewrite anything
                 return node
 
+            # Only rewrite parameters to apache_beam.Create, regardless
+            # of how it is imported as
             if node.func.attr == "Create" and (
-                node.func.value.id in self._import_aliases["apache_beam"]
+                self._import_aliases.get(node.func.value.id) == "apache_beam"
             ):
                 # If there is a single argument pased to beam.Create, and it is <something>.items()
                 # This is the heurestic we use for figuring out that we are in fact operating on a FilePattern object
