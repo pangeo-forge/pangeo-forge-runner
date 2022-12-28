@@ -134,7 +134,7 @@ class Bake(BaseCommand):
 
             if self.prune:
                 # Prune recipes to only run on certain items if we are asked to
-                if hasattr(list(recipes.items())[0], "copy_pruned"):
+                if hasattr(next(iter(recipes.values())), "copy_pruned"):
                     # pangeo-forge-recipes version < 0.10 has a `copy_pruned` method
                     recipes = {k: r.copy_pruned() for k, r in recipes.items()}
 
