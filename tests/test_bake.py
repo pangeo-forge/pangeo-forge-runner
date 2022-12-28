@@ -14,9 +14,16 @@ def recipes_version_ref():
     recipes_version = [
         p.split()[-1] for p in pip_list if p.startswith("pangeo-forge-recipes")
     ][0]
-    # for now, beam-refactor is unreleased, so installing from the the dev branch does not include
-    # the branch name as part of the installed version name. therefore, we just assume with 'else'
-    return "0.9.x" if recipes_version.startswith("0.9") else "beam-refactor"
+    return (
+        "0.9.x"
+        # FIXME: for now, beam-refactor is unreleased, so installing from the dev branch
+        # gives something like "0.9.1.dev86+g6e9c341" as the version. So we just assume any
+        # version which includes "dev" is the "beam-refactor" branch, because we're not
+        # installing from any other upstream dev branch at this point. After beam-refactor
+        # release, we can figure this out based on an explicit version tag, i.e. "0.10.*".
+        if "dev" not in recipes_version
+        else "beam-refactor"
+    )
 
 
 @pytest.mark.parametrize(
