@@ -16,7 +16,7 @@ jobs:
         python-version: ["3.9"]
         recipes-version: [
           "pangeo-forge-recipes==0.9.2",
-          "https://github.com/pangeo-forge/pangeo-forge-recipes.git@beam-refactor",
+          "git+https://github.com/pangeo-forge/pangeo-forge-recipes.git@beam-refactor",
         ]
 
     steps:
