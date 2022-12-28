@@ -45,18 +45,21 @@ class Feedstock:
         """
         if not hasattr(self, "_import_cache"):
             self._import_cache = {}
+
+        rewriter = RecipeRewriter(
+            prune=self.prune, callable_injections=self.callable_injections
+        )
+
         module, export = spec.split(":")
         if module not in self._import_cache:
+            ns = {**rewriter.get_exec_globals()}
             filename = self.feedstock_dir / f"{module}.py"
             with open(filename) as f:
-                ns = {"_CALLABLE_INJECTIONS": self.callable_injections}
                 # compiling makes debugging easier: https://stackoverflow.com/a/437857
                 # Without compiling first, `inspect.getsource()` will not work, and
                 # pangeo-forge-recipes uses it to hash recipes!
                 recipe_ast = ast.parse(source=f.read(), filename=filename, mode="exec")
-                rewritten_ast = RecipeRewriter(
-                    prune=self.prune, callable_injections=self.callable_injections
-                ).visit(recipe_ast)
+                rewritten_ast = rewriter.visit(recipe_ast)
                 print(ast.dump(rewritten_ast, indent=2))
                 exec(compile(source=rewritten_ast, filename=filename, mode="exec"), ns)
                 self._import_cache[module] = ns

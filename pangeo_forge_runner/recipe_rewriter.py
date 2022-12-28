@@ -27,6 +27,15 @@ class RecipeRewriter(NodeTransformer):
         self.prune = prune
         self.callable_injections = callable_injections if callable_injections else {}
 
+    def get_exec_globals(self):
+        """
+        Return a dict with objects to be injected into recipe while executing.
+
+        Should be passed to `globals` of `exec` function
+        """
+        # This is used by our transformations to inject parameters to callables
+        return {"_CALLABLE_INJECTIONS": self.callable_injections}
+
     def transform_prune(self, node: Call) -> Call:
         """
         Transform a FilePattern object being passed to beam.Create to call a .prune() method
