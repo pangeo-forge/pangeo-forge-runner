@@ -20,12 +20,17 @@ class RecipeRewriter(NodeTransformer):
     Transform a recipe file to provide 'configuration' as needed.
     """
 
-    def __init__(self, prune: bool = False, callable_injections: Optional[dict] = None):
+    def __init__(
+        self, prune: bool = False, callable_args_injections: Optional[dict] = None
+    ):
         """
         prune: Set to true to add a .prune() call to FilePatterns passed to beam.Create
+        callable_args_injections: A dict of callable names (as keys) with injected kwargs as value
         """
         self.prune = prune
-        self.callable_injections = callable_injections if callable_injections else {}
+        self.callable_args_injections = (
+            callable_args_injections if callable_args_injections else {}
+        )
 
     def get_exec_globals(self):
         """
@@ -34,7 +39,7 @@ class RecipeRewriter(NodeTransformer):
         Should be passed to `globals` of `exec` function
         """
         # This is used by our transformations to inject parameters to callables
-        return {"_CALLABLE_INJECTIONS": self.callable_injections}
+        return {"_CALLABLE_ARGS_INJECTIONS": self.callable_args_injections}
 
     def transform_prune(self, node: Call) -> Call:
         """
@@ -110,13 +115,13 @@ class RecipeRewriter(NodeTransformer):
                     return fix_missing_locations(self.transform_prune(node))
         elif isinstance(node.func, Name):
             # FIXME: Support importing in other ways
-            for name, params in self.callable_injections.items():
+            for name, params in self.callable_args_injections.items():
                 if name == node.func.id:
                     node.keywords += [
                         keyword(
                             arg=k,
                             value=self._make_injected_get(
-                                "_CALLABLE_INJECTIONS", name, k
+                                "_CALLABLE_ARGS_INJECTIONS", name, k
                             ),
                         )
                         for k in params

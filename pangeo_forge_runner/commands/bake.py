@@ -109,7 +109,7 @@ class Bake(BaseCommand):
         )
 
         with self.fetch() as checkout_dir:
-            callable_injections = {
+            callable_args_injections = {
                 "StoreToZarr": {
                     "target": target_storage.get_forge_target(job_name=self.job_name),
                 }
@@ -117,7 +117,7 @@ class Bake(BaseCommand):
             feedstock = Feedstock(
                 Path(checkout_dir) / self.feedstock_subdir,
                 prune=self.prune,
-                callable_injections=callable_injections,
+                callable_args_injections=callable_args_injections,
             )
 
             self.log.info("Parsing recipes...", extra={"status": "running"})

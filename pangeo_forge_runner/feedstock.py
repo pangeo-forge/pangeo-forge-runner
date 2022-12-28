@@ -19,11 +19,12 @@ class Feedstock:
         self,
         feedstock_dir: Path,
         prune: bool = False,
-        callable_injections: Optional[dict] = None,
+        callable_args_injections: Optional[dict] = None,
     ):
         """
         feedstock_dir: Path to an existing Feedstock repo
         prune: Set to true if the recipe should be pruned for testing
+        callable_args_injections: A dict of callable names (as keys) with injected kwargs as value
 
         Expects meta.yaml to exist inside in this dir
         """
@@ -32,7 +33,9 @@ class Feedstock:
             self.meta = yaml.load(f)
 
         self.prune = prune
-        self.callable_injections = callable_injections if callable_injections else {}
+        self.callable_args_injections = (
+            callable_args_injections if callable_args_injections else {}
+        )
 
     def _import(self, spec):
         """
@@ -47,7 +50,7 @@ class Feedstock:
             self._import_cache = {}
 
         rewriter = RecipeRewriter(
-            prune=self.prune, callable_injections=self.callable_injections
+            prune=self.prune, callable_args_injections=self.callable_args_injections
         )
 
         module, export = spec.split(":")

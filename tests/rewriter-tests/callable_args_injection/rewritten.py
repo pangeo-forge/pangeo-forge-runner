@@ -3,7 +3,7 @@ def some_callable(some_argument):
 
 
 some_callable(
-    some_argument=_CALLABLE_INJECTIONS.get("some_callable", {}).get(  # noqa
+    some_argument=_CALLABLE_ARGS_INJECTIONS.get("some_callable", {}).get(  # noqa
         "some_argument"
     )
 )
