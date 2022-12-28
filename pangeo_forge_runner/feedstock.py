@@ -1,6 +1,7 @@
 import ast
 from copy import deepcopy
 from pathlib import Path
+from typing import Optional
 
 from ruamel.yaml import YAML
 
@@ -14,7 +15,12 @@ class Feedstock:
     A Pangeo Forge feedstock
     """
 
-    def __init__(self, feedstock_dir: Path, prune: bool = False):
+    def __init__(
+        self,
+        feedstock_dir: Path,
+        prune: bool = False,
+        callable_injections: Optional[dict] = None,
+    ):
         """
         feedstock_dir: Path to an existing Feedstock repo
         prune: Set to true if the recipe should be pruned for testing
@@ -26,6 +32,7 @@ class Feedstock:
             self.meta = yaml.load(f)
 
         self.prune = prune
+        self.callable_injections = callable_injections if callable_injections else {}
 
     def _import(self, spec):
         """
@@ -42,12 +49,15 @@ class Feedstock:
         if module not in self._import_cache:
             filename = self.feedstock_dir / f"{module}.py"
             with open(filename) as f:
-                ns = {}
+                ns = {"_CALLABLE_INJECTIONS": self.callable_injections}
                 # compiling makes debugging easier: https://stackoverflow.com/a/437857
                 # Without compiling first, `inspect.getsource()` will not work, and
                 # pangeo-forge-recipes uses it to hash recipes!
                 recipe_ast = ast.parse(source=f.read(), filename=filename, mode="exec")
-                rewritten_ast = RecipeRewriter(prune=self.prune).visit(recipe_ast)
+                rewritten_ast = RecipeRewriter(
+                    prune=self.prune, callable_injections=self.callable_injections
+                ).visit(recipe_ast)
+                print(ast.dump(rewritten_ast, indent=2))
                 exec(compile(source=rewritten_ast, filename=filename, mode="exec"), ns)
                 self._import_cache[module] = ns
 

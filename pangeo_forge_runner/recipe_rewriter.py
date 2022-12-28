@@ -1,7 +1,18 @@
 """
 AST rewrites for recipe files to support injecting config
 """
-from ast import Attribute, Call, Load, NodeTransformer
+from ast import (
+    Attribute,
+    Call,
+    Constant,
+    Dict,
+    Load,
+    Name,
+    NodeTransformer,
+    fix_missing_locations,
+    keyword,
+)
+from typing import Optional
 
 
 class RecipeRewriter(NodeTransformer):
@@ -9,11 +20,12 @@ class RecipeRewriter(NodeTransformer):
     Transform a recipe file to provide 'configuration' as needed.
     """
 
-    def __init__(self, prune: bool = False):
+    def __init__(self, prune: bool = False, callable_injections: Optional[dict] = None):
         """
         prune: Set to true to add a .prune() call to FilePatterns passed to beam.Create
         """
         self.prune = prune
+        self.callable_injections = callable_injections if callable_injections else {}
 
     def transform_prune(self, node: Call) -> Call:
         """
@@ -53,24 +65,66 @@ class RecipeRewriter(NodeTransformer):
 
         return node
 
+    def _make_injected_get(
+        self, injected_variable: str, callable_name: str, param_name: str
+    ) -> Call:
+        return fix_missing_locations(
+            Call(
+                func=Attribute(
+                    value=Call(
+                        func=Attribute(
+                            value=Name(id=injected_variable, ctx=Load()),
+                            attr="get",
+                            ctx=Load(),
+                        ),
+                        args=[
+                            Constant(value=callable_name),
+                            Dict(keys=[], values=[]),
+                        ],
+                        keywords=[],
+                    ),
+                    attr="get",
+                    ctx=Load(),
+                ),
+                args=[Constant(value=param_name)],
+                keywords=[],
+            )
+        )
+
     def visit_Call(self, node: Call) -> Call:
         """
         Rewrite calls that return a FilePattern if we need to prune them
         """
         if not self.prune:
             return node
-        if hasattr(node, "func"):
-            if isinstance(node.func, Attribute):
-                # We are looking for beam.Create or apache_beam.Create calls
-                if node.func.attr == "Create" and (
-                    node.func.value.id == "beam" or node.func.value.id == "apache_beam"
+
+        if isinstance(node.func, Attribute):
+            # FIXME: Support it being imported as from apache_beam import Create too
+            # We are looking for beam.Create or apache_beam.Create calls
+            if node.func.attr == "Create" and (
+                node.func.value.id == "beam" or node.func.value.id == "apache_beam"
+            ):
+                # If there is a single argument pased to beam.Create, and it is <something>.items()
+                # This is the heurestic we use for figuring out that we are in fact operating on a FilePattern object
+                if (
+                    len(node.args) == 1
+                    and isinstance(node.args[0].func, Attribute)
+                    and node.args[0].func.attr == "items"
                 ):
-                    # If there is a single argument pased to beam.Create, and it is <something>.items()
-                    # This is the heurestic we use for figuring out that we are in fact operating on a FilePattern object
-                    if (
-                        len(node.args) == 1
-                        and isinstance(node.args[0].func, Attribute)
-                        and node.args[0].func.attr == "items"
-                    ):
-                        return self.transform_prune(node)
+                    return self.transform_prune(node)
+        elif isinstance(node.func, Name):
+            # FIXME: Support importing in other ways
+            for name, params in self.callable_injections.items():
+                if name == node.func.id:
+                    node.keywords += [
+                        keyword(
+                            lineno=node.lineno,
+                            col_offset=node.col_offset,
+                            arg=k,
+                            value=self._make_injected_get(
+                                "_CALLABLE_INJECTIONS", name, k
+                            ),
+                        )
+                        for k in params
+                    ]
         return node

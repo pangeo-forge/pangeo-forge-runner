@@ -1,7 +1,6 @@
 """
 Command to run a pangeo-forge recipe
 """
-from datetime import datetime
 from pathlib import Path
 
 from apache_beam import Pipeline, PTransform
@@ -110,8 +109,15 @@ class Bake(BaseCommand):
         )
 
         with self.fetch() as checkout_dir:
+            callable_injections = {
+                "StoreToZarr": {
+                    "target": target_storage.get_forge_target(job_name=self.job_name),
+                }
+            }
             feedstock = Feedstock(
-                Path(checkout_dir) / self.feedstock_subdir, prune=self.prune
+                Path(checkout_dir) / self.feedstock_subdir,
+                prune=self.prune,
+                callable_injections=callable_injections,
             )
 
             self.log.info("Parsing recipes...", extra={"status": "running"})
@@ -135,15 +141,8 @@ class Bake(BaseCommand):
             bakery: Bakery = self.bakery_class(parent=self)
 
             for name, recipe in recipes.items():
-                # Unique name for running this particular recipe.
-                if not self.job_name:
-                    # FIXME: Should include the name of repo / ref as well somehow
-                    job_name = f"{name}-{int(datetime.now().timestamp())}"
-                else:
-                    job_name = self.job_name
-
                 pipeline_options = bakery.get_pipeline_options(
-                    job_name=job_name,
+                    job_name=self.job_name,
                     # FIXME: Bring this in from meta.yaml?
                     container_image=self.container_image,
                 )
@@ -163,16 +162,16 @@ class Bake(BaseCommand):
                     from pangeo_forge_recipes.storage import StorageConfig
 
                     recipe.storage_config = StorageConfig(
-                        target_storage.get_forge_target(job_name=job_name),
-                        input_cache_storage.get_forge_target(job_name=job_name),
-                        metadata_cache_storage.get_forge_target(job_name=job_name),
+                        target_storage.get_forge_target(job_name=self.job_name),
+                        input_cache_storage.get_forge_target(job_name=self.job_name),
+                        metadata_cache_storage.get_forge_target(job_name=self.job_name),
                     )
                     pipeline | recipe.to_beam()
 
                 # Some bakeries are blocking - if Beam is configured to use them, calling
                 # pipeline.run() blocks. Some are not. We handle that here, and provide
                 # appropriate feedback to the user too.
-                extra = {"recipe": name, "job_name": job_name}
+                extra = {"recipe": name, "job_name": self.job_name}
                 if bakery.blocking:
                     self.log.info(
                         f"Running job for recipe {name}\n",

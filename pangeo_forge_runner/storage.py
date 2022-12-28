@@ -53,7 +53,7 @@ class StorageTargetConfig(LoggingConfigurable):
         """
         return self.pangeo_forge_target_class(
             self.fsspec_class(**self.fsspec_args),
-            root_path=self.root_path.format(job_id=job_name),
+            root_path=self.root_path.format(job_name=job_name),
         )
 
     def __str__(self):
