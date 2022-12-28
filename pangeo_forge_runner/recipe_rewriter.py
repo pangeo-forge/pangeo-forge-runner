@@ -42,6 +42,8 @@ class RecipeRewriter(NodeTransformer):
 
         node: A ast.Call object representing the `beam.Create` call
         """
+        if not self.prune:
+            return node
         # The object on which `.items()` is being called is what we will consider our `FilePattern` object
         # We will transform this .items() call into a .prune().items() call
         file_pattern_obj = node.args[0].func.value
@@ -92,9 +94,6 @@ class RecipeRewriter(NodeTransformer):
         """
         Rewrite calls that return a FilePattern if we need to prune them
         """
-        if not self.prune:
-            return node
-
         if isinstance(node.func, Attribute):
             # FIXME: Support it being imported as from apache_beam import Create too
             # We are looking for beam.Create or apache_beam.Create calls
