@@ -6,6 +6,7 @@ from ast import (
     Call,
     Constant,
     Dict,
+    Import,
     Load,
     Name,
     NodeTransformer,
@@ -31,6 +32,17 @@ class RecipeRewriter(NodeTransformer):
         self.callable_args_injections = (
             callable_args_injections if callable_args_injections else {}
         )
+
+        self._import_aliases = {}
+
+    def visit_Import(self, node: Import) -> Import:
+        for name in node.names:
+            if name.asname:
+                self._import_aliases.setdefault(name.name, []).append(name.asname)
+            else:
+                self._import_aliases.setdefault(name.name, []).append(name.name)
+
+        return node
 
     def get_exec_globals(self):
         """
@@ -102,8 +114,12 @@ class RecipeRewriter(NodeTransformer):
         if isinstance(node.func, Attribute):
             # FIXME: Support it being imported as from apache_beam import Create too
             # We are looking for beam.Create or apache_beam.Create calls
+            if "apache_beam" not in self._import_aliases:
+                # if beam hasn't been imported, just exit
+                return node
+
             if node.func.attr == "Create" and (
-                node.func.value.id == "beam" or node.func.value.id == "apache_beam"
+                node.func.value.id in self._import_aliases["apache_beam"]
             ):
                 # If there is a single argument pased to beam.Create, and it is <something>.items()
                 # This is the heurestic we use for figuring out that we are in fact operating on a FilePattern object
