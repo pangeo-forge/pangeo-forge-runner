@@ -1,10 +1,10 @@
 """
 Command to run a pangeo-forge recipe
 """
+import os
 import time
 from pathlib import Path
 
-import escapism
 from apache_beam import Pipeline, PTransform
 from traitlets import Bool, Type, Unicode
 
@@ -89,6 +89,28 @@ class Bake(BaseCommand):
         """,
     )
 
+    def autogenerate_job_name(self):
+        """
+        Autogenerate a readable job_name
+        """
+        # special case local checkouts, as no contentprovider is used
+        if os.path.exists(self.repo):
+            return f"local-{os.path.basename(self.repo)}"
+
+        # special-case github because it is so common
+        if self.repo.startswith("https://github.com/"):
+            _, user, repo = self.repo.rsplit("/", 2)
+            return f"gh-{user}-{repo}-{self.picked_content_provider.content_id}"
+
+        # everything other than github
+        job_name = self.repo
+        if self.picked_content_provider.content_id is not None:
+            job_name += self.picked_content_provider.content_id
+        else:
+            job_name += str(int(time.time()))
+
+        return job_name
+
     def start(self):
         """
         Start the baking process
@@ -112,12 +134,7 @@ class Bake(BaseCommand):
 
         with self.fetch() as checkout_dir:
             if not self.job_name:
-                job_name = self.repo
-                if self.picked_content_provider.content_id is not None:
-                    job_name += self.picked_content_provider.content_id
-                else:
-                    job_name += str(int(time.time()))
-                self.job_name = escapism.escape(job_name, escape_char="-")
+                self.job_name = self.autogenerate_job_name()
 
             callable_args_injections = {
                 "StoreToZarr": {

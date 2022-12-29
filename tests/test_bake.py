@@ -108,7 +108,7 @@ def test_gpcp_bake(
             if custom_job_name:
                 assert job_name == custom_job_name
             else:
-                assert job_name.startswith("gpcp-from-gcs-")
+                assert job_name.startswith("gh-pforgetest-gpcp-from-gcs-")
 
             # Open the generated dataset with xarray!
             gpcp = xr.open_dataset(
