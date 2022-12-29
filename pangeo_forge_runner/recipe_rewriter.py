@@ -1,5 +1,12 @@
 """
 AST rewrites for recipe files to support injecting config
+
+FIXME:
+
+Still needs to handle a couple of additional cases.
+- `from apache_beam import Create` is not handled for pruning yet. Need
+  to handle `ImportFrom` statements.
+- `import pangeo_forge_recipes; pangeo_forge_recipes.transforms.StoreToZarr` is not handled either
 """
 from ast import (
     Attribute,
