@@ -182,7 +182,9 @@ class FlinkOperatorBakery(Bakery):
             raise ValueError("kubectl is required for FlinkBakery to work")
 
         # Flink cluster names have a 45 char limit, and can only contain - special char
-        cluster_name = generate_hashed_slug(escapism.escape(job_name, "-"), 45)
+        cluster_name = generate_hashed_slug(
+            escapism.escape(job_name, escape_char="-"), 45
+        )
 
         # Create the temp flink cluster
         with tempfile.NamedTemporaryFile(mode="w") as f:
