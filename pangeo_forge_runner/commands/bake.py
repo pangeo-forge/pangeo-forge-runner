@@ -1,8 +1,10 @@
 """
 Command to run a pangeo-forge recipe
 """
+import time
 from pathlib import Path
 
+import escapism
 from apache_beam import Pipeline, PTransform
 from traitlets import Bool, Type, Unicode
 
@@ -109,6 +111,14 @@ class Bake(BaseCommand):
         )
 
         with self.fetch() as checkout_dir:
+            if not self.job_name:
+                job_name = self.repo
+                if self.picked_content_provider.content_id is not None:
+                    job_name += self.picked_content_provider.content_id
+                else:
+                    job_name += str(int(time.time()))
+                self.job_name = escapism.escape(job_name, escape_char="-")
+
             callable_args_injections = {
                 "StoreToZarr": {
                     "target": target_storage.get_forge_target(job_name=self.job_name),

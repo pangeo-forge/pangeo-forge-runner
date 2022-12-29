@@ -7,7 +7,7 @@ from contextlib import contextmanager
 
 from pythonjsonlogger import jsonlogger
 from repo2docker import contentproviders
-from traitlets import Bool, List, Unicode
+from traitlets import Bool, Instance, List, Unicode
 from traitlets.config import Application
 
 # Common aliases we want to support in *all* commands
@@ -63,6 +63,17 @@ class BaseCommand(Application):
 
         Optional, only used for some methods of fetching (such as git or
         mercurial)
+        """,
+    )
+
+    picked_content_provider = Instance(
+        klass=contentproviders.base.ContentProvider,
+        config=False,
+        allow_none=True,
+        help="""
+        Non-configurable picked content provider set by self.fetch()
+
+        Helpful for subcommands to access the content provider in use
         """,
     )
 
@@ -146,12 +157,11 @@ class BaseCommand(Application):
             # No cleanup necessary
             return
         with tempfile.TemporaryDirectory() as checkout_dir:
-            picked_content_provider = None
             for ContentProvider in self.content_providers:
                 cp = ContentProvider()
                 spec = cp.detect(self.repo, ref=self.ref)
                 if spec is not None:
-                    picked_content_provider = cp
+                    self.picked_content_provider = cp
                     self.log.info(
                         "Picked {cp} content "
                         "provider.\n".format(cp=cp.__class__.__name__),
@@ -159,12 +169,12 @@ class BaseCommand(Application):
                     )
                     break
 
-            if picked_content_provider is None:
+            if self.picked_content_provider is None:
                 raise ValueError(
                     f"Could not fetch {self.repo}, no matching contentprovider found"
                 )
 
-            for log_line in picked_content_provider.fetch(
+            for log_line in self.picked_content_provider.fetch(
                 spec, checkout_dir, yield_output=True
             ):
                 self.log.info(log_line, extra=dict(status="fetching"))

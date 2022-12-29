@@ -27,7 +27,7 @@ def recipes_version_ref():
 
 
 @pytest.mark.parametrize(
-    "recipe_id, expected_error, custom_job_name",
+    ("recipe_id", "expected_error", "custom_job_name"),
     (
         [None, None, None],
         ["gpcp-from-gcs", None, None],
