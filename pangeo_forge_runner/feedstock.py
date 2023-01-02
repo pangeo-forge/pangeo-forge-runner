@@ -63,7 +63,6 @@ class Feedstock:
                 # pangeo-forge-recipes uses it to hash recipes!
                 recipe_ast = ast.parse(source=f.read(), filename=filename, mode="exec")
                 rewritten_ast = rewriter.visit(recipe_ast)
-                print(ast.dump(rewritten_ast, indent=2))
                 exec(compile(source=rewritten_ast, filename=filename, mode="exec"), ns)
                 self._import_cache[module] = ns
 
