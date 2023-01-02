@@ -1,11 +1,11 @@
 """
 Command to run a pangeo-forge recipe
 """
-from datetime import datetime
+import os
+import time
 from pathlib import Path
 
-from apache_beam import Pipeline
-from pangeo_forge_recipes.storage import StorageConfig
+from apache_beam import Pipeline, PTransform
 from traitlets import Bool, Type, Unicode
 
 from .. import Feedstock
@@ -89,6 +89,28 @@ class Bake(BaseCommand):
         """,
     )
 
+    def autogenerate_job_name(self):
+        """
+        Autogenerate a readable job_name
+        """
+        # special case local checkouts, as no contentprovider is used
+        if os.path.exists(self.repo):
+            return f"local-{os.path.basename(self.repo)}"
+
+        # special-case github because it is so common
+        if self.repo.startswith("https://github.com/"):
+            _, user, repo = self.repo.rsplit("/", 2)
+            return f"gh-{user}-{repo}-{self.picked_content_provider.content_id}"
+
+        # everything other than github
+        job_name = self.repo
+        if self.picked_content_provider.content_id is not None:
+            job_name += self.picked_content_provider.content_id
+        else:
+            job_name += str(int(time.time()))
+
+        return job_name
+
     def start(self):
         """
         Start the baking process
@@ -111,7 +133,19 @@ class Bake(BaseCommand):
         )
 
         with self.fetch() as checkout_dir:
-            feedstock = Feedstock(Path(checkout_dir) / self.feedstock_subdir)
+            if not self.job_name:
+                self.job_name = self.autogenerate_job_name()
+
+            callable_args_injections = {
+                "StoreToZarr": {
+                    "target": target_storage.get_forge_target(job_name=self.job_name),
+                }
+            }
+            feedstock = Feedstock(
+                Path(checkout_dir) / self.feedstock_subdir,
+                prune=self.prune,
+                callable_args_injections=callable_args_injections,
+            )
 
             self.log.info("Parsing recipes...", extra={"status": "running"})
             with redirect_stderr(self.log, {"status": "running"}), redirect_stdout(
@@ -126,33 +160,22 @@ class Bake(BaseCommand):
                 recipes = {k: r for k, r in recipes.items() if k == self.recipe_id}
 
             if self.prune:
-                # Prune all recipes if we're asked to
-                recipes = {k: r.copy_pruned() for k, r in recipes.items()}
+                # Prune recipes to only run on certain items if we are asked to
+                if hasattr(next(iter(recipes.values())), "copy_pruned"):
+                    # pangeo-forge-recipes version < 0.10 has a `copy_pruned` method
+                    recipes = {k: r.copy_pruned() for k, r in recipes.items()}
 
             bakery: Bakery = self.bakery_class(parent=self)
 
+            # Check for a requirements.txt file and send it to beam if we have one
+            requirements_path = feedstock.feedstock_dir / "requirements.txt"
+            extra_options = {}
+            if requirements_path.exists():
+                extra_options["requirements_file"] = str(requirements_path)
+
             for name, recipe in recipes.items():
-                # Unique name for running this particular recipe.
-                if not self.job_name:
-                    # FIXME: Should include the name of repo / ref as well somehow
-                    job_name = f"{name}-{recipe.sha256.hex()}-{int(datetime.now().timestamp())}"
-                else:
-                    job_name = self.job_name
-
-                recipe.storage_config = StorageConfig(
-                    target_storage.get_forge_target(job_name=job_name),
-                    input_cache_storage.get_forge_target(job_name=job_name),
-                    metadata_cache_storage.get_forge_target(job_name=job_name),
-                )
-
-                # Check for a requirements.txt file and send it to beam if we have one
-                requirements_path = feedstock.feedstock_dir / "requirements.txt"
-                extra_options = {}
-                if requirements_path.exists():
-                    extra_options["requirements_file"] = str(requirements_path)
-
                 pipeline_options = bakery.get_pipeline_options(
-                    job_name=job_name,
+                    job_name=self.job_name,
                     # FIXME: Bring this in from meta.yaml?
                     container_image=self.container_image,
                     extra_options=extra_options,
@@ -162,12 +185,27 @@ class Bake(BaseCommand):
                 # for pipeline options - we have traitlets doing that for us.
                 pipeline = Pipeline(options=pipeline_options, argv=[])
                 # Chain our recipe to the pipeline. This mutates the `pipeline` object!
-                pipeline | recipe.to_beam()
+                # We expect `recipe` to either be a beam PTransform, or an object with a 'to_beam'
+                # method that returns a transform.
+                if isinstance(recipe, PTransform):
+                    # This means we are in pangeo-forge-recipes >=0.9
+                    pipeline | recipe
+                elif hasattr(recipe, "to_beam"):
+                    # We are in pangeo-forge-recipes <=0.9
+                    # The import has to be here, as this import is not valid in pangeo-forge-recipes>=0.9
+                    from pangeo_forge_recipes.storage import StorageConfig
+
+                    recipe.storage_config = StorageConfig(
+                        target_storage.get_forge_target(job_name=self.job_name),
+                        input_cache_storage.get_forge_target(job_name=self.job_name),
+                        metadata_cache_storage.get_forge_target(job_name=self.job_name),
+                    )
+                    pipeline | recipe.to_beam()
 
                 # Some bakeries are blocking - if Beam is configured to use them, calling
                 # pipeline.run() blocks. Some are not. We handle that here, and provide
                 # appropriate feedback to the user too.
-                extra = {"recipe": name, "job_name": job_name}
+                extra = {"recipe": name, "job_name": self.job_name}
                 if bakery.blocking:
                     self.log.info(
                         f"Running job for recipe {name}\n",

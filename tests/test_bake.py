@@ -6,8 +6,28 @@ import pytest
 import xarray as xr
 
 
+@pytest.fixture
+def recipes_version_ref():
+    # FIXME: recipes version matrix is currently determined by github workflows matrix
+    # in the future, it should be set by pangeo-forge-runner venv feature?
+    pip_list = subprocess.check_output("pip list".split()).decode("utf-8").splitlines()
+    recipes_version = [
+        p.split()[-1] for p in pip_list if p.startswith("pangeo-forge-recipes")
+    ][0]
+    return (
+        "0.9.x"
+        # FIXME: for now, beam-refactor is unreleased, so installing from the dev branch
+        # gives something like "0.9.1.dev86+g6e9c341" as the version. So we just assume any
+        # version which includes "dev" is the "beam-refactor" branch, because we're not
+        # installing from any other upstream dev branch at this point. After beam-refactor
+        # release, we can figure this out based on an explicit version tag, i.e. "0.10.*".
+        if "dev" not in recipes_version
+        else "beam-refactor"
+    )
+
+
 @pytest.mark.parametrize(
-    "recipe_id, expected_error, custom_job_name",
+    ("recipe_id", "expected_error", "custom_job_name"),
     (
         [None, None, None],
         ["gpcp-from-gcs", None, None],
@@ -19,7 +39,9 @@ import xarray as xr
         [None, None, "special-name-for-job"],
     ),
 )
-def test_gpcp_bake(minio, recipe_id, expected_error, custom_job_name):
+def test_gpcp_bake(
+    minio, recipe_id, expected_error, custom_job_name, recipes_version_ref
+):
     fsspec_args = {
         "key": minio["username"],
         "secret": minio["password"],
@@ -62,7 +84,9 @@ def test_gpcp_bake(minio, recipe_id, expected_error, custom_job_name):
             "--repo",
             "https://github.com/pforgetest/gpcp-from-gcs-feedstock.git",
             "--ref",
-            "4f41e02512b2078c8bdb286368a1a9d878b5cec2",
+            # in the test feedstock, tags are named for the recipes version
+            # which was used to write the recipe module
+            recipes_version_ref,
             "--json",
             "-f",
             f.name,
@@ -84,7 +108,7 @@ def test_gpcp_bake(minio, recipe_id, expected_error, custom_job_name):
             if custom_job_name:
                 assert job_name == custom_job_name
             else:
-                assert job_name.startswith("gpcp-from-gcs-")
+                assert job_name.startswith("gh-pforgetest-gpcp-from-gcs-")
 
             # Open the generated dataset with xarray!
             gpcp = xr.open_dataset(
