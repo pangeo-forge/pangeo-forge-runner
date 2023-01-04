@@ -78,6 +78,7 @@ def test_gpcp_bake(minio, recipe_id, expected_error, custom_job_name):
             assert proc.returncode == 0
 
             for line in stdout:
+                assert "status" in json.loads(line)
                 if "Running job for recipe gpcp" in line:
                     job_name = json.loads(line)["job_name"]
 
