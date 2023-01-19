@@ -21,4 +21,4 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     # TODO: gcloud auth
-    # TODO: pytest -vvvxs tests/test_dataflow_integration.py
+    # TODO: pytest -vvvxs tests/integration/test_dataflow_integration.py
