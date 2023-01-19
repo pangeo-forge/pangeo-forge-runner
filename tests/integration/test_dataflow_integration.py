@@ -71,7 +71,7 @@ def test_dataflow_integration():
                 # if 12 minutes have elapsed (twice the expected time to complete the job),
                 # we're going to assume the job is hanging, and call this test a failure.
                 # remember: we're sourcing data for this job from within GCS, so networking
-                # should delay things *too* much. if we eventually find that jobs may take
+                # shouldn't delay things *too* much. if we eventually find that jobs may take
                 # more than 12 minutes and not be hanging, we can change this assumption.
                 pytest.fail(f"Time {elapsed = } exceedes 12 minutes.")
 
