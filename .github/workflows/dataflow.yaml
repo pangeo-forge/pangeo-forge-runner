@@ -6,6 +6,8 @@ on:
   pull_request:
     branches: [ "main" ]
     types: [ opened, reopened, synchronize, labeled ]
+  schedule:
+    - cron: '0 4 * * *' # run once a day at 4 AM
 
 jobs:
   build:
