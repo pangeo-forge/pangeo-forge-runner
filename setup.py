@@ -16,11 +16,11 @@ setup(
     install_requires=[
         "jupyter-repo2docker",
         "ruamel.yaml",
-        "pangeo-forge-recipes>=0.9.4",
+        "pangeo-forge-recipes==0.9.2",
         "traitlets",
         # Matches the version of apache_beam in the default image,
         # specified in bake.py's container_image traitlet default
-        "apache-beam[gcp]==2.43.0",
+        "apache-beam[gcp]==2.42.0",
     ],
     entry_points={
         "console_scripts": ["pangeo-forge-runner=pangeo_forge_runner.cli:main"]

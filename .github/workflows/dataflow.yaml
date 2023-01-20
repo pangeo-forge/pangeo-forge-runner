@@ -1,0 +1,50 @@
+name: Dataflow Integration Test
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+    types: [ opened, reopened, synchronize, labeled ]
+  schedule:
+    - cron: '0 4 * * *' # run once a day at 4 AM
+
+jobs:
+  build:
+    name: ${{ matrix.python-version }}
+    # run on:
+    #  - all pushes to main
+    #  - a PR was just labeled 'test-dataflow'
+    #  - a PR with 'test-dataflow' label was opened, reopened, or synchronized
+    if: |
+      github.event_name == 'push' ||
+      github.event.label.name == 'test-dataflow' ||
+      contains( github.event.pull_request.labels.*.name, 'test-dataflow')
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9"]
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: 'Authenticate to Google Cloud'
+      uses: 'google-github-actions/auth@v1'
+      with:
+        credentials_json: '${{ secrets.GCP_DATAFLOW_SERVICE_KEY }}'
+    - name: Install dependencies & our package
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install -r dev-requirements.txt
+        python -m pip install -e .
+    # FIXME: should gcsfs actually be part of some optional installs in setup.py?
+    - name: Install gcsfs
+      run: |
+        python -m pip install 'gcsfs==2022.8.2'
+    - name: 'Run Dataflow Integration Test'
+      run: |
+        pytest -vvvxs tests/integration/test_dataflow_integration.py
