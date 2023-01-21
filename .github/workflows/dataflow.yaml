@@ -14,10 +14,12 @@ jobs:
     name: ${{ matrix.python-version }}
     # run on:
     #  - all pushes to main
+    #  - schedule defined above
     #  - a PR was just labeled 'test-dataflow'
     #  - a PR with 'test-dataflow' label was opened, reopened, or synchronized
     if: |
       github.event_name == 'push' ||
+      github.event_name == 'schedule' ||
       github.event.label.name == 'test-dataflow' ||
       contains( github.event.pull_request.labels.*.name, 'test-dataflow')
     runs-on: ubuntu-latest
