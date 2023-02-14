@@ -1,9 +1,12 @@
 import json
+import re
 import subprocess
 import tempfile
 
 import pytest
 import xarray as xr
+
+from pangeo_forge_runner.commands.bake import Bake
 
 
 @pytest.fixture
@@ -24,6 +27,20 @@ def recipes_version_ref():
         if "dev" not in recipes_version
         else "beam-refactor"
     )
+
+
+def test_job_name_validation():
+    bake = Bake()
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "job_name must match the regex ^[-0-9a-z]+$, instead found invali/d"
+        ),
+    ):
+        bake.job_name = "invali/d"
+
+    bake.job_name = "valid-job"
+    assert bake.job_name == "valid-job"
 
 
 @pytest.mark.parametrize(

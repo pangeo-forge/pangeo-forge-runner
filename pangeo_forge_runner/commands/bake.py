@@ -2,11 +2,12 @@
 Command to run a pangeo-forge recipe
 """
 import os
+import re
 import time
 from pathlib import Path
 
 from apache_beam import Pipeline, PTransform
-from traitlets import Bool, Type, Unicode
+from traitlets import Bool, Type, Unicode, validate
 
 from .. import Feedstock
 from ..bakery.base import Bakery
@@ -75,6 +76,21 @@ class Bake(BaseCommand):
         If `None` (the default), a unique name will be generated for the job.
         """,
     )
+
+    @validate("job_name")
+    def _validate_job_name(self, proposal):
+        """
+        Validate that job_name conforms to [-a-z0-9] regex.
+
+        That's what is valid in dataflow job names, so let's keep everyone
+        in that range.
+        """
+        validating_regex = r"^[-0-9a-z]+$"
+        if not re.match(validating_regex, proposal.value):
+            raise ValueError(
+                f"job_name must match the regex {validating_regex}, instead found {proposal.value}"
+            )
+        return proposal.value
 
     container_image = Unicode(
         # Provides apache_beam 2.42, which we pin to in setup.py
