@@ -103,14 +103,15 @@ class Bake(BaseCommand):
             # Get rid of the '.git' at the end, if it exists
             if repo.endswith(".git"):
                 repo = repo[:-4]
-            return f"gh-{user}-{repo}-{self.picked_content_provider.content_id}"
-
-        # everything other than github
-        job_name = self.repo
-        if self.picked_content_provider.content_id is not None:
-            job_name += self.picked_content_provider.content_id
+            job_name = f"gh-{user}-{repo}-{self.picked_content_provider.content_id}"
         else:
-            job_name += str(int(time.time()))
+            # everything other than github
+            job_name = self.repo
+            if self.picked_content_provider.content_id is not None:
+                job_name += self.picked_content_provider.content_id
+
+        # Always append current ts to job name, to make it unique
+        job_name += "-" + str(int(time.time()))
 
         return job_name
 
