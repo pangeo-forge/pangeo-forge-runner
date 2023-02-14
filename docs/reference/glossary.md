@@ -17,4 +17,6 @@ A glossary of common terms used throughout pangeo-forge-runner.
     A human readable, human set, but not necessarily globally unique ID that represents a particular
     beam job. These are set on the commandline with `--Bake.job_name=test-flink` (or similar traitlets
     config). If not set, pangeo-forge-runner will try to automatically generate a descriptive name.
+    
+    These can only contain lower case characters (a-z), digits (0-9) and dashes (-).
 ```
