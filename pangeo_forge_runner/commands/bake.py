@@ -78,7 +78,7 @@ class Bake(BaseCommand):
 
     container_image = Unicode(
         # Provides apache_beam 2.42, which we pin to in setup.py
-        "quay.io/pangeo/forge:2022.10.20",
+        "quay.io/pangeo/forge:5e51a29",
         config=True,
         help="""
         Container image to use for this job.
