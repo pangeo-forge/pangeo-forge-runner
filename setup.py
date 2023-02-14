@@ -10,13 +10,14 @@ setup(
     long_description_content_type="text/markdown",
     author="Yuvi Panda",
     author_email="yuvipanda@gmail.com",
-    version="0.7.1",
+    version="0.7.2",
     packages=find_packages(),
     python_requires=">=3.9",
     install_requires=[
         "jupyter-repo2docker",
         "ruamel.yaml",
         "pangeo-forge-recipes>=0.9.2",
+        "escapism",
         "traitlets",
         # Matches the version of apache_beam in the default image,
         # specified in bake.py's container_image traitlet default

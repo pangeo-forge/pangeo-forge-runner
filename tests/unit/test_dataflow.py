@@ -73,7 +73,9 @@ def test_pipelineoptions():
     dfb.use_public_ips = True
     dfb.temp_gcs_location = "gs://something"
 
-    po = dfb.get_pipeline_options("job", "some-container:some-tag")
+    po = dfb.get_pipeline_options(
+        "job", "some-container:some-tag", {"requirements_file": "/tmp/some-file"}
+    )
     opts = po.get_all_options()
     assert opts["project"] == "hello"
     assert opts["use_public_ips"]
@@ -86,6 +88,7 @@ def test_pipelineoptions():
     assert opts["sdk_container_image"] == "some-container:some-tag"
     assert opts["job_name"] == "job"
     assert opts["runner"] == "DataflowRunner"
+    assert opts["requirements_file"] == "/tmp/some-file"
 
 
 def test_required_params():
@@ -94,13 +97,13 @@ def test_required_params():
     dfb.temp_gcs_location = "gs://test"
 
     with pytest.raises(ValueError):
-        dfb.get_pipeline_options("test", "test")
+        dfb.get_pipeline_options("test", "test", {})
 
     dfb.project_id = "something"
     dfb.temp_gcs_location = None
 
     with pytest.raises(ValueError):
-        dfb.get_pipeline_options("test", "test")
+        dfb.get_pipeline_options("test", "test", {})
 
 
 def test_missing_gcloud(mocker):

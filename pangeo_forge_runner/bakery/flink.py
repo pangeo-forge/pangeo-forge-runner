@@ -8,6 +8,7 @@ import subprocess
 import tempfile
 import time
 
+import escapism
 from apache_beam.pipeline import PipelineOptions
 from traitlets import Dict, Unicode
 
@@ -170,7 +171,7 @@ class FlinkOperatorBakery(Bakery):
         }
 
     def get_pipeline_options(
-        self, job_name: str, container_image: str
+        self, job_name: str, container_image: str, extra_options: dict
     ) -> PipelineOptions:
         """
         Return PipelineOptions for use with this Bakery
@@ -180,8 +181,11 @@ class FlinkOperatorBakery(Bakery):
         if shutil.which("kubectl") is None:
             raise ValueError("kubectl is required for FlinkBakery to work")
 
-        # Flink cluster names have a 45 char limit
-        cluster_name = generate_hashed_slug(job_name, 45)
+        # Flink cluster names have a 45 char limit, and can only contain - special char
+        # And no uppercase characters are allowed
+        cluster_name = generate_hashed_slug(
+            escapism.escape(job_name, escape_char="-").lower(), 45
+        )
 
         # Create the temp flink cluster
         with tempfile.NamedTemporaryFile(mode="w") as f:
@@ -246,5 +250,6 @@ class FlinkOperatorBakery(Bakery):
             save_main_session=True,
             # this might solve serialization issues; cf. https://beam.apache.org/blog/beam-2.36.0/
             pickle_library="cloudpickle",
+            **extra_options,
         )
         return PipelineOptions(**opts)
