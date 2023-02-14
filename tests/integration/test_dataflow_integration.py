@@ -92,7 +92,7 @@ def test_dataflow_integration():
 
         # open the generated dataset with xarray!
         gpcp = xr.open_dataset(
-            config["TargetStorage"]["root_path"].format(job_id=job_name),
+            config["TargetStorage"]["root_path"].format(job_name=job_name),
             engine="zarr",
         )
 
