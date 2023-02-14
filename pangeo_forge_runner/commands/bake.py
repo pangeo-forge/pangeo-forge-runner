@@ -100,6 +100,9 @@ class Bake(BaseCommand):
         # special-case github because it is so common
         if self.repo.startswith("https://github.com/"):
             _, user, repo = self.repo.rsplit("/", 2)
+            # Get rid of the '.git' at the end, if it exists
+            if repo.endswith(".git"):
+                repo = repo[:-4]
             return f"gh-{user}-{repo}-{self.picked_content_provider.content_id}"
 
         # everything other than github
