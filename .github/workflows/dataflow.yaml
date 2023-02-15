@@ -10,7 +10,7 @@ on:
     - cron: '0 4 * * *' # run once a day at 4 AM
 
 jobs:
-  build:
+  test-dataflow:
     name: ${{ matrix.python-version }}
     # run on:
     #  - all pushes to main
