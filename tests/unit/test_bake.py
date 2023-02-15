@@ -29,18 +29,32 @@ def recipes_version_ref():
     )
 
 
-def test_job_name_validation():
+@pytest.mark.parametrize(
+    "job_name, raises",
+    (
+        ["valid-job", False],
+        ["valid_job", False],
+        ["".join(["a" for i in range(63)]), False],  # <= 63 chars allowed
+        ["".join(["a" for i in range(64)]), True],  # > 63 chars not allowed
+        ["invali/d", True],  # dashes are the only allowable punctuation
+        ["1valid-job", True],  # can only start with letters
+        ["-valid-job", True],  # can only start with letters
+        ["Valid-Job", True],  # uppercase letters not allowed
+    ),
+)
+def test_job_name_validation(job_name, raises):
     bake = Bake()
-    with pytest.raises(
-        ValueError,
-        match=re.escape(
-            "job_name must match the regex ^[-0-9a-z]+$, instead found invali/d"
-        ),
-    ):
-        bake.job_name = "invali/d"
-
-    bake.job_name = "valid-job"
-    assert bake.job_name == "valid-job"
+    if raises:
+        with pytest.raises(
+            ValueError,
+            match=re.escape(
+                f"job_name must match the regex ^[a-z][-_0-9a-z]{{0,62}}$, instead found {job_name}"
+            ),
+        ):
+            bake.job_name = job_name
+    else:
+        bake.job_name = job_name
+        assert bake.job_name == job_name
 
 
 @pytest.mark.parametrize(
