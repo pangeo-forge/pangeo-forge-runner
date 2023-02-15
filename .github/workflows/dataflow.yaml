@@ -11,7 +11,7 @@ on:
 
 jobs:
   test-dataflow:
-    name: ${{ matrix.python-version }}
+    name: test-dataflow-py${{ matrix.python-version }}
     # run on:
     #  - all pushes to main
     #  - schedule defined above
