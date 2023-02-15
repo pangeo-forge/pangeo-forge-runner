@@ -80,12 +80,15 @@ class Bake(BaseCommand):
     @validate("job_name")
     def _validate_job_name(self, proposal):
         """
-        Validate that job_name conforms to [-a-z0-9] regex.
+        Validate that job_name conforms to ^[a-z][-_0-9a-z]{0,62}$ regex.
 
         That's what is valid in dataflow job names, so let's keep everyone
         in that range.
+
+        Dataflow job names adhere to the following GCP cloud labels requirements:
+        https://cloud.google.com/resource-manager/docs/creating-managing-labels#requirements
         """
-        validating_regex = r"^[-0-9a-z]+$"
+        validating_regex = r"^[a-z][-_0-9a-z]{0,62}$"
         if not re.match(validating_regex, proposal.value):
             raise ValueError(
                 f"job_name must match the regex {validating_regex}, instead found {proposal.value}"
