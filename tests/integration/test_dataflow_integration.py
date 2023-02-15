@@ -18,15 +18,15 @@ def test_dataflow_integration():
         "DataflowBakery": {"temp_gcs_location": bucket + "/temp"},
         "TargetStorage": {
             "fsspec_class": "gcsfs.GCSFileSystem",
-            "root_path": bucket + "/target/{job_id}",
+            "root_path": bucket + "/target/{job_name}",
         },
         "InputCacheStorage": {
             "fsspec_class": "gcsfs.GCSFileSystem",
-            "root_path": bucket + "/input-cache/{job_id}",
+            "root_path": bucket + "/input-cache/{job_name}",
         },
         "MetadataCacheStorage": {
             "fsspec_class": "gcsfs.GCSFileSystem",
-            "root_path": bucket + "/metadata-cache/{job_id}",
+            "root_path": bucket + "/metadata-cache/{job_name}",
         },
     }
 
@@ -92,7 +92,7 @@ def test_dataflow_integration():
 
         # open the generated dataset with xarray!
         gpcp = xr.open_dataset(
-            config["TargetStorage"]["root_path"].format(job_id=job_name),
+            config["TargetStorage"]["root_path"].format(job_name=job_name),
             engine="zarr",
         )
 

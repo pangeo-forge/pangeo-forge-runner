@@ -2,11 +2,12 @@
 Command to run a pangeo-forge recipe
 """
 import os
+import re
 import time
 from pathlib import Path
 
 from apache_beam import Pipeline, PTransform
-from traitlets import Bool, Type, Unicode
+from traitlets import Bool, Type, Unicode, validate
 
 from .. import Feedstock
 from ..bakery.base import Bakery
@@ -76,6 +77,24 @@ class Bake(BaseCommand):
         """,
     )
 
+    @validate("job_name")
+    def _validate_job_name(self, proposal):
+        """
+        Validate that job_name conforms to ^[a-z][-_0-9a-z]{0,62}$ regex.
+
+        That's what is valid in dataflow job names, so let's keep everyone
+        in that range.
+
+        Dataflow job names adhere to the following GCP cloud labels requirements:
+        https://cloud.google.com/resource-manager/docs/creating-managing-labels#requirements
+        """
+        validating_regex = r"^[a-z][-_0-9a-z]{0,62}$"
+        if not re.match(validating_regex, proposal.value):
+            raise ValueError(
+                f"job_name must match the regex {validating_regex}, instead found {proposal.value}"
+            )
+        return proposal.value
+
     container_image = Unicode(
         # Provides apache_beam 2.42, which we pin to in setup.py
         "quay.io/pangeo/forge:5e51a29",
@@ -100,14 +119,18 @@ class Bake(BaseCommand):
         # special-case github because it is so common
         if self.repo.startswith("https://github.com/"):
             _, user, repo = self.repo.rsplit("/", 2)
-            return f"gh-{user}-{repo}-{self.picked_content_provider.content_id}"
-
-        # everything other than github
-        job_name = self.repo
-        if self.picked_content_provider.content_id is not None:
-            job_name += self.picked_content_provider.content_id
+            # Get rid of the '.git' at the end, if it exists
+            if repo.endswith(".git"):
+                repo = repo[:-4]
+            job_name = f"gh-{user}-{repo}-{self.picked_content_provider.content_id}"
         else:
-            job_name += str(int(time.time()))
+            # everything other than github
+            job_name = self.repo
+            if self.picked_content_provider.content_id is not None:
+                job_name += self.picked_content_provider.content_id
+
+        # Always append current ts to job name, to make it unique
+        job_name += "-" + str(int(time.time()))
 
         return job_name
 
