@@ -51,7 +51,20 @@ class DataflowBakery(Bakery):
         "n1-highmem-2",
         config=True,
         help="""
-        GCP Machine type to use for the Dataflow jobs
+        GCP Machine type to use for the Dataflow jobs.
+
+        Ignored if use_dataflow_prime is set.
+        """,
+    )
+
+    use_dataflow_prime = Bool(
+        False,
+        config=True,
+        help="""
+        Use GCP's DataFlow Prime instead of regular DataFlow.
+
+        https://cloud.google.com/dataflow/docs/guides/enable-dataflow-prime has more information
+        on the advantages of dataflow prime.
         """,
     )
 
@@ -132,6 +145,12 @@ class DataflowBakery(Bakery):
         if self.project_id is None:
             raise ValueError("DataflowBakery.project_id must be set")
 
+        if self.use_dataflow_prime:
+            # dataflow prime does not support setting machine types explicitly!
+            sizing_options = {"dataflow_service_options": ["enable_prime"]}
+        else:
+            sizing_options = {"machine_type": self.machine_type}
+
         # Set flags explicitly to empty so Apache Beam doesn't try to parse the commandline
         # for pipeline options - we have traitlets doing that for us.
         opts = dict(
@@ -150,8 +169,7 @@ class DataflowBakery(Bakery):
             save_main_session=True,
             # this might solve serialization issues; cf. https://beam.apache.org/blog/beam-2.36.0/
             pickle_library="cloudpickle",
-            machine_type=self.machine_type,
-            **extra_options
+            **(sizing_options | extra_options)
         )
         if self.service_account_email:
             opts.update({"service_account_email": self.service_account_email})
