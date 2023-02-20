@@ -164,6 +164,13 @@ class Bake(BaseCommand):
                     "target": target_storage.get_forge_target(job_name=self.job_name),
                 }
             }
+
+            cache_target = input_cache_storage.get_forge_target(job_name=self.job_name)
+            if cache_target:
+                callable_args_injections |= {
+                    "OpenURLWithFSSpec": {"cache": cache_target},
+                }
+
             feedstock = Feedstock(
                 Path(checkout_dir) / self.feedstock_subdir,
                 prune=self.prune,
