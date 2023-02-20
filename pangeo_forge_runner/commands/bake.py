@@ -3,9 +3,11 @@ Command to run a pangeo-forge recipe
 """
 import os
 import re
+import string
 import time
 from pathlib import Path
 
+import escapism
 from apache_beam import Pipeline, PTransform
 from traitlets import Bool, Type, Unicode, validate
 
@@ -113,8 +115,19 @@ class Bake(BaseCommand):
         Autogenerate a readable job_name
         """
         # special case local checkouts, as no contentprovider is used
+        safe_chars = string.ascii_lowercase + string.digits
         if os.path.exists(self.repo):
-            return f"local-{os.path.basename(self.repo)}"
+            name = "local-"
+            name += escapism.escape(
+                os.path.basename(os.path.abspath(self.repo)),
+                safe=safe_chars,
+                escape_char="-",
+            )
+            if self.feedstock_subdir != "feedstock":
+                name += "-" + escapism.escape(
+                    self.feedstock_subdir, safe=safe_chars, escape_char="-"
+                )
+            return name.lower()
 
         # special-case github because it is so common
         if self.repo.startswith("https://github.com/"):
