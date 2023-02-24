@@ -5,7 +5,7 @@ import shutil
 import subprocess
 
 from apache_beam.pipeline import PipelineOptions
-from traitlets import Bool, TraitError, Unicode, default, validate
+from traitlets import Bool, Integer, TraitError, Unicode, default, validate
 
 from .base import Bakery
 
@@ -90,6 +90,17 @@ class DataflowBakery(Bakery):
         """,
     )
 
+    max_num_workers = Integer(
+        None,
+        allow_none=True,
+        config=True,
+        help="""
+        Maximum number of workers this job can be autoscaled to.
+
+        Set to None (default) for no limit.
+        """,
+    )
+
     service_account_email = Unicode(
         None,
         allow_none=True,
@@ -158,6 +169,7 @@ class DataflowBakery(Bakery):
             runner="DataflowRunner",
             project=self.project_id,
             job_name=job_name,
+            max_num_workers=self.max_num_workers,
             temp_location=self.temp_gcs_location,
             use_public_ips=self.use_public_ips,
             region=self.region,
