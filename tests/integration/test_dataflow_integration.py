@@ -8,7 +8,6 @@ import xarray as xr
 
 
 def test_dataflow_integration():
-
     bucket = "gs://pangeo-forge-runner-ci-testing"
     config = {
         "Bake": {
