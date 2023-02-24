@@ -114,3 +114,19 @@ def test_missing_gcloud(mocker):
 
     dfb = DataflowBakery()
     assert dfb.project_id is None
+
+
+def test_dataflow_prime():
+    """
+    Validate that machine_type is not set when dataflow prime is enabled
+    """
+    dfb = DataflowBakery()
+    dfb.use_dataflow_prime = True
+    dfb.temp_gcs_location = "gs://something"
+
+    po = dfb.get_pipeline_options(
+        "job", "some-container:some-tag", {"requirements_file": "/tmp/some-file"}
+    )
+    opts = po.get_all_options()
+    assert opts["machine_type"] is None
+    assert opts["dataflow_service_options"] == ["enable_prime"]
