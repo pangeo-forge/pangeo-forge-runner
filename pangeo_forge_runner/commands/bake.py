@@ -174,7 +174,9 @@ class Bake(BaseCommand):
 
             callable_args_injections = {
                 "StoreToZarr": {
-                    "target": target_storage.get_forge_target(job_name=self.job_name),
+                    "target_root": target_storage.get_forge_target(
+                        job_name=self.job_name
+                    ),
                 }
             }
 

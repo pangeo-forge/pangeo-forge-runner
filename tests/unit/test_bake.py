@@ -143,7 +143,8 @@ def test_gpcp_bake(
 
             # Open the generated dataset with xarray!
             gpcp = xr.open_dataset(
-                config["TargetStorage"]["root_path"],
+                # We specify a store_name of "gpcp" in the test recipe
+                config["TargetStorage"]["root_path"] + "/gpcp/",
                 backend_kwargs={"storage_options": fsspec_args},
                 engine="zarr",
             )
