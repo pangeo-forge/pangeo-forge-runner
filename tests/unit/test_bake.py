@@ -141,10 +141,19 @@ def test_gpcp_bake(
             else:
                 assert job_name.startswith("gh-pforgetest-gpcp-from-gcs-")
 
+            # In beam-refactor, the actual zarr store is produced in a
+            # *subpath* of target_storage.rootpath, rather than in the
+            # root path itself. This is a compatibility break vs the previous
+            # versions of pangeo-forge-recipes. https://github.com/pangeo-forge/pangeo-forge-recipes/pull/495
+            # has more information
+            if recipes_version_ref == "beam-refactor":
+                zarr_store_path = config["TargetStorage"]["root_path"] + "/gpcp/"
+            else:
+                zarr_store_path = config["TargetStorage"]["root_path"]
             # Open the generated dataset with xarray!
             gpcp = xr.open_dataset(
                 # We specify a store_name of "gpcp" in the test recipe
-                config["TargetStorage"]["root_path"] + "/gpcp/",
+                zarr_store_path,
                 backend_kwargs={"storage_options": fsspec_args},
                 engine="zarr",
             )
