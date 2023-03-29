@@ -82,11 +82,10 @@ class Bake(BaseCommand):
         allow_none=True,
         config=True,
         help="""
-        Optionally pass a nested dict which has name(s) of callables as its top-level keys,
-        and provides a nested dict arguments (arg_name:value) to inject for those callables
-        as values.
+        Optionally pass a dict of arg_name:value pairs to inject as kwargs in the function
+        named `inject_func`.
 
-        If given, top-level keys must correspond to existing callables in the recipe module.
+        If given, an `inject_func` callable must be defined and called in the recipe module.
         """,
     )
 
@@ -185,7 +184,11 @@ class Bake(BaseCommand):
                 }
 
             if self.inject:
-                callable_args_injections |= self.inject
+                self.log.info(
+                    f"Injecting kwargs {self.inject} in call to `inject_func`."
+                )
+                callable_args_injections |= {"inject_func": self.inject}
+
             feedstock = Feedstock(
                 Path(checkout_dir) / self.feedstock_subdir,
                 prune=self.prune,
