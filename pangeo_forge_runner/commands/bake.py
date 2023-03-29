@@ -7,7 +7,7 @@ import time
 from pathlib import Path
 
 from apache_beam import Pipeline, PTransform
-from traitlets import Bool, Type, Unicode, validate
+from traitlets import Bool, Dict, Type, Unicode, validate
 
 from .. import Feedstock
 from ..bakery.base import Bakery
@@ -74,6 +74,19 @@ class Bake(BaseCommand):
         Optionally pass a custom job name for the job run.
 
         If `None` (the default), a unique name will be generated for the job.
+        """,
+    )
+
+    inject = Dict(
+        None,
+        allow_none=True,
+        config=True,
+        help="""
+        Optionally pass a nested dict which has name(s) of callables as its top-level keys,
+        and provides a nested dict arguments (arg_name:value) to inject for those callables
+        as values.
+
+        If given, top-level keys must correspond to existing callables in the recipe module.
         """,
     )
 
@@ -171,6 +184,8 @@ class Bake(BaseCommand):
                     "OpenURLWithFSSpec": {"cache": cache_target},
                 }
 
+            if self.inject:
+                callable_args_injections |= self.inject
             feedstock = Feedstock(
                 Path(checkout_dir) / self.feedstock_subdir,
                 prune=self.prune,
