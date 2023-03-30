@@ -7,13 +7,14 @@ import time
 from pathlib import Path
 
 from apache_beam import Pipeline, PTransform
-from traitlets import Bool, Dict, Type, Unicode, validate
+from traitlets import Bool, Type, Unicode, validate
 
 from .. import Feedstock
 from ..bakery.base import Bakery
 from ..bakery.local import LocalDirectBakery
 from ..storage import InputCacheStorage, MetadataCacheStorage, TargetStorage
 from ..stream_capture import redirect_stderr, redirect_stdout
+from ._traits import CallableArgsInjection
 from .base import BaseCommand, common_aliases, common_flags
 
 
@@ -77,15 +78,23 @@ class Bake(BaseCommand):
         """,
     )
 
-    inject = Dict(
+    inject = CallableArgsInjection(
         None,
         allow_none=True,
         config=True,
         help="""
-        Optionally pass a dict of arg_name:value pairs to inject as kwargs in the function
-        named `inject_func`.
+        Optionally pass a JSON string defining a nested dict in which the top-level
+        keys are names of callables in the recipe module, and the inner key:value
+        pairs are arg_names mapped to values to inject for those args.
 
-        If given, an `inject_func` callable must be defined and called in the recipe module.
+        Used to dynamically inject runtime values into a templated recipe module.
+
+        If given, all top level keys must be names of callables defined in the
+        recipe module, and all inner keys must be names of actual arguments for
+        those callables.
+
+        For example: `'{"get_some_value": {"value": 123}}'`, where `get_some_value`
+        is a callable, with argument `value`, defined in the recipe module.
         """,
     )
 
@@ -185,9 +194,9 @@ class Bake(BaseCommand):
 
             if self.inject:
                 self.log.info(
-                    f"Injecting kwargs {self.inject} in call to `inject_func`."
+                    f"Injecting {self.inject} as callable args into recipe module."
                 )
-                callable_args_injections |= {"inject_func": self.inject}
+                callable_args_injections |= self.inject
 
             feedstock = Feedstock(
                 Path(checkout_dir) / self.feedstock_subdir,
