@@ -147,7 +147,7 @@ def test_gpcp_bake(
             # versions of pangeo-forge-recipes. https://github.com/pangeo-forge/pangeo-forge-recipes/pull/495
             # has more information
             if recipes_version_ref == "beam-refactor":
-                zarr_store_path = config["TargetStorage"]["root_path"] + "/gpcp/"
+                zarr_store_path = config["TargetStorage"]["root_path"] + "gpcp/"
             else:
                 zarr_store_path = config["TargetStorage"]["root_path"]
             # Open the generated dataset with xarray!
