@@ -43,20 +43,20 @@ jobs:
         credentials_json: '${{ secrets.GCP_DATAFLOW_SERVICE_KEY }}'
     - name: Install dependencies & our package
       run: |
-        python -m pip install --upgrade pip
-        python -m pip install -r dev-requirements.txt
-        python -m pip install -e .
-        python -m pip install -U ${{ matrix.recipes-version }}
+        python3.9 -m pip install --upgrade pip
+        python3.9 -m pip install -r dev-requirements.txt
+        python3.9 -m pip install -e .
+        python3.9 -m pip install -U ${{ matrix.recipes-version }}
 
     # FIXME: should gcsfs actually be part of some optional installs in setup.py?
     - name: Install gcsfs
       run: |
-        python -m pip install 'gcsfs==2022.8.2'
+        python3.9 -m pip install 'gcsfs==2022.8.2'
 
     # https://github.com/apache/beam/blob/e8d8043f44113aeeeb181bacc8662c2a2f0f642b/sdks/python/apache_beam/runners/portability/stager.py#L654
     - name: Set beam python
       run: |
-        BEAM_PYTHON=`which python`
+        BEAM_PYTHON=`which python3.9`
         echo "BEAM_PYTHON=${BEAM_PYTHON}" >> $GITHUB_ENV
 
     - name: 'Run Dataflow Integration Test'
