@@ -27,6 +27,10 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ["3.9"]
+        recipes-version: [
+          "pangeo-forge-recipes==0.9.4",
+          "pangeo-forge-recipes==0.10.0",
+        ]
 
     steps:
     - uses: actions/checkout@v3
@@ -43,6 +47,8 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install -r dev-requirements.txt
         python -m pip install -e .
+        python -m pip install -U ${{ matrix.recipes-version }}
+
     # FIXME: should gcsfs actually be part of some optional installs in setup.py?
     - name: Install gcsfs
       run: |

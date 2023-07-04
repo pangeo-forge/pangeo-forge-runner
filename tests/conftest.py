@@ -57,3 +57,18 @@ def minio(local_ip):
         proc.wait()
 
         assert proc.returncode == 0
+
+
+@pytest.fixture
+def recipes_version_ref():
+    # FIXME: recipes version matrix is currently determined by github workflows matrix
+    # in the future, it should be set by pangeo-forge-runner venv feature?
+    pip_list = subprocess.check_output("pip list".split()).decode("utf-8").splitlines()
+    recipes_version = [
+        p.split()[-1] for p in pip_list if p.startswith("pangeo-forge-recipes")
+    ][0]
+    return (
+        "0.9.x"
+        if int(recipes_version.split(".")[1]) < 10
+        else "beam-refactor"  # FIXME: change branch name on test feedstock
+    )
