@@ -41,6 +41,13 @@ jobs:
       uses: 'google-github-actions/auth@v1'
       with:
         credentials_json: '${{ secrets.GCP_DATAFLOW_SERVICE_KEY }}'
+
+    - name: Setup venv
+      run: |
+        python3.9 -m venv env
+        source env/bin/activate
+        echo PATH=$PATH >> $GITHUB_ENV
+
     - name: Install dependencies & our package
       run: |
         python3.9 -m pip install --upgrade pip
