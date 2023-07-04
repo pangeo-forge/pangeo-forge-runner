@@ -69,7 +69,7 @@ class StorageTargetConfig(LoggingConfigurable):
         fsspec_args_filtered = ", ".join(
             f"{k}=<{type(v).__name__}>" for k, v in self.fsspec_args.items()
         )
-        return f'{self.pangeo_forge_target_class.__name__}({self.fsspec_class.__name__}({fsspec_args_filtered}, root_path="{self.root_path}")'
+        return f'{self.pangeo_forge_target_class}({self.fsspec_class.__name__}({fsspec_args_filtered}, root_path="{self.root_path}")'
 
 
 class TargetStorage(StorageTargetConfig):
