@@ -177,6 +177,7 @@ class DataflowBakery(Bakery):
             # https://cloud.google.com/dataflow/docs/guides/using-custom-containers#usage
             experiments=["use_runner_v2"],
             sdk_container_image=container_image,
+            sdk_location="container",
             # https://cloud.google.com/dataflow/docs/resources/faq#how_do_i_handle_nameerrors
             save_main_session=True,
             # this might solve serialization issues; cf. https://beam.apache.org/blog/beam-2.36.0/
