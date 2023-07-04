@@ -19,13 +19,8 @@ def recipes_version_ref():
     ][0]
     return (
         "0.9.x"
-        # FIXME: for now, beam-refactor is unreleased, so installing from the dev branch
-        # gives something like "0.9.1.dev86+g6e9c341" as the version. So we just assume any
-        # version which includes "dev" is the "beam-refactor" branch, because we're not
-        # installing from any other upstream dev branch at this point. After beam-refactor
-        # release, we can figure this out based on an explicit version tag, i.e. "0.10.*".
-        if "dev" not in recipes_version
-        else "beam-refactor"
+        if int(recipes_version.split(".")[1]) < 10
+        else "beam-refactor"  # FIXME: change branch name on test feedstock
     )
 
 
