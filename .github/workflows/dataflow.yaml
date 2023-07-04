@@ -52,6 +52,13 @@ jobs:
     - name: Install gcsfs
       run: |
         python -m pip install 'gcsfs==2022.8.2'
+
+    # https://github.com/apache/beam/blob/e8d8043f44113aeeeb181bacc8662c2a2f0f642b/sdks/python/apache_beam/runners/portability/stager.py#L654
+    - name: Set beam python
+      run: |
+        BEAM_PYTHON=`which python`
+        echo "BEAM_PYTHON=${BEAM_PYTHON}" >> $GITHUB_ENV
+
     - name: 'Run Dataflow Integration Test'
       run: |
         pytest -vvvxs tests/integration/test_dataflow_integration.py
