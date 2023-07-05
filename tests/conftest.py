@@ -67,8 +67,8 @@ def recipes_version_ref():
     recipes_version = [
         p.split()[-1] for p in pip_list if p.startswith("pangeo-forge-recipes")
     ][0]
-    return (
-        "0.9.x"
-        if int(recipes_version.split(".")[1]) < 10
-        else "beam-refactor"  # FIXME: change branch name on test feedstock
-    )
+    # the recipes_version is a 3-element semantic version of form `0.A.B` where A is either minor
+    # version `9` or `10`. the test feedstock (pforgetest/gpcp-from-gcs-feedstock) has tags for
+    # each of these minor versions, of the format `0.A.x`, so we translate the installed version
+    # of pangeo-forge-recipes to one of the valid tags (either `0.9.x` or `0.10.x`) here.
+    return f"0.{recipes_version.split('.')[1]}.x"
