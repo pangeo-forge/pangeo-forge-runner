@@ -170,6 +170,8 @@ class Bake(BaseCommand):
             cache_target = input_cache_storage.get_forge_target(job_name=self.job_name)
             if cache_target:
                 callable_args_injections |= {
+                    # FIXME: a plugin/entrypoint system should handle injections.
+                    # hardcoding object names here assumes too much.
                     "OpenURLWithFSSpec": {"cache": cache_target},
                 }
 
@@ -225,13 +227,28 @@ class Bake(BaseCommand):
                 elif hasattr(recipe, "to_beam"):
                     # We are in pangeo-forge-recipes <=0.9
                     # The import has to be here, as this import is not valid in pangeo-forge-recipes>=0.9
+                    # NOTE: `StorageConfig` only requires a target; input and metadata caches are optional,
+                    # so those are handled conditionally if provided.
                     from pangeo_forge_recipes.storage import StorageConfig
 
                     recipe.storage_config = StorageConfig(
                         target_storage.get_forge_target(job_name=self.job_name),
-                        input_cache_storage.get_forge_target(job_name=self.job_name),
-                        metadata_cache_storage.get_forge_target(job_name=self.job_name),
                     )
+                    for attrname, optional_storage in zip(
+                        ("cache", "metadata"),
+                        (input_cache_storage, metadata_cache_storage),
+                    ):
+                        # `.root_path` is an empty string by default, so if the user has not setup this
+                        # optional storage type in config, this block is skipped.
+                        if optional_storage.root_path:
+                            setattr(
+                                recipe.storage_config,
+                                attrname,
+                                optional_storage.get_forge_target(
+                                    job_name=self.job_name
+                                ),
+                            )
+                    # with configured storage now attached, compile recipe to beam
                     pipeline | recipe.to_beam()
 
                 # Some bakeries are blocking - if Beam is configured to use them, calling

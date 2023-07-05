@@ -9,26 +9,6 @@ import xarray as xr
 from pangeo_forge_runner.commands.bake import Bake
 
 
-@pytest.fixture
-def recipes_version_ref():
-    # FIXME: recipes version matrix is currently determined by github workflows matrix
-    # in the future, it should be set by pangeo-forge-runner venv feature?
-    pip_list = subprocess.check_output("pip list".split()).decode("utf-8").splitlines()
-    recipes_version = [
-        p.split()[-1] for p in pip_list if p.startswith("pangeo-forge-recipes")
-    ][0]
-    return (
-        "0.9.x"
-        # FIXME: for now, beam-refactor is unreleased, so installing from the dev branch
-        # gives something like "0.9.1.dev86+g6e9c341" as the version. So we just assume any
-        # version which includes "dev" is the "beam-refactor" branch, because we're not
-        # installing from any other upstream dev branch at this point. After beam-refactor
-        # release, we can figure this out based on an explicit version tag, i.e. "0.10.*".
-        if "dev" not in recipes_version
-        else "beam-refactor"
-    )
-
-
 @pytest.mark.parametrize(
     "job_name, raises",
     (
@@ -141,12 +121,12 @@ def test_gpcp_bake(
             else:
                 assert job_name.startswith("gh-pforgetest-gpcp-from-gcs-")
 
-            # In beam-refactor, the actual zarr store is produced in a
+            # In pangeo-forge-recipes>=0.10.0, the actual zarr store is produced in a
             # *subpath* of target_storage.rootpath, rather than in the
             # root path itself. This is a compatibility break vs the previous
             # versions of pangeo-forge-recipes. https://github.com/pangeo-forge/pangeo-forge-recipes/pull/495
             # has more information
-            if recipes_version_ref == "beam-refactor":
+            if recipes_version_ref == "0.10.x":
                 zarr_store_path = config["TargetStorage"]["root_path"] + "gpcp/"
             else:
                 zarr_store_path = config["TargetStorage"]["root_path"]

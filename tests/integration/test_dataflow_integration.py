@@ -7,7 +7,7 @@ import pytest
 import xarray as xr
 
 
-def test_dataflow_integration():
+def test_dataflow_integration(recipes_version_ref):
     bucket = "gs://pangeo-forge-runner-ci-testing"
     config = {
         "Bake": {
@@ -38,7 +38,9 @@ def test_dataflow_integration():
             "--repo",
             "https://github.com/pforgetest/gpcp-from-gcs-feedstock.git",
             "--ref",
-            "0.9.x",
+            # in the test feedstock, tags are named for the recipes version
+            # which was used to write the recipe module
+            recipes_version_ref,
             "--json",
             "-f",
             f.name,
@@ -90,10 +92,13 @@ def test_dataflow_integration():
                 pytest.fail(f"{state = } is neither 'Done' nor 'Running'")
 
         # open the generated dataset with xarray!
-        gpcp = xr.open_dataset(
-            config["TargetStorage"]["root_path"].format(job_name=job_name),
-            engine="zarr",
-        )
+        target_path = config["TargetStorage"]["root_path"].format(job_name=job_name)
+        if recipes_version_ref == "0.10.x":
+            # in pangeo-forge-recipes>=0.10.0, an additional `StoreToZarr.store_name` kwarg
+            # is appended to the formatted root path at execution time. for ref `0.10.x`,
+            # the value of that kwarg is "gpcp", so we append that here.
+            target_path += "/gpcp"
+        gpcp = xr.open_dataset(target_path, engine="zarr")
 
         assert (
             gpcp.title
