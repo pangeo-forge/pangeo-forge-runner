@@ -92,10 +92,13 @@ def test_dataflow_integration(recipes_version_ref):
                 pytest.fail(f"{state = } is neither 'Done' nor 'Running'")
 
         # open the generated dataset with xarray!
-        gpcp = xr.open_dataset(
-            config["TargetStorage"]["root_path"].format(job_name=job_name),
-            engine="zarr",
-        )
+        target_path = config["TargetStorage"]["root_path"].format(job_name=job_name)
+        if recipes_version_ref == "0.10.x":
+            # in pangeo-forge-recipes>=0.10.0, an additional `StoreToZarr.store_name` kwarg
+            # is appended to the formatted root path at execution time. for ref `0.10.x`,
+            # the value of that kwarg is "gpcp", so we append that here.
+            target_path += "/gpcp"
+        gpcp = xr.open_dataset(target_path, engine="zarr")
 
         assert (
             gpcp.title
