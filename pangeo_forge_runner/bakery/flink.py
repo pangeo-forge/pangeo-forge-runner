@@ -129,7 +129,8 @@ class FlinkOperatorBakery(Bakery):
     )
 
     parallelism = Integer(
-        -1,
+        None,
+        allow_none=True,
         config=True,
         help="""
         The degree of parallelism to be used when distributing operations onto workers.
@@ -139,7 +140,8 @@ class FlinkOperatorBakery(Bakery):
     )
 
     max_parallelism = Integer(
-        -1,
+        None,
+        allow_none=True,
         config=True,
         help="""
         The pipeline wide maximum degree of parallelism to be used.
