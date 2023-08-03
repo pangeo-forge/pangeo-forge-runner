@@ -10,7 +10,7 @@ import time
 
 import escapism
 from apache_beam.pipeline import PipelineOptions
-from traitlets import Dict, Unicode
+from traitlets import Dict, Integer, Unicode
 
 from .base import Bakery
 
@@ -125,6 +125,26 @@ class FlinkOperatorBakery(Bakery):
 
         Note that this is *not* specified the same way as other resource
         request config on this class.
+        """,
+    )
+
+    parallelism = Integer(
+        -1,
+        config=True,
+        help="""
+        The degree of parallelism to be used when distributing operations onto workers.
+        If the parallelism is not set, the configured Flink default is used,
+        or 1 if none can be found.
+        """,
+    )
+
+    max_parallelism = Integer(
+        -1,
+        config=True,
+        help="""
+        The pipeline wide maximum degree of parallelism to be used.
+        The maximum parallelism specifies the upper limit for dynamic scaling
+        and the number of key groups used for partitioned state.
         """,
     )
 
@@ -250,6 +270,8 @@ class FlinkOperatorBakery(Bakery):
             save_main_session=True,
             # this might solve serialization issues; cf. https://beam.apache.org/blog/beam-2.36.0/
             pickle_library="cloudpickle",
+            parallelism=self.parallelism,
+            max_parallelism=self.max_parallelism,
             **extra_options,
         )
         return PipelineOptions(**opts)
