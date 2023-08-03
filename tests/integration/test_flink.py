@@ -48,9 +48,12 @@ def test_flink_bake(minio):
             "-f",
             f.name,
         ]
-        proc = subprocess.run(cmd)
+        proc = subprocess.run(cmd, capture_output=True)
 
-        assert proc.returncode == 0
+        if proc.returncode != 0:
+            print(proc.stderr.decode())
+
+        assert proc.returncode == 0  # bail if proc did not succeed
 
         # We should have some kinda 'has this completed?' check here
         # Instead, I just wait for 3min
