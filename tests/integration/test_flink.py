@@ -44,7 +44,7 @@ def test_flink_bake(minio):
             "--repo",
             "https://github.com/pangeo-forge/gpcp-feedstock.git",
             "--ref",
-            "2cde04745189665a1f5a05c9eae2a98578de8b7f",
+            "beam-refactor",
             "-f",
             f.name,
         ]
