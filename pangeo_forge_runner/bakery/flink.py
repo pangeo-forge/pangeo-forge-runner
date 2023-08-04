@@ -258,6 +258,13 @@ class FlinkOperatorBakery(Bakery):
 
         print(f"You can run '{' '.join(cmd)}' to make the Flink Dashboard available!")
 
+        for k, v in dict(
+            parallelism=self.parallelism,
+            max_parallelism=self.max_parallelism,
+        ).items():
+            if v:  # if None, don't pass these options to Flink
+                extra_options |= {k: v}
+
         # Set flags explicitly to empty so Apache Beam doesn't try to parse the commandline
         # for pipeline options - we have traitlets doing that for us.
         opts = dict(
@@ -272,8 +279,6 @@ class FlinkOperatorBakery(Bakery):
             save_main_session=True,
             # this might solve serialization issues; cf. https://beam.apache.org/blog/beam-2.36.0/
             pickle_library="cloudpickle",
-            parallelism=self.parallelism,
-            max_parallelism=self.max_parallelism,
             **extra_options,
         )
         return PipelineOptions(**opts)
