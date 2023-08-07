@@ -1,6 +1,7 @@
 """
 Command to run a pangeo-forge recipe
 """
+import hashlib
 import os
 import re
 import time
@@ -208,8 +209,20 @@ class Bake(BaseCommand):
                 extra_options["requirements_file"] = str(requirements_path)
 
             for name, recipe in recipes.items():
+                if len(recipes) > 1:
+                    recipe_name_hash = hashlib.sha256(name.encode()).hexdigest()[:5]
+                    recipe_job_name = self.job_name[: 62 - 6] + "-" + recipe_name_hash
+                    self.log.info(
+                        f"Deploying > 1 recipe. Modifying base {self.job_name = } for recipe "
+                        f"{name = } with {recipe_name_hash = }. Submitting job with modified "
+                        f"{recipe_job_name = }. Note: job names must be <= 63 chars. If base job "
+                        "name was > 57 chars, it was truncated to accomodate modification."
+                    )
+                else:
+                    recipe_job_name = self.job_name
+
                 pipeline_options = bakery.get_pipeline_options(
-                    job_name=self.job_name,
+                    job_name=recipe_job_name,
                     # FIXME: Bring this in from meta.yaml?
                     container_image=self.container_image,
                     extra_options=extra_options,
@@ -254,7 +267,10 @@ class Bake(BaseCommand):
                 # Some bakeries are blocking - if Beam is configured to use them, calling
                 # pipeline.run() blocks. Some are not. We handle that here, and provide
                 # appropriate feedback to the user too.
-                extra = {"recipe": name, "job_name": self.job_name}
+
+                # FIXME: it's potentially very confusing that job_name is not self.job_name here.
+                # let's think about this naming more carefully before merge.
+                extra = {"recipe": name, "job_name": recipe_job_name}
                 if bakery.blocking:
                     self.log.info(
                         f"Running job for recipe {name}\n",

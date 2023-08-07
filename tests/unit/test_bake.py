@@ -1,3 +1,4 @@
+import hashlib
 import json
 import re
 import subprocess
@@ -116,14 +117,19 @@ def test_gpcp_bake(
         else:
             assert proc.returncode == 0
 
-            for line in stdout:
-                if "Running job for recipe gpcp" in line:
-                    job_name = json.loads(line)["job_name"]
+            job_name_logs = [
+                json.loads(line) for line in stdout if "Running job for recipe " in line
+            ]
+            job_names = {line["recipe"]: line["job_name"] for line in job_name_logs}
+            for recipe_name, job_name in job_names.items():
+                if custom_job_name:
+                    assert job_name.startswith(custom_job_name)
+                else:
+                    assert job_name.startswith("gh-pforgetest-gpcp-from-gcs-")
 
-            if custom_job_name:
-                assert job_name == custom_job_name
-            else:
-                assert job_name.startswith("gh-pforgetest-gpcp-from-gcs-")
+                assert job_name.endswith(
+                    hashlib.sha256(recipe_name.encode()).hexdigest()[:5]
+                )
 
             # In pangeo-forge-recipes>=0.10.0, the actual zarr store is produced in a
             # *subpath* of target_storage.rootpath, rather than in the
