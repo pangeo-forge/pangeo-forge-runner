@@ -51,8 +51,12 @@ def test_job_name_validation(job_name, raises):
     ),
 )
 def test_gpcp_bake(
-    minio, recipe_id, expected_error, custom_job_name, recipes_version_ref
+    minio,
+    recipe_id,
+    expected_error,
+    custom_job_name,  # recipes_version_ref
 ):
+    recipes_version_ref = "dictobj"  # FIXME: don't commit this, for development only
     fsspec_args = {
         "key": minio["username"],
         "secret": minio["password"],
@@ -126,25 +130,32 @@ def test_gpcp_bake(
             # root path itself. This is a compatibility break vs the previous
             # versions of pangeo-forge-recipes. https://github.com/pangeo-forge/pangeo-forge-recipes/pull/495
             # has more information
-            if recipes_version_ref == "0.10.x":
-                zarr_store_path = config["TargetStorage"]["root_path"] + "gpcp/"
+            if recipes_version_ref == "dictobj":
+                # if recipes_version_ref == "0.10.x":  # FIXME: uncomment before merge
+                zarr_store_root_path = config["TargetStorage"]["root_path"]
+                zarr_store_full_paths = [
+                    zarr_store_root_path + store_name
+                    for store_name in ["gpcp/", "gpcp-dict-key-0", "gpcp-dict-key-1"]
+                ]
             else:
-                zarr_store_path = config["TargetStorage"]["root_path"]
-            # Open the generated dataset with xarray!
-            gpcp = xr.open_dataset(
-                # We specify a store_name of "gpcp" in the test recipe
-                zarr_store_path,
-                backend_kwargs={"storage_options": fsspec_args},
-                engine="zarr",
-            )
+                zarr_store_full_paths = [config["TargetStorage"]["root_path"]]
+            # Open the generated datasets with xarray!
+            for path in zarr_store_full_paths:
+                print(f"Opening dataset for {path = }")
+                ds = xr.open_dataset(
+                    # We specify a store_name of "gpcp" in the test recipe
+                    path,
+                    backend_kwargs={"storage_options": fsspec_args},
+                    engine="zarr",
+                )
 
-            assert (
-                gpcp.title
-                == "Global Precipitation Climatatology Project (GPCP) Climate Data Record (CDR), Daily V1.3"
-            )
-            # --prune prunes to two time steps by default, so we expect 2 items here
-            assert len(gpcp.precip) == 2
-            print(gpcp)
+                assert (
+                    ds.title
+                    == "Global Precipitation Climatatology Project (GPCP) Climate Data Record (CDR), Daily V1.3"
+                )
+                # --prune prunes to two time steps by default, so we expect 2 items here
+                assert len(ds.precip) == 2
+                print(ds)
 
             # `mc` isn't the best way, but we want to display all the files in our minio
             with tempfile.TemporaryDirectory() as mcd:
