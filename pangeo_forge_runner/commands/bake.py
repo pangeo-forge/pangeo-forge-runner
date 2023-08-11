@@ -159,12 +159,10 @@ class Bake(BaseCommand):
             if not self.job_name:
                 self.job_name = self.autogenerate_job_name()
 
+            target_root = target_storage.get_forge_target(job_name=self.job_name)
             callable_args_injections = {
-                "StoreToZarr": {
-                    "target_root": target_storage.get_forge_target(
-                        job_name=self.job_name
-                    ),
-                }
+                "StoreToZarr": {"target_root": target_root},
+                "WriteCombinedReference": {"target_root": target_root},
             }
 
             cache_target = input_cache_storage.get_forge_target(job_name=self.job_name)
