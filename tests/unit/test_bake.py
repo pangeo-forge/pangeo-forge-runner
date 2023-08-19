@@ -2,9 +2,11 @@ import json
 import re
 import subprocess
 import tempfile
+from importlib.metadata import version
 
 import pytest
 import xarray as xr
+from packaging.version import parse as parse_version
 
 from pangeo_forge_runner.commands.bake import Bake
 
@@ -50,9 +52,7 @@ def test_job_name_validation(job_name, raises):
         [None, None, "special-name-for-job"],
     ),
 )
-def test_gpcp_bake(
-    minio, recipe_id, expected_error, custom_job_name, recipes_version_ref
-):
+def test_gpcp_bake(minio, recipe_id, expected_error, custom_job_name):
     fsspec_args = {
         "key": minio["username"],
         "secret": minio["password"],
@@ -86,6 +86,12 @@ def test_gpcp_bake(
     if custom_job_name:
         config["Bake"].update({"job_name": custom_job_name})
 
+    pfr_version = parse_version(version("pangeo-forge-recipes"))
+    if pfr_version >= parse_version("0.10"):
+        recipe_version_ref = "0.10.x"
+    else:
+        recipe_version_ref = "0.9.x"
+
     with tempfile.NamedTemporaryFile("w", suffix=".json") as f:
         json.dump(config, f)
         f.flush()
@@ -97,7 +103,7 @@ def test_gpcp_bake(
             "--ref",
             # in the test feedstock, tags are named for the recipes version
             # which was used to write the recipe module
-            recipes_version_ref,
+            recipe_version_ref,
             "--json",
             "-f",
             f.name,
@@ -126,7 +132,8 @@ def test_gpcp_bake(
             # root path itself. This is a compatibility break vs the previous
             # versions of pangeo-forge-recipes. https://github.com/pangeo-forge/pangeo-forge-recipes/pull/495
             # has more information
-            if recipes_version_ref == "0.10.x":
+
+            if pfr_version >= parse_version("0.10"):
                 zarr_store_path = config["TargetStorage"]["root_path"] + "gpcp/"
             else:
                 zarr_store_path = config["TargetStorage"]["root_path"]
