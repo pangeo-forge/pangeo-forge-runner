@@ -12,7 +12,7 @@ from packaging.version import parse as parse_version
 def test_dataflow_integration():
     pfr_version = parse_version(version("pangeo-forge-recipes"))
     if pfr_version >= parse_version("0.10"):
-        recipe_version_ref = "0.10.x"
+        recipe_version_ref = "beam-bump"
     else:
         recipe_version_ref = "0.9.x"
     bucket = "gs://pangeo-forge-runner-ci-testing"

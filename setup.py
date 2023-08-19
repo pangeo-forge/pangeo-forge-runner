@@ -19,7 +19,7 @@ setup(
         "pangeo-forge-recipes>=0.9.2",
         "escapism",
         "traitlets",
-        "apache-beam[gcp]==2.48.0",
+        "apache-beam[gcp]",
     ],
     entry_points={
         "console_scripts": ["pangeo-forge-runner=pangeo_forge_runner.cli:main"]
