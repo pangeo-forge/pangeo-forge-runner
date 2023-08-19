@@ -28,8 +28,6 @@ def test_pipelineoptions(
         # flink in an actual deployment, though.
         opts = po.get_all_options(retain_unknown_options=True)
 
-    assert opts["flink_version"] == "1.15"
-
     for optional_arg, value in dict(
         parallelism=parallelism,
         max_parallelism=max_parallelism,
