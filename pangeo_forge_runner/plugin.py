@@ -116,6 +116,17 @@ def get_injectionspecs_from_entrypoints():
         # FIXME: This is a shallow merge, should be a deep merge instead
         injection_specs |= specs
 
+    if injection_specs == {}:
+        # Handle the specific case of pangeo-forge-recipes==0.10.x,
+        # which shipped with beam transforms that need injections, but without
+        # entrypoint based injection specs.
+        injection_specs = {
+            "StoreToZarr": {
+                "target_root": "OUTPUT_ROOT",
+            },
+            "OpenURLWithFSSpec": {"cache": "CACHE_ROOT"},
+        }
+
     return injection_specs
 
 
