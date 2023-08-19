@@ -14,6 +14,7 @@ feedstocks
 ```{toctree}
 :maxdepth: 1
 
+tutorial/local
 tutorial/flink
 ```
 
