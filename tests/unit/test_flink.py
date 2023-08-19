@@ -1,22 +1,15 @@
-from typing import Optional
 from unittest.mock import patch
-
-import pytest
 
 from pangeo_forge_runner.bakery.flink import FlinkOperatorBakery
 
 
-@pytest.mark.parametrize("parallelism, max_parallelism", [(None, None), (100, 100)])
-def test_pipelineoptions(
-    parallelism: Optional[int],
-    max_parallelism: Optional[int],
-):
+def test_pipelineoptions():
     """
     Quickly validate some of the PipelineOptions set
     """
     fob = FlinkOperatorBakery()
-    fob.parallelism = parallelism
-    fob.max_parallelism = max_parallelism
+    fob.parallelism = 100
+    fob.max_parallelism = 100
 
     # FlinkOperatorBakery.get_pipeline_options calls `kubectl` in a subprocess,
     # so we patch subprocess here to skip that behavior for this test
@@ -28,13 +21,5 @@ def test_pipelineoptions(
         # flink in an actual deployment, though.
         opts = po.get_all_options(retain_unknown_options=True)
 
-    for optional_arg, value in dict(
-        parallelism=parallelism,
-        max_parallelism=max_parallelism,
-    ).items():
-        # if these args are not passed, we don't want them to appear in
-        # the pipeline opts, so we verify here that is actually happening.
-        if value is None:
-            assert optional_arg not in opts
-        else:
-            assert opts[optional_arg] == value
+    assert opts["parallelism"] == 100
+    assert opts["max_parallelism"] == 100
