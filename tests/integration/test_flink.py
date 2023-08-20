@@ -42,13 +42,13 @@ def test_flink_bake(minio):
             "pangeo-forge-runner",
             "bake",
             "--repo",
-            "https://github.com/pangeo-forge/gpcp-feedstock.git",
+            "https://github.com/pforgetest/gpcp-from-gcs-feedstock.git",
             "--ref",
-            "2cde04745189665a1f5a05c9eae2a98578de8b7f",
+            "beam-refactor",
             "-f",
             f.name,
         ]
-        proc = subprocess.run(cmd)
+        proc = subprocess.run(cmd, capture_output=True)
 
         assert proc.returncode == 0
 
