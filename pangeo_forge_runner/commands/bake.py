@@ -18,6 +18,10 @@ from ..storage import InputCacheStorage, MetadataCacheStorage, TargetStorage
 from ..stream_capture import redirect_stderr, redirect_stdout
 from .base import BaseCommand, common_aliases, common_flags
 
+PFR_0_9_REQUIREMENTS_FILE_PATH = (
+    Path(__file__).parent / "pangeo-forge-recipes-0.9-requirements.txt"
+)
+
 
 class Bake(BaseCommand):
     """
@@ -216,13 +220,20 @@ class Bake(BaseCommand):
 
             bakery: Bakery = self.bakery_class(parent=self)
 
-            # Check for a requirements.txt file and send it to beam if we have one
-            requirements_path = feedstock.feedstock_dir / "requirements.txt"
             extra_options = {}
-            if requirements_path.exists():
-                extra_options["requirements_file"] = str(requirements_path)
 
             for name, recipe in recipes.items():
+                # if pangeo-forge-recipes is <=0.9, we have to specify a requirements.txt
+                # file even if it isn't present, as the image used otherwise will not have pangeo-forge-recipes
+                if isinstance(recipe, PTransform):
+                    requirements_path = feedstock.feedstock_dir / "requirements.txt"
+                    if requirements_path.exists():
+                        extra_options["requirements_file"] = str(requirements_path)
+                else:
+                    extra_options["requirements_file"] = str(
+                        PFR_0_9_REQUIREMENTS_FILE_PATH
+                    )
+
                 pipeline_options = bakery.get_pipeline_options(
                     job_name=self.job_name,
                     # FIXME: Bring this in from meta.yaml?
