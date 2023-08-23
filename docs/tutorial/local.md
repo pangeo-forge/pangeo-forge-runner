@@ -50,7 +50,7 @@ Construct a `local_config.py` file that describes where the output
 data should go, and what should be used for caching the input files. Since we just
 want to test locally, these can point to the local filesystem!
 
-```
+```python
 # Let's put all our data on the same dir as this config file
 from pathlib import Path
 import os
