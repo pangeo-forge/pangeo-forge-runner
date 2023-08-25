@@ -2,12 +2,19 @@ import json
 import subprocess
 import tempfile
 import time
+from importlib.metadata import version
 
 import pytest
 import xarray as xr
+from packaging.version import parse as parse_version
 
 
-def test_dataflow_integration(recipes_version_ref):
+def test_dataflow_integration():
+    pfr_version = parse_version(version("pangeo-forge-recipes"))
+    if pfr_version >= parse_version("0.10"):
+        recipe_version_ref = "0.10.x"
+    else:
+        recipe_version_ref = "0.9.x"
     bucket = "gs://pangeo-forge-runner-ci-testing"
     config = {
         "Bake": {
@@ -40,7 +47,7 @@ def test_dataflow_integration(recipes_version_ref):
             "--ref",
             # in the test feedstock, tags are named for the recipes version
             # which was used to write the recipe module
-            recipes_version_ref,
+            recipe_version_ref,
             "--json",
             "-f",
             f.name,
@@ -93,8 +100,8 @@ def test_dataflow_integration(recipes_version_ref):
 
         # open the generated dataset with xarray!
         target_path = config["TargetStorage"]["root_path"].format(job_name=job_name)
-        if recipes_version_ref == "0.10.x":
-            # in pangeo-forge-recipes>=0.10.0, an additional `StoreToZarr.store_name` kwarg
+        if pfr_version >= parse_version("0.10"):
+            # in pangeo-forge-eecipes>=0.10.0, an additional `StoreToZarr.store_name` kwarg
             # is appended to the formatted root path at execution time. for ref `0.10.x`,
             # the value of that kwarg is "gpcp", so we append that here.
             target_path += "/gpcp"

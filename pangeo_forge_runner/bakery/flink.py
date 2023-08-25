@@ -10,7 +10,7 @@ import time
 
 import escapism
 from apache_beam.pipeline import PipelineOptions
-from traitlets import Dict, Unicode
+from traitlets import Dict, Integer, Unicode
 
 from .base import Bakery
 
@@ -128,6 +128,28 @@ class FlinkOperatorBakery(Bakery):
         """,
     )
 
+    parallelism = Integer(
+        None,
+        allow_none=True,
+        config=True,
+        help="""
+        The degree of parallelism to be used when distributing operations onto workers.
+        If the parallelism is not set, the configured Flink default is used,
+        or 1 if none can be found.
+        """,
+    )
+
+    max_parallelism = Integer(
+        None,
+        allow_none=True,
+        config=True,
+        help="""
+        The pipeline wide maximum degree of parallelism to be used.
+        The maximum parallelism specifies the upper limit for dynamic scaling
+        and the number of key groups used for partitioned state.
+        """,
+    )
+
     def make_flink_deployment(self, name: str, worker_image: str):
         """
         Return YAML for a FlinkDeployment
@@ -235,6 +257,13 @@ class FlinkOperatorBakery(Bakery):
         listen_port = listen_address.rsplit(":", 1)[1]
 
         print(f"You can run '{' '.join(cmd)}' to make the Flink Dashboard available!")
+
+        for k, v in dict(
+            parallelism=self.parallelism,
+            max_parallelism=self.max_parallelism,
+        ).items():
+            if v:  # if None, don't pass these options to Flink
+                extra_options |= {k: v}
 
         # Set flags explicitly to empty so Apache Beam doesn't try to parse the commandline
         # for pipeline options - we have traitlets doing that for us.
