@@ -1,6 +1,4 @@
-# Same as https://github.com/pangeo-forge/pangeo-forge-recipes/blob/main/.github/workflows/release.yaml
-
-name: Release Python Package
+name: Release
 
 on:
   release:
@@ -9,6 +7,10 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: release
+    permissions:
+      id-token: write
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python
@@ -19,12 +21,13 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install --upgrade setuptools setuptools-scm wheel twine toml
-      - name: Build and publish
-        env:
-          TWINE_USERNAME: "__token__"
-          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+      - name: Build
         run: |
           python setup.py sdist bdist_wheel
           python setup.py --version
           twine check dist/*
-          twine upload dist/*
+          ls -l dist
+      - name: Publish
+        uses: pypa/gh-action-pypi-publish@release/v1
+        if: startsWith(github.ref, 'refs/tags/')
+  
