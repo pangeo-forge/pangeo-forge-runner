@@ -76,13 +76,22 @@ class Feedstock:
         """
         recipes = {}
         recipes_config = self.meta.get("recipes")
-        if isinstance(recipes_config, list):
-            for r in recipes_config:
+        if not isinstance(recipes_config, list) and all(
+            [isinstance(r, dict) for r in recipes_config]
+        ):
+            # TODO: make error message more descriptive (print recipes_config and give example)
+            raise ValueError("Recipes config must be a list of mappings.")
+        for r in recipes_config:
+            if {"id", "object"} == set(r.keys()):
                 recipes[r["id"]] = self._import(r["object"])
-        elif isinstance(recipes_config, dict):
-            recipes = self._import(recipes_config["dict_object"])
-        else:
-            raise ValueError("Could not parse recipes config in meta.yaml")
+            elif {"dict_object"} == set(r.keys()):
+                dict_object = self._import(r["dict_object"])
+                for k, v in dict_object.items():
+                    recipes[k] = v
+            else:
+                raise ValueError(
+                    f"Could not parse item {r =} in meta.yaml recipes config."
+                )
 
         return recipes
 
