@@ -7,7 +7,7 @@ from contextlib import contextmanager
 
 from pythonjsonlogger import jsonlogger
 from repo2docker import contentproviders
-from traitlets import Bool, Instance, List, Unicode
+from traitlets import Bool, Dict, Instance, List, Unicode
 from traitlets.config import Application
 
 # Common aliases we want to support in *all* commands
@@ -40,6 +40,21 @@ class BaseCommand(Application):
     """
 
     log_level = logging.INFO
+
+    logging_config = Dict(
+        {},
+        config=True,
+        help="""
+        Logging configuration for this python application.
+
+        When set, this value is passed to logging.config.dictConfig,
+        and can be used to configure how logs *throughout the application*
+        are handled, not just for logs from this application alone.
+
+        See https://docs.python.org/3/library/logging.config.html#logging.config.dictConfig
+        for more details.
+        """,
+    )
 
     repo = Unicode(
         "",
@@ -196,8 +211,26 @@ class BaseCommand(Application):
 
     def initialize(self, argv=None):
         super().initialize(argv)
-        # Load traitlets config from a config file if present
-        self.load_config_file(self.config_file)
+        # Load traitlets config from a config file if passed
+        if self.config_file:
+            self.load_config_file(self.config_file)
+            if (
+                not os.path.exists(self.config_file)
+                and self.config_file != "pangeo_forge_runner_config.py"
+            ):
+                # Throw an explicit error and exit if config file isn't present
+                print(
+                    f"Could not read config from file {self.config_file}. Make sure it exists and is readable",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
+
+        # Allow arbitrary logging config if set
+        # We do this first up so any custom logging we set up ourselves
+        # is not affected, as by default dictConfig will replace all
+        # existing config.
+        if self.logging_config:
+            logging.config.dictConfig(self.logging_config)
 
         # The application communicates with the outside world via
         # stdout, and we structure this communication via logging.
