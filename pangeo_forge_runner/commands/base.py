@@ -211,8 +211,19 @@ class BaseCommand(Application):
 
     def initialize(self, argv=None):
         super().initialize(argv)
-        # Load traitlets config from a config file if present
-        self.load_config_file(self.config_file)
+        # Load traitlets config from a config file if passed
+        if self.config_file:
+            self.load_config_file(self.config_file)
+            if (
+                not os.path.exists(self.config_file)
+                and self.config_file != "pangeo_forge_runner_config.py"
+            ):
+                # Throw an explicit error and exit if config file isn't present
+                print(
+                    f"Could not read config from file {self.config_file}. Make sure it exists and is readable",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
 
         # Allow arbitrary logging config if set
         # We do this first up so any custom logging we set up ourselves
