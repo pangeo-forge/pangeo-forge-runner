@@ -216,7 +216,7 @@ class BaseCommand(Application):
             self.load_config_file(self.config_file)
             if (
                 not os.path.exists(self.config_file)
-                and not self.config_file == "pangeo_forge_runner_config.py"
+                and self.config_file != "pangeo_forge_runner_config.py"
             ):
                 # Throw an explicit error and exit if config file isn't present
                 print(
