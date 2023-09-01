@@ -213,7 +213,7 @@ class BaseCommand(Application):
         super().initialize(argv)
         # Load traitlets config from a config file if passed
         if self.config_file:
-            if os.path.exists(self.config_file):
+            if not os.path.exists(self.config_file):
                 # Throw an explicit error and exit if config file isn't present
                 print(
                     f"Could not read config from file {self.config_file}. Make sure it exists and is readable",
