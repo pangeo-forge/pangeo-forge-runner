@@ -24,3 +24,11 @@ tutorial/flink
 
 reference/index
 ```
+
+## Development
+
+```{toctree}
+:maxdepth: 2
+
+development/release
+```
