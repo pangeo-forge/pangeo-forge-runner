@@ -6,4 +6,4 @@ some_callable(
     some_argument=_CALLABLE_ARGS_INJECTIONS.get("some_callable", {}).get(  # noqa
         "some_argument"
     )
-).some_func()
+).with_resource_hints()
