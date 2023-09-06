@@ -20,9 +20,7 @@ from ast import (
     fix_missing_locations,
     keyword,
 )
-from typing import Optional, TypeVar
-
-N = TypeVar("N")
+from typing import Optional
 
 
 class RecipeRewriter(NodeTransformer):
@@ -116,7 +114,7 @@ class RecipeRewriter(NodeTransformer):
             keywords=[],
         )
 
-    def inject_keywords(self, node: N) -> N:
+    def inject_keywords(self, node: Call) -> Call:
         """ """
         for name, params in self.callable_args_injections.items():
             if hasattr(node.func, "id") and name == node.func.id:
