@@ -115,9 +115,10 @@ class RecipeRewriter(NodeTransformer):
         )
 
     def inject_keywords(self, node: Call) -> Call:
-        """ """
+        """Inject keywords into calls."""
         for name, params in self.callable_args_injections.items():
             if hasattr(node.func, "id") and name == node.func.id:
+                # this is a non-chained call, so append to top-level `.keywords`
                 node.keywords += [
                     keyword(
                         arg=k,
@@ -129,6 +130,7 @@ class RecipeRewriter(NodeTransformer):
                 ]
 
             elif hasattr(node.func, "value") and name == node.func.value.func.id:
+                # this is a *chained* call, so append to `.func.value.keywords`
                 node.func.value.keywords += [
                     keyword(
                         arg=k,
