@@ -44,6 +44,14 @@ class StorageTargetConfig(LoggingConfigurable):
         """,
     )
 
+    pangeo_forge_target_class_args = Dict(
+        {},
+        config=True,
+        help="""
+        Args to pass to pangeo_forge_target_class during instantiation
+        """,
+    )
+
     def get_forge_target(self, job_name: str):
         """
         Return correct pangeo-forge-recipes Target
@@ -59,6 +67,7 @@ class StorageTargetConfig(LoggingConfigurable):
         return cls(
             self.fsspec_class(**self.fsspec_args),
             root_path=self.root_path.format(job_name=job_name),
+            **self.pangeo_forge_target_class_args,
         )
 
     def __str__(self):
