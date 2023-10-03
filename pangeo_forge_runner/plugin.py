@@ -22,10 +22,11 @@ There are three parts of injections:
 
    `<value-spec>` specifies what value should be injected. Currently
    supported are two strings:
-   1. `OUTPUT_ROOT` - Root path that *output* should be written to. Will
-      be an FSSpec path.
-   2. `CACHE_ROOT` - (Optional) Root path that should be used for caching
-      input values if necessary.
+   1. `TARGET_STORAGE` - Storage that a pipeline *output* should be written to.
+       Will be passed as a `pangeo_forge_recipes.storage.FSSpecTarget` object.
+   2. `INPUT_CACHE_STORAGE` - (Optional) Storage used for caching inputs.
+       Will be passed as a `pangeo_forge_recipes.storage.CacheFSSpecTarget` object.
+
 
    Additional values may be provided in the future.
 
@@ -34,10 +35,10 @@ There are three parts of injections:
    ```
     {
         'StoreToZarr': {
-            'target_root': 'OUTPUT_ROOT',
+            'target_root': 'TARGET_STORAGE',
         },
         'OpenURLWithFSSpec': {
-            'cache': 'CACHE_ROOT'
+            'cache': 'INPUT_CACHE_STORAGE'
         }
     }
     ```
@@ -52,8 +53,8 @@ There are three parts of injections:
 
    ```
    {
-     "OUTPUT_ROOT": <A fsspec object>,
-     "CACHE_ROOT": <another fsspec object>
+     "TARGET_STORAGE": <A `pangeo_forge_recipes.storage.FSSpecTarget` object>,
+     "INPUT_CACHE_STORAGE": <A `pangeo_forge_recipes.storage.CacheFSSpecTarget` object>
    }
    ```
 3. "Injections", ready to be passed on to the rewriter! This merges (1) and (2),
@@ -61,10 +62,10 @@ There are three parts of injections:
    ```
     {
         'StoreToZarr': {
-            'target_root': <An fsspec object pointing to output for this run>
+            'target_root': <A `pangeo_forge_recipes.storage.FSSpecTarget` object>
         },
         'OpenURLWithFSSpec': {
-            'cache': <Another fsspec object pointing to where this bakery stores cache>
+            'cache': <A `pangeo_forge_recipes.storage.CacheFSSpecTarget` object>
         }
     }
    ```
@@ -88,7 +89,10 @@ INJECTION_SPEC_SCHEMA = {
             # Second level keys represent attribute names in the callable, and are also arbitray.
             "patternProperties": {
                 # Value of the second level keys is restricted to just these two
-                ".+": {"type": "string", "enum": ["OUTPUT_ROOT", "CACHE_ROOT"]}
+                ".+": {
+                    "type": "string",
+                    "enum": ["TARGET_STORAGE", "INPUT_CACHE_STORAGE"],
+                }
             },
         }
     },
@@ -122,12 +126,12 @@ def get_injectionspecs_from_entrypoints():
         # entrypoint based injection specs.
         injection_specs = {
             "StoreToZarr": {
-                "target_root": "OUTPUT_ROOT",
+                "target_root": "TARGET_STORAGE",
             },
             "WriteCombinedReference": {
-                "target_root": "OUTPUT_ROOT",
+                "target_root": "TARGET_STORAGE",
             },
-            "OpenURLWithFSSpec": {"cache": "CACHE_ROOT"},
+            "OpenURLWithFSSpec": {"cache": "INPUT_CACHE_STORAGE"},
         }
 
     return injection_specs
