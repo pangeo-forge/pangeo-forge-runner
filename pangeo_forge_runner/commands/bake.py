@@ -176,12 +176,14 @@ class Bake(BaseCommand):
                 self.job_name = self.autogenerate_job_name()
 
             injection_values = {
-                "OUTPUT_ROOT": target_storage.get_forge_target(job_name=self.job_name),
+                "TARGET_STORAGE": target_storage.get_forge_target(
+                    job_name=self.job_name
+                ),
             }
 
             cache_target = input_cache_storage.get_forge_target(job_name=self.job_name)
             if cache_target:
-                injection_values |= {"CACHE_ROOT": cache_target}
+                injection_values |= {"INPUT_CACHE_STORAGE": cache_target}
             print(injection_values)
             print(injection_specs)
 
