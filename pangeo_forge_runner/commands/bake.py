@@ -14,6 +14,7 @@ from traitlets import Bool, Type, Unicode, validate
 from .. import Feedstock
 from ..bakery.base import Bakery
 from ..bakery.local import LocalDirectBakery
+from ..plugin import get_injections, get_injectionspecs_from_entrypoints
 from ..storage import InputCacheStorage, MetadataCacheStorage, TargetStorage
 from ..stream_capture import redirect_stderr, redirect_stdout
 from .base import BaseCommand, common_aliases, common_flags
@@ -168,30 +169,30 @@ class Bake(BaseCommand):
             extra={"status": "setup"},
         )
 
+        injection_specs = get_injectionspecs_from_entrypoints()
+
         with self.fetch() as checkout_dir:
             if not self.job_name:
                 self.job_name = self.autogenerate_job_name()
 
-            callable_args_injections = {
-                "StoreToZarr": {
-                    "target_root": target_storage.get_forge_target(
-                        job_name=self.job_name
-                    ),
-                }
+            injection_values = {
+                "TARGET_STORAGE": target_storage.get_forge_target(
+                    job_name=self.job_name
+                ),
             }
 
             cache_target = input_cache_storage.get_forge_target(job_name=self.job_name)
             if cache_target:
-                callable_args_injections |= {
-                    # FIXME: a plugin/entrypoint system should handle injections.
-                    # hardcoding object names here assumes too much.
-                    "OpenURLWithFSSpec": {"cache": cache_target},
-                }
+                injection_values |= {"INPUT_CACHE_STORAGE": cache_target}
+            print(injection_values)
+            print(injection_specs)
 
             feedstock = Feedstock(
                 Path(checkout_dir) / self.feedstock_subdir,
                 prune=self.prune,
-                callable_args_injections=callable_args_injections,
+                callable_args_injections=get_injections(
+                    injection_specs, injection_values
+                ),
             )
 
             self.log.info("Parsing recipes...", extra={"status": "running"})
