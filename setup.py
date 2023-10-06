@@ -23,6 +23,14 @@ setup(
         # specified in bake.py's container_image traitlet default
         "apache-beam[gcp]==2.42.0",
     ],
+    extras_require={
+        "dask": [
+            # Pinning upper bound to `2023.9.2` as a workaround until the following fix goes in:
+            # https://github.com/apache/beam/pull/27618/files#diff-bfb5ae715e9067778f492058e8a02ff877d6e7584624908ddbdd316853e6befbL102-R107
+            "dask>=2022.6.0,<2023.9.3",
+            "distributed>=2022.6.0,<2023.9.3",
+        ],
+    },
     entry_points={
         "console_scripts": ["pangeo-forge-runner=pangeo_forge_runner.cli:main"]
     },
