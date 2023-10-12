@@ -182,12 +182,7 @@ class DataflowBakery(Bakery):
             save_main_session=True,
             # this might solve serialization issues; cf. https://beam.apache.org/blog/beam-2.36.0/
             pickle_library="cloudpickle",
-<<<<<<< HEAD
-            machine_type=self.machine_type,
-            **extra_options
-=======
             **(sizing_options | extra_options)
->>>>>>> main
         )
         if self.service_account_email:
             opts.update({"service_account_email": self.service_account_email})

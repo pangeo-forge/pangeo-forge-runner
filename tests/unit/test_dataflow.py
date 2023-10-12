@@ -74,11 +74,7 @@ def test_pipelineoptions():
     dfb.temp_gcs_location = "gs://something"
 
     po = dfb.get_pipeline_options(
-<<<<<<< HEAD:tests/test_dataflow.py
-        "job", "some-container:some-tag", {"setup_file": "something/setup.py"}
-=======
         "job", "some-container:some-tag", {"requirements_file": "/tmp/some-file"}
->>>>>>> main:tests/unit/test_dataflow.py
     )
     opts = po.get_all_options()
     assert opts["project"] == "hello"
@@ -92,11 +88,7 @@ def test_pipelineoptions():
     assert opts["sdk_container_image"] == "some-container:some-tag"
     assert opts["job_name"] == "job"
     assert opts["runner"] == "DataflowRunner"
-<<<<<<< HEAD:tests/test_dataflow.py
-    assert opts["setup_file"] == "something/setup.py"
-=======
     assert opts["requirements_file"] == "/tmp/some-file"
->>>>>>> main:tests/unit/test_dataflow.py
 
 
 def test_required_params():
