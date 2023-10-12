@@ -222,63 +222,88 @@ class Bake(BaseCommand):
                 extra_options["requirements_file"] = str(requirements_path)
 
             for name, recipe in recipes.items():
-                pipeline_options = bakery.get_pipeline_options(
-                    job_name=self.job_name,
-                    # FIXME: Bring this in from meta.yaml?
-                    container_image=self.container_image,
-                    extra_options=extra_options,
-                )
-
-                # Set argv explicitly to empty so Apache Beam doesn't try to parse the commandline
-                # for pipeline options - we have traitlets doing that for us.
-                pipeline = Pipeline(options=pipeline_options, argv=[])
-                # Chain our recipe to the pipeline. This mutates the `pipeline` object!
-                # We expect `recipe` to either be a beam PTransform, or an object with a 'to_beam'
-                # method that returns a transform.
-                if isinstance(recipe, PTransform):
-                    # This means we are in pangeo-forge-recipes >=0.9
-                    pipeline | recipe
-                elif hasattr(recipe, "to_beam"):
-                    # We are in pangeo-forge-recipes <=0.9
-                    # The import has to be here, as this import is not valid in pangeo-forge-recipes>=0.9
-                    # NOTE: `StorageConfig` only requires a target; input and metadata caches are optional,
-                    # so those are handled conditionally if provided.
-                    from pangeo_forge_recipes.storage import StorageConfig
-
-                    recipe.storage_config = StorageConfig(
-                        target_storage.get_forge_target(job_name=self.job_name),
+                with feedstock.generate_setup_py() as setup_path:
+                    extra_options["setup_file"] = setup_path
+                    pipeline_options = bakery.get_pipeline_options(
+                        job_name=self.job_name,
+                        # FIXME: Bring this in from meta.yaml?
+                        container_image=self.container_image,
+                        extra_options=extra_options,
                     )
-                    for attrname, optional_storage in zip(
-                        ("cache", "metadata"),
-                        (input_cache_storage, metadata_cache_storage),
-                    ):
-                        # `.root_path` is an empty string by default, so if the user has not setup this
-                        # optional storage type in config, this block is skipped.
-                        if optional_storage.root_path:
-                            setattr(
-                                recipe.storage_config,
-                                attrname,
-                                optional_storage.get_forge_target(
-                                    job_name=self.job_name
-                                ),
+                    # Set argv explicitly to empty so Apache Beam doesn't try to parse the commandline
+                    # for pipeline options - we have traitlets doing that for us.
+                    pipeline = Pipeline(options=pipeline_options, argv=[])
+                    # Chain our recipe to the pipeline. This mutates the `pipeline` object!
+                    # We expect `recipe` to either be a beam PTransform, or an object with a 'to_beam'
+                    # method that returns a transform.
+                    if isinstance(recipe, PTransform):
+                        # This means we are in pangeo-forge-recipes >=0.9
+                        pipeline | recipe
+                    elif hasattr(recipe, "to_beam"):
+                        # We are in pangeo-forge-recipes <=0.9
+                        # The import has to be here, as this import is not valid in pangeo-forge-recipes>=0.9
+                        # NOTE: `StorageConfig` only requires a target; input and metadata caches are optional,
+                        # so those are handled conditionally if provided.
+                        from pangeo_forge_recipes.storage import StorageConfig
+
+                        recipe.storage_config = StorageConfig(
+                            target_storage.get_forge_target(job_name=self.job_name),
+                        )
+                        for attrname, optional_storage in zip(
+                            ("cache", "metadata"),
+                            (input_cache_storage, metadata_cache_storage),
+                        ):
+                            # `.root_path` is an empty string by default, so if the user has not setup this
+                            # optional storage type in config, this block is skipped.
+                            if optional_storage.root_path:
+                                setattr(
+                                    recipe.storage_config,
+                                    attrname,
+                                    optional_storage.get_forge_target(
+                                        job_name=self.job_name
+                                    ),
+                                )
+                        # with configured storage now attached, compile recipe to beam
+                        pipeline | recipe.to_beam()
+
+                    # Some bakeries are blocking - if Beam is configured to use them, calling
+                    # pipeline.run() blocks. Some are not. We handle that here, and provide
+                    # appropriate feedback to the user too.
+                    extra = {"recipe": name, "job_name": self.job_name}
+                    if bakery.blocking:
+                        self.log.info(
+                            f"Running job for recipe {name}\n",
+                            extra=extra | {"status": "running"},
+                        )
+                        pipeline.run()
+                    else:
+                        result = pipeline.run()
+                        job_id = result.job_id()
+                        self.log.info(
+                            f"Submitted job {job_id} for recipe {name}",
+                            extra=extra | {"job_id": job_id, "status": "submitted"},
+                        )
+
+                        # Set argv explicitly to empty so Apache Beam doesn't try to parse the commandline
+                        # for pipeline options - we have traitlets doing that for us.
+                        pipeline = Pipeline(options=pipeline_options, argv=[])
+                        # Chain our recipe to the pipeline. This mutates the `pipeline` object!
+                        pipeline | recipe.to_beam()
+
+                        # Some bakeries are blocking - if Beam is configured to use them, calling
+                        # pipeline.run() blocks. Some are not. We handle that here, and provide
+                        # appropriate feedback to the user too.
+                        extra = {"recipe": name, "job_name": self.job_name}
+                        if bakery.blocking:
+                            self.log.info(
+                                f"Running job for recipe {name}\n",
+                                extra=extra | {"status": "running"},
                             )
-                    # with configured storage now attached, compile recipe to beam
-                    pipeline | recipe.to_beam()
-
-                # Some bakeries are blocking - if Beam is configured to use them, calling
-                # pipeline.run() blocks. Some are not. We handle that here, and provide
-                # appropriate feedback to the user too.
-                extra = {"recipe": name, "job_name": self.job_name}
-                if bakery.blocking:
-                    self.log.info(
-                        f"Running job for recipe {name}\n",
-                        extra=extra | {"status": "running"},
-                    )
-                    pipeline.run()
-                else:
-                    result = pipeline.run()
-                    job_id = result.job_id()
-                    self.log.info(
-                        f"Submitted job {job_id} for recipe {name}",
-                        extra=extra | {"job_id": job_id, "status": "submitted"},
-                    )
+                            pipeline.run()
+                        else:
+                            result = pipeline.run()
+                            job_id = result.job_id()
+                            self.log.info(
+                                f"Submitted job {job_id} for recipe {name}",
+                                extra=extra | {"job_id": job_id, "status": "submitted"},
+                            )
