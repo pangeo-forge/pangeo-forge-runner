@@ -221,15 +221,15 @@ class Bake(BaseCommand):
             if requirements_path.exists():
                 extra_options["requirements_file"] = str(requirements_path)
 
-
             for name, recipe in recipes.items():
                 with feedstock.generate_setup_py() as setup_path:
-                    extra_options["setup_file"] =  setup_path
+                    extra_options["setup_file"] = setup_path
                     pipeline_options = bakery.get_pipeline_options(
                         job_name=self.job_name,
                         # FIXME: Bring this in from meta.yaml?
                         container_image=self.container_image,
-                        extra_options=extra_options)
+                        extra_options=extra_options,
+                    )
                     # Set argv explicitly to empty so Apache Beam doesn't try to parse the commandline
                     # for pipeline options - we have traitlets doing that for us.
                     pipeline = Pipeline(options=pipeline_options, argv=[])
@@ -293,7 +293,7 @@ class Bake(BaseCommand):
                         # Some bakeries are blocking - if Beam is configured to use them, calling
                         # pipeline.run() blocks. Some are not. We handle that here, and provide
                         # appropriate feedback to the user too.
-                        extra = {"recipe": name, "job_name": job_name}
+                        extra = {"recipe": name, "job_name": self.job_name}
                         if bakery.blocking:
                             self.log.info(
                                 f"Running job for recipe {name}\n",

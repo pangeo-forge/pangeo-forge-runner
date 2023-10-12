@@ -1,9 +1,9 @@
+import ast
 import os
 from contextlib import contextmanager
 from copy import deepcopy
 from pathlib import Path
 from textwrap import dedent
-import ast
 from typing import Optional
 
 from ruamel.yaml import YAML
