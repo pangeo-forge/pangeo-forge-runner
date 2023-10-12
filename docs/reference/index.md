@@ -16,4 +16,5 @@ in `.json` or `.py` format
 bakery
 storage
 commands
+glossary
 ```

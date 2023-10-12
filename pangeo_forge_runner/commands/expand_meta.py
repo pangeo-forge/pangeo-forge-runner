@@ -1,5 +1,4 @@
 import json
-import tempfile
 from pathlib import Path
 
 from .. import Feedstock
@@ -19,9 +18,8 @@ class ExpandMeta(BaseCommand):
     flags = common_flags
 
     def start(self):
-        with tempfile.TemporaryDirectory() as d:
-            self.fetch(d)
-            feedstock = Feedstock(Path(d) / self.feedstock_subdir)
+        with self.fetch() as checkout_dir:
+            feedstock = Feedstock(Path(checkout_dir) / self.feedstock_subdir)
             with redirect_stderr(self.log, {"status": "running"}), redirect_stdout(
                 self.log, {"status": "running"}
             ):

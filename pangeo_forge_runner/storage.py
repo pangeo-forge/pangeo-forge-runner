@@ -1,5 +1,4 @@
 from fsspec import AbstractFileSystem
-from pangeo_forge_recipes.storage import CacheFSSpecTarget, FSSpecTarget, MetadataTarget
 from traitlets import Dict, Type, Unicode
 from traitlets.config import LoggingConfigurable
 
@@ -36,10 +35,10 @@ class StorageTargetConfig(LoggingConfigurable):
         """,
     )
 
-    pangeo_forge_target_class = Type(
+    pangeo_forge_target_class = Unicode(
         config=False,
         help="""
-        StorageConfig class from pangeo_forge_recipes to instantiate.
+        Name of StorageConfig class from pangeo_forge_recipes to instantiate.
 
         Should be set by subclasses.
         """,
@@ -51,9 +50,15 @@ class StorageTargetConfig(LoggingConfigurable):
 
         If {job_name} is present in `root_path`, it is expanded with the given job_name
         """
-        return self.pangeo_forge_target_class(
+        # import dynamically on call, because different versions of `pangeo-forge-recipes.storage`
+        # contain different objects, so a static top-level import cannot be used.
+        from pangeo_forge_recipes import storage
+
+        cls = getattr(storage, self.pangeo_forge_target_class)
+
+        return cls(
             self.fsspec_class(**self.fsspec_args),
-            root_path=self.root_path.format(job_id=job_name),
+            root_path=self.root_path.format(job_name=job_name),
         )
 
     def __str__(self):
@@ -64,7 +69,7 @@ class StorageTargetConfig(LoggingConfigurable):
         fsspec_args_filtered = ", ".join(
             f"{k}=<{type(v).__name__}>" for k, v in self.fsspec_args.items()
         )
-        return f'{self.pangeo_forge_target_class.__name__}({self.fsspec_class.__name__}({fsspec_args_filtered}, root_path="{self.root_path}")'
+        return f'{self.pangeo_forge_target_class}({self.fsspec_class.__name__}({fsspec_args_filtered}, root_path="{self.root_path}")'
 
 
 class TargetStorage(StorageTargetConfig):
@@ -72,7 +77,7 @@ class TargetStorage(StorageTargetConfig):
     Storage configuration for where the baked data should be stored
     """
 
-    pangeo_forge_target_class = FSSpecTarget
+    pangeo_forge_target_class = "FSSpecTarget"
 
 
 class InputCacheStorage(StorageTargetConfig):
@@ -80,7 +85,7 @@ class InputCacheStorage(StorageTargetConfig):
     Storage configuration for caching input files during recipe baking
     """
 
-    pangeo_forge_target_class = CacheFSSpecTarget
+    pangeo_forge_target_class = "CacheFSSpecTarget"
 
 
 class MetadataCacheStorage(StorageTargetConfig):
@@ -88,4 +93,4 @@ class MetadataCacheStorage(StorageTargetConfig):
     Storage configuration for caching metadata during recipe baking
     """
 
-    pangeo_forge_target_class = MetadataTarget
+    pangeo_forge_target_class = "MetadataTarget"

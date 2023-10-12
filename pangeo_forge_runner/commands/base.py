@@ -1,9 +1,13 @@
 import logging
+import os
 import sys
+import tempfile
+from collections.abc import Generator
+from contextlib import contextmanager
 
 from pythonjsonlogger import jsonlogger
 from repo2docker import contentproviders
-from traitlets import Bool, List, Unicode
+from traitlets import Bool, Dict, Instance, List, Unicode
 from traitlets.config import Application
 
 # Common aliases we want to support in *all* commands
@@ -37,6 +41,21 @@ class BaseCommand(Application):
 
     log_level = logging.INFO
 
+    logging_config = Dict(
+        {},
+        config=True,
+        help="""
+        Logging configuration for this python application.
+
+        When set, this value is passed to logging.config.dictConfig,
+        and can be used to configure how logs *throughout the application*
+        are handled, not just for logs from this application alone.
+
+        See https://docs.python.org/3/library/logging.config.html#logging.config.dictConfig
+        for more details.
+        """,
+    )
+
     repo = Unicode(
         "",
         config=True,
@@ -59,6 +78,17 @@ class BaseCommand(Application):
 
         Optional, only used for some methods of fetching (such as git or
         mercurial)
+        """,
+    )
+
+    picked_content_provider = Instance(
+        klass=contentproviders.base.ContentProvider,
+        config=False,
+        allow_none=True,
+        help="""
+        Non-configurable picked content provider set by self.fetch()
+
+        Helpful for subcommands to access the content provider in use
         """,
     )
 
@@ -122,38 +152,49 @@ class BaseCommand(Application):
         """,
     )
 
-    def fetch(self, target_path):
+    @contextmanager
+    def fetch(self) -> Generator[str, None, None]:
         """
-        Fetch repo from url at ref, and check it out to checkout_path
+        Fetch repo from configured url at ref, and return a directory where it can be accessed.
 
-        Uses repo2docker to detect what kinda url is going to be checked out,
-        and fetches it into checkout_path. No image building or anything is
-        performed.
-
-        checkout_path should be empty.
+        If self.repo is a local directory that exists, it is just returned - no extra
+        processing is done. If not, repo2docker is used to detect what kind of URL
+        is to be checked out (git, zenodo, mercurial, etc) and that is checked out into
+        a temporary directory, the path of which is returned. When the contextmanager
+        exits, the temporary directory is cleaned up.
         """
-        picked_content_provider = None
-        for ContentProvider in self.content_providers:
-            cp = ContentProvider()
-            spec = cp.detect(self.repo, ref=self.ref)
-            if spec is not None:
-                picked_content_provider = cp
-                self.log.info(
-                    "Picked {cp} content "
-                    "provider.\n".format(cp=cp.__class__.__name__),
-                    extra={"status": "fetching"},
+        if os.path.exists(self.repo):
+            # We are trying to submit off a local checkout, so we don't need to do much
+            checkout_dir = self.repo
+
+            yield checkout_dir
+
+            # No cleanup necessary
+            return
+        with tempfile.TemporaryDirectory() as checkout_dir:
+            for ContentProvider in self.content_providers:
+                cp = ContentProvider()
+                spec = cp.detect(self.repo, ref=self.ref)
+                if spec is not None:
+                    self.picked_content_provider = cp
+                    self.log.info(
+                        "Picked {cp} content "
+                        "provider.\n".format(cp=cp.__class__.__name__),
+                        extra={"status": "fetching"},
+                    )
+                    break
+
+            if self.picked_content_provider is None:
+                raise ValueError(
+                    f"Could not fetch {self.repo}, no matching contentprovider found"
                 )
-                break
 
-        if picked_content_provider is None:
-            raise ValueError(
-                f"Could not fetch {self.repo}, no matching contentprovider found"
-            )
+            for log_line in self.picked_content_provider.fetch(
+                spec, checkout_dir, yield_output=True
+            ):
+                self.log.info(log_line, extra=dict(status="fetching"))
 
-        for log_line in picked_content_provider.fetch(
-            spec, target_path, yield_output=True
-        ):
-            self.log.info(log_line, extra=dict(status="fetching"))
+            yield checkout_dir
 
     def json_excepthook(self, etype, evalue, traceback):
         """
@@ -170,8 +211,26 @@ class BaseCommand(Application):
 
     def initialize(self, argv=None):
         super().initialize(argv)
-        # Load traitlets config from a config file if present
-        self.load_config_file(self.config_file)
+        # Load traitlets config from a config file if passed
+        if self.config_file:
+            self.load_config_file(self.config_file)
+            if (
+                not os.path.exists(self.config_file)
+                and self.config_file != "pangeo_forge_runner_config.py"
+            ):
+                # Throw an explicit error and exit if config file isn't present
+                print(
+                    f"Could not read config from file {self.config_file}. Make sure it exists and is readable",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
+
+        # Allow arbitrary logging config if set
+        # We do this first up so any custom logging we set up ourselves
+        # is not affected, as by default dictConfig will replace all
+        # existing config.
+        if self.logging_config:
+            logging.config.dictConfig(self.logging_config)
 
         # The application communicates with the outside world via
         # stdout, and we structure this communication via logging.
@@ -209,9 +268,5 @@ class BaseCommand(Application):
             formatter = jsonlogger.JsonFormatter()
             logHandler.setFormatter(formatter)
         else:
-            # Since we also have JSON logging, we put newlines in our
-            # messages wherever explicitly needed. Avoid the logger
-            # adding its own, so we don't have unnecessary blank lines
-            logHandler.terminator = ""
             # Just put out the message here, nothing else.
             logHandler.formatter = logging.Formatter(fmt="%(message)s")

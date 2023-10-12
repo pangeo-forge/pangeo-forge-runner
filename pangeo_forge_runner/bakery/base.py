@@ -31,6 +31,7 @@ class Bakery(LoggingConfigurable):
         job_name: A unique string representing this particular run
         container_image: A docker image spec that should be used in this run,
                          if the Bakery supports using docker images
+        extra_options: Dictionary of extra options that should be passed on to PipelineOptions
 
         """
         raise NotImplementedError("Override get_pipeline_options in subclass")

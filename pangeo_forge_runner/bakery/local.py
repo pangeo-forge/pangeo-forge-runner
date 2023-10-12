@@ -39,7 +39,7 @@ class LocalDirectBakery(Bakery):
         return PipelineOptions(
             flags=[],
             runner="DirectRunner",
-            direct_running_mode="multiprocessing",
+            direct_running_mode="multi_processing",
             direct_num_workers=self.num_workers,
             save_main_session=True,
             # this might solve serialization issues; cf. https://beam.apache.org/blog/beam-2.36.0/

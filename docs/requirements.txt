@@ -2,5 +2,5 @@ autodoc-traits
 myst-parser
 pre-commit
 pydata-sphinx-theme
-sphinx>=1.7
+sphinx>=1.7,<7.2  # https://github.com/sphinx-doc/sphinx/issues/11631
 sphinx-copybutton
