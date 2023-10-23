@@ -42,8 +42,8 @@ def test_flink_bake(minio):
             "job_manager_resources": '{"memory": "1024m", "cpu": 1.0}',
             "task_manager_resources": '{"memory": "2048m", "cpu": 1.0}',
             "parallelism": "1",
-            "flink_configuration": '{"taskmanager.numberOfTaskSlots": "1", "taskmanager.memory.jvm-overhead.max": "2048m"}'
-        }
+            "flink_configuration": '{"taskmanager.numberOfTaskSlots": "1", "taskmanager.memory.jvm-overhead.max": "2048m"}',
+        },
     }
 
     with tempfile.NamedTemporaryFile("w", suffix=".json") as f:
