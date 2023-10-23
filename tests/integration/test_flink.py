@@ -17,6 +17,10 @@ def test_flink_bake(minio):
         "Bake": {
             "prune": True,
             "bakery_class": "pangeo_forge_runner.bakery.flink.FlinkOperatorBakery",
+            # there must be a job-server jar available for the matching
+            # `apache-beam` and `FlinkOperatorBakery.flink_version` here:
+            # https://repo.maven.apache.org/maven2/org/apache/beam/beam-runners-flink-1.16-job-server/
+            "container_image": "apache/beam_python3.9_sdk:2.47.0",
         },
         "TargetStorage": {
             "fsspec_class": "s3fs.S3FileSystem",
@@ -33,6 +37,13 @@ def test_flink_bake(minio):
             "fsspec_args": fsspec_args,
             "root_path": "s3://gpcp/metadata-cache/",
         },
+        "FlinkOperatorBakery": {
+            "flink_version": "1.16",
+            "job_manager_resources": '{"memory": "1024m", "cpu": 1.0}',
+            "task_manager_resources": '{"memory": "2048m", "cpu": 1.0}',
+            "parallelism": "1",
+            "flink_configuration": '{"taskmanager.numberOfTaskSlots": "1", "taskmanager.memory.jvm-overhead.max": "2048m"}'
+        }
     }
 
     with tempfile.NamedTemporaryFile("w", suffix=".json") as f:
@@ -44,7 +55,7 @@ def test_flink_bake(minio):
             "--repo",
             "https://github.com/pforgetest/gpcp-from-gcs-feedstock.git",
             "--ref",
-            "beam-refactor",
+            "main",
             "-f",
             f.name,
         ]
