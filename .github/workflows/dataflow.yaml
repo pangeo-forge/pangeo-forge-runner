@@ -14,12 +14,14 @@ jobs:
     # run on:
     #  - all pushes to main
     #  - schedule defined above
-    #  - a PR was just labeled 'test-dataflow'
-    #  - a PR with 'test-dataflow' label was opened, reopened, or synchronized
+    #  - a PR was just labeled 'test-dataflow' or 'test-all'
+    #  - a PR with 'test-dataflow' or 'test-all' label was opened, reopened, or synchronized
     if: |
       github.event_name == 'push' ||
       github.event_name == 'schedule' ||
+      github.event.label.name == 'test-all' ||
       github.event.label.name == 'test-dataflow' ||
+      contains( github.event.pull_request.labels.*.name, 'test-all') ||
       contains( github.event.pull_request.labels.*.name, 'test-dataflow')
     runs-on: ubuntu-latest
     strategy:
@@ -29,6 +31,7 @@ jobs:
         recipes-version: [
           "pangeo-forge-recipes==0.9.4",
           "pangeo-forge-recipes==0.10.0",
+          "git+https://github.com/yuvipanda/pangeo-forge-recipes@injections"
         ]
 
     steps:
