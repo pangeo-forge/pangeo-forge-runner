@@ -19,8 +19,6 @@ setup(
         "pangeo-forge-recipes>=0.10.3",
         "escapism",
         "traitlets",
-        # Matches the version of apache_beam in the default image,
-        # specified in bake.py's container_image traitlet default
         "apache-beam[gcp]==2.47.0",
     ],
     entry_points={
