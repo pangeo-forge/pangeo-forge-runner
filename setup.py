@@ -20,7 +20,6 @@ setup(
         "escapism",
         "traitlets",
         "apache-beam[gcp]==2.47.0",
-
     ],
     entry_points={
         "console_scripts": ["pangeo-forge-runner=pangeo_forge_runner.cli:main"]
