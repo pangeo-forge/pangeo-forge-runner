@@ -1,0 +1,5 @@
+# List of packages installed in the container image when
+# baking a recipe that's using pangeo-forge-recipes<0.10
+gcsfs
+pangeo-forge-recipes<0.10
+s3fs
