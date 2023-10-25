@@ -57,7 +57,7 @@ import os
 HERE = Path(__file__).parent
 
 DATA_PREFIX = HERE / 'data'
-os.makedirs(DATA_PREFIX, exists_ok=True)
+os.makedirs(DATA_PREFIX, exist_ok=True)
 
 # Target output should be partitioned by job id
 c.TargetStorage.root_path = f"{DATA_PREFIX}/{{job}}"
