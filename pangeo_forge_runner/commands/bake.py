@@ -207,11 +207,9 @@ class Bake(BaseCommand):
                 ),
             }
 
-            cache_target = input_cache_storage.get_forge_target(job_name=self.job_name)
-            if cache_target:
+            if not input_cache_storage.is_default():
+                cache_target = input_cache_storage.get_forge_target(job_name=self.job_name)
                 injection_values |= {"INPUT_CACHE_STORAGE": cache_target}
-            print(injection_values)
-            print(injection_specs)
 
             feedstock = Feedstock(
                 Path(checkout_dir) / self.feedstock_subdir,
@@ -285,9 +283,7 @@ class Bake(BaseCommand):
                         ("cache", "metadata"),
                         (input_cache_storage, metadata_cache_storage),
                     ):
-                        # `.root_path` is an empty string by default, so if the user has not setup this
-                        # optional storage type in config, this block is skipped.
-                        if optional_storage.root_path:
+                        if not optional_storage.is_default():
                             setattr(
                                 recipe.storage_config,
                                 attrname,
