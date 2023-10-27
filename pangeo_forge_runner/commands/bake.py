@@ -208,7 +208,9 @@ class Bake(BaseCommand):
             }
 
             if not input_cache_storage.is_default():
-                cache_target = input_cache_storage.get_forge_target(job_name=self.job_name)
+                cache_target = input_cache_storage.get_forge_target(
+                    job_name=self.job_name
+                )
                 injection_values |= {"INPUT_CACHE_STORAGE": cache_target}
 
             feedstock = Feedstock(
