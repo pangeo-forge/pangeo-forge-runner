@@ -23,11 +23,35 @@ jobs:
       github.event.label.name == 'test-flink' ||
       contains( github.event.pull_request.labels.*.name, 'test-all') ||
       contains( github.event.pull_request.labels.*.name, 'test-flink')
-
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [ "3.9", "3.10", "3.11" ]
+        recipes-version: [
+            "pangeo-forge-recipes==0.9.4",
+            "pangeo-forge-recipes==0.10.0",
+            "pangeo-forge-recipes==0.10.3",
+        ]
+        beam-version: [
+            "apache-beam==2.47.0",
+            # save some cycles and infer it might
+            # work on all versions between lowest and highest
+            # "apache-beam==2.48.0",
+            # "apache-beam==2.49.0",
+            # "apache-beam==2.50.0",
+            "apache-beam==2.51.0",
+        ]
+        # keep here to be explicit for future users what version
+        # of Flink we are supporting
+        flink-version: [ "1.16", ]
 
     steps:
     - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
 
     # Starts a k8s cluster with NetworkPolicy enforcement and installs both
     # kubectl and helm
@@ -64,32 +88,29 @@ jobs:
     - name: 'Set up Cloud SDK'
       uses: 'google-github-actions/setup-gcloud@v0'
 
-
-    - name: Set up Python 3.9
-      uses: actions/setup-python@v3
-      with:
-        python-version: 3.9
-
-    - name: 'Setup minio + mc'
+    - name: 'Setup minio cli mc'
       run: |
-        wget --quiet https://dl.min.io/server/minio/release/linux-amd64/minio
-        chmod +x minio
-        mv minio /usr/local/bin/minio
-
         wget --quiet https://dl.min.io/client/mc/release/linux-amd64/mc
         chmod +x mc
         mv mc /usr/local/bin/mc
-
-        minio --version
         mc --version
 
+    - name: Setup "${{ matrix.beam-version }}" to satisfy pf-runner installs
+      run: |
+        pip install ${{ matrix.beam-version }}
 
     - name: Install dependencies & our package
       run: |
         python -m pip install --upgrade pip
         python -m pip install -r dev-requirements.txt
-        python -m pip install -e .
+        python -m pip install -e .[flink]
 
+    - name: Set up min.io as a k3s service
+      run: |
+        MYACCESSKEY=$(openssl rand -hex 16)
+        MYSECRETKEY=$(openssl rand -hex 16)
+        kubectl create secret generic minio-secrets --from-literal=MINIO_ACCESS_KEY=$MYACCESSKEY --from-literal=MINIO_SECRET_KEY=$MYSECRETKEY
+        kubectl apply -f tests/integration/flink/minio-manifest.yaml
 
     - name: Install socat so kubectl port-forward will work
       run: |
@@ -97,10 +118,30 @@ jobs:
         sudo apt update --yes && sudo apt install --yes socat
 
     - name: Test with pytest
+      id: testrunner
+      continue-on-error: true
       run: |
-        pytest -vvv -s --cov=pangeo_forge_runner tests/integration/test_flink.py
-        kubectl get pod -A
-        kubectl describe pod
+        beamversion=$(echo ${{ matrix.beam-version }} | cut -d"=" -f3)
+        pytest -vvv -s --cov=pangeo_forge_runner tests/integration/flink/test_flink_integration.py \
+          --flinkversion=${{ matrix.flink-version }} \
+          --pythonversion=${{ matrix.python-version }} \
+          --beamversion=$beamversion
+
+    - name: Dump logs from pods after failure so we don't have ssh
+      if: steps.testrunner.outcome == 'failure'
+      run: |
+        echo "The previous step failed or timed out. Dumping logs..."
+
+        # much easier to do in bash than in Python via subprocess
+        echo "##################### OPERATOR ######################"
+        kubectl get pod | grep operator | cut -d' ' -f1 | xargs -I{} kubectl logs pod/{} | tail -n 1000
+        echo "##################### JOB MANAGER ######################"
+        kubectl get pod | grep -v manager | grep recipe- | cut -d' ' -f1 | xargs -I{} kubectl logs pod/{} | tail -n 1000
+        echo "##################### TASK MANAGER ######################"
+        kubectl get pod | grep manager | head -n1 | cut -d' ' -f1 | xargs -I{} kubectl logs pod/{} | tail -n 1000
+
+        # force GH action to show failed result
+        exit 128
 
     - name: Upload Coverage to Codecov
       uses: codecov/codecov-action@v2

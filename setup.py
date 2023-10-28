@@ -18,9 +18,12 @@ setup(
         "escapism",
         "jsonschema",
         "traitlets",
-        "apache-beam[gcp]",
         "importlib-metadata",
     ],
+    extras_require={
+        "dataflow": ["apache-beam[gcp]"],
+        "flink": ["apache-beam>=2.47.0"],
+    },
     entry_points={
         "console_scripts": ["pangeo-forge-runner=pangeo_forge_runner.cli:main"]
     },

@@ -13,6 +13,7 @@ from traitlets import Bool, Type, Unicode, validate
 
 from .. import Feedstock
 from ..bakery.base import Bakery
+from ..bakery.flink import FlinkOperatorBakery
 from ..bakery.local import LocalDirectBakery
 from ..plugin import get_injections, get_injectionspecs_from_entrypoints
 from ..storage import InputCacheStorage, MetadataCacheStorage, TargetStorage
@@ -108,14 +109,28 @@ class Bake(BaseCommand):
         help="""
         Container image to use for this job.
 
-        Defaults to letting beam automatically figure out the image to use,
+        For GCP DataFlow leaving it blank defaults to letting beam 
+        automatically figure out the image to use for the workers 
         based on version of beam and python in use.
-
-        Should be accessible to whatever Beam runner is being used.
+        
+        For Flink it's required that you pass an beam image
+        for the version of python and beam you are targeting
+        for example: apache/beam_python3.10_sdk:2.51.0
+        more info: https://hub.docker.com/layers/apache/
 
         Note that some runners (like the local one) may not support this!
         """,
     )
+
+    @validate("container_image")
+    def _validate_container_image(self, proposal):
+        if self.bakery_class == FlinkOperatorBakery and not proposal.value:
+            raise ValueError(
+                "'container_name' is required when using the 'FlinkOperatorBakery' "
+                "for the version of python and apache-beam you are targeting. "
+                "See the sdk images available: https://hub.docker.com/layers/apache/"
+            )
+        return proposal.value
 
     def autogenerate_job_name(self):
         """
