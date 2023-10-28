@@ -159,7 +159,7 @@ class FlinkOperatorBakery(Bakery):
         
         Setting key/value pairs here will create k8s secret that will be mounted
         into the container as os env vars
-        """
+        """,
     )
 
     def _secret_name(self, name: str):
@@ -173,11 +173,9 @@ class FlinkOperatorBakery(Bakery):
         return {
             "apiVersion": "v1",
             "kind": "Secret",
-            "metadata": {
-                "name": name
-            },
+            "metadata": {"name": name},
             "type": "Opague",
-            "stringData": secret_key_values
+            "stringData": secret_key_values,
         }
 
     def make_flink_deployment(self, name: str, worker_image: str, secret_name: str):
@@ -206,13 +204,7 @@ class FlinkOperatorBakery(Bakery):
                                     "name": "beam-worker-pool",
                                     "image": worker_image,
                                     "ports": [{"containerPort": 50000}],
-                                    "envFrom": [
-                                        {
-                                            "secretRef": {
-                                                "name": secret_name
-                                            }
-                                        }
-                                    ],
+                                    "envFrom": [{"secretRef": {"name": secret_name}}],
                                     "readinessProbe": {
                                         # Don't mark this container as ready until the beam SDK harnass starts
                                         "tcpSocket": {"port": 50000},
@@ -251,9 +243,7 @@ class FlinkOperatorBakery(Bakery):
 
         # Create the secret in the k8s cluster
         with tempfile.NamedTemporaryFile(mode="w") as f:
-            f.write(
-                json.dumps(self.make_k8s_secret(cluster_name, secret_name))
-            )
+            f.write(json.dumps(self.make_k8s_secret(cluster_name, secret_name)))
             f.flush()
             cmd = ["kubectl", "apply", "--wait", "-f", f.name]
             subprocess.check_call(cmd)
@@ -261,7 +251,11 @@ class FlinkOperatorBakery(Bakery):
         # Create the temp flink cluster
         with tempfile.NamedTemporaryFile(mode="w") as f:
             f.write(
-                json.dumps(self.make_flink_deployment(cluster_name, container_image, secret_name))
+                json.dumps(
+                    self.make_flink_deployment(
+                        cluster_name, container_image, secret_name
+                    )
+                )
             )
             f.flush()
             # FIXME: Add a timeout here?
