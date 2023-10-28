@@ -150,9 +150,39 @@ class FlinkOperatorBakery(Bakery):
         """,
     )
 
-    def make_flink_deployment(self, name: str, worker_image: str):
+    secret_env_vars = Dict(
+        {},
+        config=True,
+        help="""
+        Some recipes will need credentials to access their input 
+        data which they should rely on accessing using `os.environ` calls
+        
+        Setting key/value pairs here will create k8s secret that will be mounted
+        into the container as os env vars
         """
-        Return YAML for a FlinkDeployment
+    )
+
+    def _secret_name(self, name: str):
+        return f"secret-{name}"
+
+    def make_k8s_secret(self, name: str, secret_name: str):
+        """
+        Return YAML for a `kind: Secret`
+        """
+        secret_key_values = self.secret_env_vars
+        return {
+            "apiVersion": "v1",
+            "kind": "Secret",
+            "metadata": {
+                "name": name
+            },
+            "type": "Opague",
+            "stringData": secret_key_values
+        }
+
+    def make_flink_deployment(self, name: str, worker_image: str, secret_name: str):
+        """
+        Return YAML for a `kind: FlinkDeployment`
         """
         image = f"flink:{self.flink_version}"
         flink_version_str = f'v{self.flink_version.replace(".", "_")}'
@@ -176,6 +206,13 @@ class FlinkOperatorBakery(Bakery):
                                     "name": "beam-worker-pool",
                                     "image": worker_image,
                                     "ports": [{"containerPort": 50000}],
+                                    "envFrom": [
+                                        {
+                                            "secretRef": {
+                                                "name": secret_name
+                                            }
+                                        }
+                                    ],
                                     "readinessProbe": {
                                         # Don't mark this container as ready until the beam SDK harnass starts
                                         "tcpSocket": {"port": 50000},
@@ -209,10 +246,22 @@ class FlinkOperatorBakery(Bakery):
             escapism.escape(job_name, escape_char="-").lower(), 45
         )
 
+        # Name of k8s secret file
+        secret_name = self._secret_name(cluster_name)
+
+        # Create the secret in the k8s cluster
+        with tempfile.NamedTemporaryFile(mode="w") as f:
+            f.write(
+                json.dumps(self.make_k8s_secret(cluster_name, secret_name))
+            )
+            f.flush()
+            cmd = ["kubectl", "apply", "--wait", "-f", f.name]
+            subprocess.check_call(cmd)
+
         # Create the temp flink cluster
         with tempfile.NamedTemporaryFile(mode="w") as f:
             f.write(
-                json.dumps(self.make_flink_deployment(cluster_name, container_image))
+                json.dumps(self.make_flink_deployment(cluster_name, container_image, secret_name))
             )
             f.flush()
             # FIXME: Add a timeout here?
