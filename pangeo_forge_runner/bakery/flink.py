@@ -161,7 +161,7 @@ class FlinkOperatorBakery(Bakery):
         
         Setting key/value pairs here will create k8s secret that will be mounted
         into the container as os env vars
-        """
+        """,
     )
 
     def _secret_name(self, name: str):
@@ -179,7 +179,7 @@ class FlinkOperatorBakery(Bakery):
                 "name": secret_name
             },
             "type": "Opague",
-            "stringData": secret_key_values
+            "stringData": secret_key_values,
         }
 
     def make_flink_deployment(self, name: str, worker_image: str, secret_name: str):
@@ -266,7 +266,11 @@ class FlinkOperatorBakery(Bakery):
         # Create the temp flink cluster
         with tempfile.NamedTemporaryFile(mode="w") as f:
             f.write(
-                json.dumps(self.make_flink_deployment(cluster_name, container_image, secret_name))
+                json.dumps(
+                    self.make_flink_deployment(
+                        cluster_name, container_image, secret_name
+                    )
+                )
             )
             f.flush()
             # FIXME: Add a timeout here?
