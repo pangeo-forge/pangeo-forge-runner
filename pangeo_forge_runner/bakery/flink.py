@@ -175,9 +175,7 @@ class FlinkOperatorBakery(Bakery):
         return {
             "apiVersion": "v1",
             "kind": "Secret",
-            "metadata": {
-                "name": secret_name
-            },
+            "metadata": {"name": secret_name},
             "type": "Opague",
             "stringData": secret_key_values,
         }
@@ -219,14 +217,8 @@ class FlinkOperatorBakery(Bakery):
                                 },
                                 {
                                     "name": "flink-main-container",
-                                    "envFrom": [
-                                        {
-                                            "secretRef": {
-                                                "name": secret_name
-                                            }
-                                        }
-                                    ],
-                                }
+                                    "envFrom": [{"secretRef": {"name": secret_name}}],
+                                },
                             ]
                         }
                     },
@@ -256,9 +248,7 @@ class FlinkOperatorBakery(Bakery):
 
         # Create the secret in the k8s cluster
         with tempfile.NamedTemporaryFile(mode="w") as f:
-            f.write(
-                json.dumps(self.make_k8s_secret(secret_name))
-            )
+            f.write(json.dumps(self.make_k8s_secret(secret_name)))
             f.flush()
             cmd = ["kubectl", "apply", "--wait", "-f", f.name]
             subprocess.check_call(cmd)
@@ -314,7 +304,9 @@ class FlinkOperatorBakery(Bakery):
         # Use rsplit in case we listen on ipv6 stuff in the future
         listen_port = listen_address.rsplit(":", 1)[1]
 
-        self.log.info(f"You can run '{' '.join(cmd)}' to make the Flink Dashboard available!")
+        self.log.info(
+            f"You can run '{' '.join(cmd)}' to make the Flink Dashboard available!"
+        )
 
         # Set flags explicitly to empty so Apache Beam doesn't try to parse the commandline
         # for pipeline options - we have traitlets doing that for us.
