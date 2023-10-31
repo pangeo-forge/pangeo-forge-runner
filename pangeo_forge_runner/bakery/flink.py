@@ -3,6 +3,7 @@ Bakery for baking pangeo-forge recipes in GCP DataFlow
 """
 import hashlib
 import json
+import logging
 import shutil
 import subprocess
 import tempfile
@@ -52,6 +53,7 @@ class FlinkOperatorBakery(Bakery):
 
     # Not actually, but we don't have a job_id to return.
     # that looks like just a dataflow concept, we'll have to refactor
+    log_level = logging.INFO
     blocking = True
 
     flink_version = Unicode(
@@ -165,7 +167,7 @@ class FlinkOperatorBakery(Bakery):
     def _secret_name(self, name: str):
         return f"secret-{name}"
 
-    def make_k8s_secret(self, name: str, secret_name: str):
+    def make_k8s_secret(self, secret_name: str):
         """
         Return YAML for a `kind: Secret`
         """
@@ -174,7 +176,7 @@ class FlinkOperatorBakery(Bakery):
             "apiVersion": "v1",
             "kind": "Secret",
             "metadata": {
-                "name": name
+                "name": secret_name
             },
             "type": "Opague",
             "stringData": secret_key_values
@@ -206,13 +208,6 @@ class FlinkOperatorBakery(Bakery):
                                     "name": "beam-worker-pool",
                                     "image": worker_image,
                                     "ports": [{"containerPort": 50000}],
-                                    "envFrom": [
-                                        {
-                                            "secretRef": {
-                                                "name": secret_name
-                                            }
-                                        }
-                                    ],
                                     "readinessProbe": {
                                         # Don't mark this container as ready until the beam SDK harnass starts
                                         "tcpSocket": {"port": 50000},
@@ -221,6 +216,16 @@ class FlinkOperatorBakery(Bakery):
                                     "resources": self.beam_executor_resources,
                                     "command": ["/opt/apache/beam/boot"],
                                     "args": ["--worker_pool"],
+                                },
+                                {
+                                    "name": "flink-main-container",
+                                    "envFrom": [
+                                        {
+                                            "secretRef": {
+                                                "name": secret_name
+                                            }
+                                        }
+                                    ],
                                 }
                             ]
                         }
@@ -252,7 +257,7 @@ class FlinkOperatorBakery(Bakery):
         # Create the secret in the k8s cluster
         with tempfile.NamedTemporaryFile(mode="w") as f:
             f.write(
-                json.dumps(self.make_k8s_secret(cluster_name, secret_name))
+                json.dumps(self.make_k8s_secret(secret_name))
             )
             f.flush()
             cmd = ["kubectl", "apply", "--wait", "-f", f.name]
@@ -305,7 +310,7 @@ class FlinkOperatorBakery(Bakery):
         # Use rsplit in case we listen on ipv6 stuff in the future
         listen_port = listen_address.rsplit(":", 1)[1]
 
-        print(f"You can run '{' '.join(cmd)}' to make the Flink Dashboard available!")
+        self.log.info(f"You can run '{' '.join(cmd)}' to make the Flink Dashboard available!")
 
         # Set flags explicitly to empty so Apache Beam doesn't try to parse the commandline
         # for pipeline options - we have traitlets doing that for us.
