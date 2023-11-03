@@ -13,11 +13,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.9"]
+        python-version: ["3.9", "3.10", "3.11"]
         recipes-version: [
           "pangeo-forge-recipes==0.9.4",
           "pangeo-forge-recipes==0.10.0",
-          "git+https://github.com/yuvipanda/pangeo-forge-recipes@injections"
+          "pangeo-forge-recipes==0.10.3",
         ]
 
     steps:
