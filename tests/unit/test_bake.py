@@ -40,6 +40,28 @@ def test_job_name_validation(job_name, raises):
 
 
 @pytest.mark.parametrize(
+    "container_image, raises",
+    (
+        ["", True],
+        ["apache/beam_python3.10_sdk:2.51.0", False],
+    ),
+)
+def test_container_name_validation(container_image, raises):
+    bake = Bake()
+    if raises:
+        with pytest.raises(
+            ValueError,
+            match=r"^'container_name' is required.*",
+        ):
+            bake.bakery_class = "pangeo_forge_runner.bakery.flink.FlinkOperatorBakery"
+            bake.container_image = container_image
+    else:
+        bake.bakery_class = "pangeo_forge_runner.bakery.flink.FlinkOperatorBakery"
+        bake.container_image = container_image
+        assert bake.container_image == container_image
+
+
+@pytest.mark.parametrize(
     ("recipe_id", "expected_error", "custom_job_name"),
     (
         [None, None, None],

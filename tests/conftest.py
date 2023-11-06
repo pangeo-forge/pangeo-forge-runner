@@ -1,3 +1,4 @@
+import base64
 import os
 import secrets
 import signal
@@ -57,3 +58,66 @@ def minio(local_ip):
         proc.wait()
 
         assert proc.returncode == 0
+
+
+@pytest.fixture(scope="session")
+def minio_service():
+    cmd = [
+        "kubectl",
+        "get",
+        "service/minio-service",
+        "-o=jsonpath='{.spec.clusterIP}:{.spec.ports[0].port}'",
+    ]
+    proc = subprocess.run(cmd, capture_output=True, text=True)
+    assert proc.returncode == 0
+    svc_address = proc.stdout.strip('"').strip("'")
+    endpoint = f"http://{svc_address}"
+
+    cmd = [
+        "kubectl",
+        "get",
+        "secret/minio-secrets",
+        "-o=jsonpath='{.data.MINIO_ACCESS_KEY}'",
+    ]
+    proc = subprocess.run(cmd, capture_output=True, text=True)
+    assert proc.returncode == 0
+    myaccesskey = proc.stdout
+    myaccesskey = base64.b64decode(myaccesskey).decode()
+
+    cmd = [
+        "kubectl",
+        "get",
+        "secret/minio-secrets",
+        "-o=jsonpath='{.data.MINIO_SECRET_KEY}'",
+    ]
+    proc = subprocess.run(cmd, capture_output=True, text=True)
+    assert proc.returncode == 0
+    mysecretkey = proc.stdout
+    mysecretkey = base64.b64decode(mysecretkey).decode()
+
+    # enter
+    yield {"endpoint": endpoint, "username": myaccesskey, "password": mysecretkey}
+
+    # exit
+    return
+
+
+def pytest_addoption(parser):
+    parser.addoption("--flinkversion", action="store", default="1.16")
+    parser.addoption("--pythonversion", action="store", default="3.9")
+    parser.addoption("--beamversion", action="store", default="2.47.0")
+
+
+@pytest.fixture
+def flinkversion(request):
+    return request.config.getoption("--flinkversion")
+
+
+@pytest.fixture
+def pythonversion(request):
+    return request.config.getoption("--pythonversion")
+
+
+@pytest.fixture
+def beamversion(request):
+    return request.config.getoption("--beamversion")
