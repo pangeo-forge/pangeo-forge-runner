@@ -27,6 +27,7 @@ Terraform for that [here](https://github.com/pangeo-forge/pangeo-forge-cloud-fed
 1. Install required tools on your machine.
    1. [aws](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
    2. [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl)
+   3. [pangeo-forge-runner](https://pypi.org/project/pangeo-forge-runner/)
 
 
 2. Authenticate to `aws` by running `aws configure`. If you don't already have the
