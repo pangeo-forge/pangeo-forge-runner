@@ -11,9 +11,9 @@ kubernetes cluster that we use for [integration tests](https://github.com/pangeo
 
 Current support is for the following versions:
 
-| **pangeo<br>forge<br>runner<br>branch** | **flink<br>operator<br>version** | **flink<br>version** |                  **apache<br>beam<br>version**                 |
+| **pangeo-forge-runner<br>version** | **flink<br>operator<br>version** | **flink<br>version** |                  **apache<br>beam<br>version**                 |
 |:----------------------------:|:--------------------------------:|:--------------------:|:--------------------------------------------------------------:|
-| main                 | 1.5.0                            | 1.16                | 2.[47-51].0<br>(all versions listed https://repo.maven.apache.org/maven2/org/apache/beam/beam-runners-flink-1.16/) |
+| 0.9.1 | 1.5.0                            | 1.16                | 2.[47-51].0<br>(all versions listed [here](https://repo.maven.apache.org/maven2/org/apache/beam/beam-runners-flink-1.16/)) |
 
 
 ## Setting up EKS
@@ -27,21 +27,21 @@ Terraform for that [here](https://github.com/pangeo-forge/pangeo-forge-cloud-fed
 1. Install required tools on your machine.
    1. [aws](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
    2. [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl)
-   3. [pangeo-forge-runner](https://pypi.org/project/pangeo-forge-runner/)
+   3. [pangeo-forge-runner>=0.9.1](https://pypi.org/project/pangeo-forge-runner/)
 
 
 2. Authenticate to `aws` by running `aws configure`. If you don't already have the
    AWS Access Keys, you might need to [create one](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html#Using_CreateAccessKey).
 
 
-3. Ask your administrator to add your IAM user arn to the correct k8s `aws-auth` configuration. They should then
-ask you to run a command to get EKS credentials that looks something like this:
+3. Ask your administrator to add your IAM user arn to the correct k8s `aws-auth` configuration. Then the admin will 
+ask you to run a command to get EKS credentials locally that might look like this:
 
    ```bash
    $ AWS_PROFILE=<your-aws-profile> aws eks update-kubeconfig --name <cluster-name> --region <aws-cluster-region>
    ```
 
-4. Verify everything is working by running the following command and you should see something similar below:
+4. Verify everything is working by running the following command. You should see the `flink-kubernetes-operator` resources like below:
 
    ```bash
    $ kubectl -n default get flinkdeployment,deploy,pod,svc
@@ -59,12 +59,12 @@ ask you to run a command to get EKS credentials that looks something like this:
 
 ## Setting up runner configuration
 
-There are two file formats for constructing runner configuration that tell recipes *where*
-the data should output and be cached. In the examples below `{{job_name}}` will be templated for you based
-on the configuration for `Bake.job_name` (TODO: point to other docs). Also notice we going to store everything
+There are two runner configuration file formats you can use to tell recipes *where*
+your data output or cached. In the examples below `{{job_name}}` will be templated for you based
+on the configuration for `Bake.job_name` (TODO: point to other docs). Also notice we're going to store everything
 in s3. There are other storage options as well (TODO: point to the other docs).
 
-0. JSON configuration:
+1. JSON configuration:
 
    ```json
    {
@@ -101,7 +101,7 @@ in s3. There are other storage options as well (TODO: point to the other docs).
    }
    ```
 
-1. `traitlet` configuration:
+2. `traitlet` configuration:
 
    ```python
    BUCKET_PREFIX = "s3://<bucket-name>/<some-prefix>/"
@@ -132,7 +132,8 @@ gets dependency injected into the recipe by the runner.
 Various other runner options (TODO: talked about here and flink-specific here) can also be put into these file configurations or passed
 directly during CLI `bake` calls. 
 
-An example of something slightly more detailed where `-f <runner_config.py>` would point to a `traitlet` configuration file talked about above:
+Here's a quick example of something slightly more complicated where you're passing flink-specific configuration options and runner options. 
+Note that `-f <runner_config.py>` would point to your `traitlet` or JSON configuration file we just talked about above:
 
    ```bash
    pangeo-forge-runner bake \
@@ -149,11 +150,12 @@ An example of something slightly more detailed where `-f <runner_config.py>` wou
        --Bake.bakery_class="pangeo_forge_runner.bakery.flink.FlinkOperatorBakery"
    ```
 
-Where you put things is your choice but please make sure you don't commit any AWS secrets into GH 
+Whether you put things in a config file or pass via CLI, it's your choice but please make sure you don't commit any AWS secrets unintentionally
 
 ## Running the recipe
 
-Now let's run a recipe! First we need to find a public recipe. Let's reuse the one for intergration tests: `"https://github.com/pforgetest/gpcp-from-gcs-feedstock.git"` 
+Now let's run a recipe! First we need to find a public recipe. 
+Let's reuse the one for integration tests: `"https://github.com/pforgetest/gpcp-from-gcs-feedstock.git"`.
 Below is the minimal required args for running Flink:
 
    ```bash
@@ -167,8 +169,7 @@ Below is the minimal required args for running Flink:
        --Bake.bakery_class="pangeo_forge_runner.bakery.flink.FlinkOperatorBakery"
    ```
 
-You can add Bake.prune=True` if you want to only test the recipe and run just the first
-few steps.
+You can add `Bake.prune=True` too if you want to only test the recipe and run the first two time steps.
 
 ## Access the Flink Dashboard
 
@@ -187,5 +188,28 @@ Forwarding from 127.0.0.1:<some-number> -> 8081
 
 Copy the `127.0.0.1:<some-number>` URL to your browser, and tada!
 
+## Monitoring Job Output
 
-## Some thoughts about Flink Memory Allocation
+## Flink Memory Allocation Tricks and Trapdoors
+
+Sometimes you'll have jobs fail on Flink with errors about not enough `off-heap` memory or the JVM being OOM killed. Here
+are some configuration options to think about when running jobs
+
+The `kind: FlinkDeployment` resource has a goal which is to spin up a job manager. The job manager has a goal which is
+to spin up the task managers (depending on your `--FlinkOperatorBakery.parallelism` setting). In k8s land
+you can get a sense for which deployment/pod is which by considering your `--Bake.job_name`:
+
+```bash
+$ kubectl -n default get pod
+
+NAME                                             READY   STATUS    RESTARTS       AGE
+pod/flink-kubernetes-operator-559fccd895-pfdwj   2/2     Running   2 (3d1h ago)   6d21h
+# NOTE: the job manager here gets provisioned as `<Bake.job_name>-<k8s-resource-hash>`
+pod/nz-5ftesting-66d8644f49-wnndr                1/1     Running   0              55m
+# NOTE: the task managers always have a similar suffix depending on your 
+# `--FlinkOperatorBakery.parallelism` setting. Here it was set to `--FlinkOperatorBakery.parallelism=2`
+pod/nz-5ftesting-task-manager-1-1                1/1     Running   0              55m
+pod/nz-5ftesting-task-manager-1-2                1/1     Running   0              55m
+```
+
+If we grok the first 10 lines of the job manager we get a nice ascii output
