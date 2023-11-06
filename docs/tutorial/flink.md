@@ -40,7 +40,7 @@ ask you to run a command to get EKS credentials that looks something like this:
    $ AWS_PROFILE=<your-aws-profile> aws eks update-kubeconfig --name <cluster-name> --region <aws-cluster-region>
    ```
 
-4. Verify everything is working by running the following command and you should see something similar to this:
+4. Verify everything is working by running the following command and you should see something similar below:
 
    ```bash
    $ kubectl -n default get flinkdeployment,deploy,pod,svc
@@ -58,10 +58,10 @@ ask you to run a command to get EKS credentials that looks something like this:
 
 ## Setting up runner configuration
 
-There are two file formats for constructing runner configuration that tells recipes *where*
+There are two file formats for constructing runner configuration that tell recipes *where*
 the data should output and be cached. In the examples below `{{job_name}}` will be templated for you based
-on the configuration for `Bake.job_name` (TODO: point to other docs). Also noticed we going to store everything
-in s3. There are other options as well (TODO: point to the other docs).
+on the configuration for `Bake.job_name` (TODO: point to other docs). Also notice we going to store everything
+in s3. There are other storage options as well (TODO: point to the other docs).
 
 0. JSON configuration:
 
@@ -133,35 +133,41 @@ directly during CLI `bake` calls.
 
 An example of something slightly more detailed where `-f <runner_config.py>` would point to a `traitlet` configuration file talked about above:
 
-```bash
-pangeo-forge-runner bake \
-    --repo=https://github.com/ranchodeluxe/gpcp-from-gcs-feedstock.git  \
-    --ref="test/integration" \
-    -f /Users/ranchodeluxe/apps/gpcp-from-gcs-feedstock/feedstock/runner_config.py \
-    --FlinkOperatorBakery.job_manager_resources='{"memory": "6144m", "cpu": 1.0}' \
-    --FlinkOperatorBakery.task_manager_resources='{"memory": "6144m", "cpu": 1.0}' \
-    --FlinkOperatorBakery.flink_configuration='{"taskmanager.numberOfTaskSlots": "1", "taskmanager.memory.flink.size": "3072m", "taskmanager.memory.task.off-heap.size": "1024m", "taskmanager.memory.jvm-overhead.max": "4096m"}' \
-    --FlinkOperatorBakery.parallelism=1 \
-    --FlinkOperatorBakery.flink_version="1.16" \
-    --Bake.job_name=gpcp \
-    --Bake.container_image='apache/beam_python3.9_sdk:2.50.0' \
-    --Bake.bakery_class="pangeo_forge_runner.bakery.flink.FlinkOperatorBakery"
-```
+   ```bash
+   pangeo-forge-runner bake \
+       --repo=https://github.com/ranchodeluxe/gpcp-from-gcs-feedstock.git  \
+       --ref="test/integration" \
+       -f /Users/ranchodeluxe/apps/gpcp-from-gcs-feedstock/feedstock/runner_config.py \
+       --FlinkOperatorBakery.job_manager_resources='{"memory": "6144m", "cpu": 1.0}' \
+       --FlinkOperatorBakery.task_manager_resources='{"memory": "6144m", "cpu": 1.0}' \
+       --FlinkOperatorBakery.flink_configuration='{"taskmanager.numberOfTaskSlots": "1", "taskmanager.memory.flink.size": "3072m", "taskmanager.memory.task.off-heap.size": "1024m", "taskmanager.memory.jvm-overhead.max": "4096m"}' \
+       --FlinkOperatorBakery.parallelism=1 \
+       --FlinkOperatorBakery.flink_version="1.16" \
+       --Bake.job_name=gpcp \
+       --Bake.container_image='apache/beam_python3.9_sdk:2.50.0' \
+       --Bake.bakery_class="pangeo_forge_runner.bakery.flink.FlinkOperatorBakery"
+   ```
 
 Where you put things is your choice but please make sure you don't commit any AWS secrets into GH 
 
 ## Running the recipe
 
-Now run a recipe!
+Now let's run a recipe! First we need to find a public recipe. Let's reuse the one for intergration tests: `"https://github.com/pforgetest/gpcp-from-gcs-feedstock.git"` 
+Below is the minimal required args for running Flink:
 
-```bash
-pangeo-forge-runner bake --repo <url-to-github-repo> --ref <name-of-branch-or-commit-hash>
-```
+   ```bash
+   pangeo-forge-runner bake \
+       --repo=https://github.com/pforgetest/gpcp-from-gcs-feedstock.git  \
+       --ref="main" \
+       -f <path-to-your-runner-config>.<json|py>
+       --FlinkOperatorBakery.flink_version="1.16" \
+       --Bake.job_name=gpcp \
+       --Bake.container_image='apache/beam_python3.9_sdk:2.47.0' \
+       --Bake.bakery_class="pangeo_forge_runner.bakery.flink.FlinkOperatorBakery"
+   ```
 
-You can add `--prune` if you want to only test the recipe and run just the first
+You can add Bake.prune=True` if you want to only test the recipe and run just the first
 few steps.
-
-This might take a minute to submit.
 
 ## Access the Flink Dashboard
 
