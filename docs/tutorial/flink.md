@@ -160,7 +160,7 @@ Below is the minimal required args for running Flink:
    pangeo-forge-runner bake \
        --repo=https://github.com/pforgetest/gpcp-from-gcs-feedstock.git  \
        --ref="main" \
-       -f <path-to-your-runner-config>.<json|py>
+       -f <path-to-your-runner-config>.<json||py>
        --FlinkOperatorBakery.flink_version="1.16" \
        --Bake.job_name=gpcp \
        --Bake.container_image='apache/beam_python3.9_sdk:2.47.0' \
