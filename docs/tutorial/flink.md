@@ -59,10 +59,19 @@ ask you to run a command to get EKS credentials that looks something like this:
 
 ## Setting up runner configuration
 
+### Backend Configuration
+
 There are two file formats for constructing runner configuration that tell recipes *where*
-the data should output and be cached. In the examples below `{{job_name}}` will be templated for you based
-on the configuration for `Bake.job_name` (TODO: point to other docs). Also notice we going to store everything
-in s3. There are other storage options as well (TODO: point to the other docs).
+the data should output and be cached. Note the use of `{{job_name}}` in the `root_path` configuration
+examples below. `{{job_name}}` is special within `root_path` and will be treated as a template-value based
+on `Bake.job_name` which will can be provided through the CLI (TODO: point to other docs) and,
+failing that, will be generated automatically.
+
+Notice that, as configured below, we going to store everything in s3.  Nevertheless, Pangeo Forge
+project is storage-agnostic. By depending on `fsspec`, we're able to plug in supported backends.
+For other well-known `fsspec` implementations, please refer to the
+[fsspec docs](https://filesystem-spec.readthedocs.io/en/latest/api.html#other-known-implementations).
+
 
 0. JSON configuration:
 
@@ -105,26 +114,34 @@ in s3. There are other storage options as well (TODO: point to the other docs).
 
    ```python
    BUCKET_PREFIX = "s3://<bucket-name>/<some-prefix>/"
-
-   c.TargetStorage.fsspec_class = "s3fs.S3FileSystem"
-   # Target output should be partitioned by `{{job_name}}`
-   c.TargetStorage.root_path = f"{BUCKET_PREFIX}/{{job_name}}/output"
-   c.TargetStorage.fsspec_args = {
+   # The storage backend we want
+   s3_fsspec = "s3fs.S3FileSystem"
+   # Credentials for the backend
+   s3_args = {
        "key": "<your-aws-access-key>",
        "secret": "<your-aws-access-secret>",
        "client_kwargs":{"region_name":"<your-aws-bucket-region>"}
    }
+   # Take note: this is just python. We can reuse these values below
 
-   c.InputCacheStorage.fsspec_class = c.TargetStorage.fsspec_class
-   c.InputCacheStorage.fsspec_args = c.TargetStorage.fsspec_args
+   c.TargetStorage.fsspec_class = s3_fsspec
+   # Target output should be partitioned by `{{job_name}}`
+   c.TargetStorage.root_path = f"{BUCKET_PREFIX}/{{job_name}}/output"
+   c.TargetStorage.fsspec_args = s3_args
+
+   c.InputCacheStorage.fsspec_class = filesystem_class
+   c.InputCacheStorage.fsspec_args = s3_args
    # Input data cache should *not* be partitioned by `{{job_name}}`, as we want to get the datafile from the source only once
    c.InputCacheStorage.root_path = f"{BUCKET_PREFIX}/cache/input"
 
-   c.MetadataCacheStorage.fsspec_class = c.TargetStorage.fsspec_class
-   c.MetadataCacheStorage.fsspec_args = c.TargetStorage.fsspec_args
+   c.MetadataCacheStorage.fsspec_class = s3_fsspec
+   c.MetadataCacheStorage.fsspec_args = s3_args
    # Metadata cache should be per `{{job_name}}`, as kwargs changing can change metadata
    c.MetadataCacheStorage.root_path = f"{BUCKET_PREFIX}/{{job_name}}/cache/metadata"
    ```
+
+
+### Other configuration options
 
 A [subset of the configuration schema](https://github.com/pangeo-forge/pangeo-forge-recipes/blob/main/pangeo_forge_recipes/injections.py) 
 gets dependency injected into the recipe by the runner. 
@@ -149,7 +166,7 @@ An example of something slightly more detailed where `-f <runner_config.py>` wou
        --Bake.bakery_class="pangeo_forge_runner.bakery.flink.FlinkOperatorBakery"
    ```
 
-Where you put things is your choice but please make sure you don't commit any AWS secrets into GH 
+Where you put things is your choice but please be careful: you don't want to commit AWS secrets into GH!
 
 ## Running the recipe
 
