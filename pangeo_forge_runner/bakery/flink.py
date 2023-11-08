@@ -55,7 +55,7 @@ class FlinkOperatorBakery(Bakery):
     blocking = True
 
     flink_version = Unicode(
-        "1.15",
+        "1.16",
         config=True,
         help="""
         Version of Flink to use.
