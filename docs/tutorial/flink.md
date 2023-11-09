@@ -385,14 +385,13 @@ While the task manager doesn't have this nice memory configuration breakdown, th
 [Flink memory configurations](https://nightlies.apache.org/flink/flink-docs-release-1.16/docs/deployment/config/#memory-configuration)
 have all the same options for the task managers.
 
-While these settings might need to be tweaked in a recipe-specific situation, a good default is to set the 
-Job/Task Manager process memory higher than needed and hope that the fractional allocations talked in the 
+These settings are probably recipe specific b/c it depends what you are doing. A good default is to set the 
+job/task manager process memory higher than needed and hope that the fractional allocations talked in the 
 [Flink memory configuration](https://nightlies.apache.org/flink/flink-docs-release-1.16/docs/deployment/config/#memory-configuration) 
 will carve off enough room to do their job. 
 
-Then only adjust if you are getting specific errors about memory. The
-one caveat here is that `taskmanager.memory.flink.size` can't have a fractional allocation of total process memory
-and so it's best to set it outright at or below your total process memory:
+Then only adjust if you are getting specific errors about memory. The one caveat here is that `taskmanager.memory.flink.size` 
+can't have a fractional allocation of total process memory and so it's best to set it outright at or below your total process memory:
 
    ```bash
    pangeo-forge-runner bake \
