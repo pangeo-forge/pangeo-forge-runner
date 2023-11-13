@@ -165,7 +165,31 @@ class FlinkOperatorBakery(Bakery):
                 "flinkVersion": flink_version_str,
                 "flinkConfiguration": self.flink_configuration,
                 "serviceAccount": "flink",
-                "jobManager": {"resource": self.job_manager_resources},
+                "jobManager": {
+                    "resource": self.job_manager_resources,
+                    "podTemplate": {
+                        "spec": {
+                            "containers": [
+                                {
+                                    "volumeMounts": [
+                                        {
+                                            "name": "efs-flink-history",
+                                            "mountPath": "/opt/job/history"
+                                        }
+                                    ]
+                                }
+                            ],
+                            "volumes": [
+                                {
+                                    "name": "efs-flink-history",
+                                    "persistentVolumeClaim": {
+                                        "claimName": "flink-historyserver-efs-pvc"
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                },
                 "taskManager": {
                     "replicas": 5,
                     "resource": self.task_manager_resources,
