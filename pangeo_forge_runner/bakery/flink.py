@@ -200,14 +200,14 @@ class FlinkOperatorBakery(Bakery):
                                         "sh",
                                         "-c",
                                         # makes sure the flink uid/gid is owner of the archival mount
-                                        f"chown 9999:9999 {self.job_archive_efs_mount} && ls -lhd {self.job_archive_efs_mount}"
+                                        f"chown 9999:9999 {self.job_archive_efs_mount} && ls -lhd {self.job_archive_efs_mount}",
                                     ],
                                     "volumeMounts": [
                                         {
                                             "name": "efs-flink-history",
-                                            "mountPath": f"{self.job_archive_efs_mount}"
+                                            "mountPath": f"{self.job_archive_efs_mount}",
                                         }
-                                    ]
+                                    ],
                                 }
                             ],
                             "containers": [
@@ -220,9 +220,9 @@ class FlinkOperatorBakery(Bakery):
                                     "volumeMounts": [
                                         {
                                             "name": "efs-flink-history",
-                                            "mountPath": f"{self.job_archive_efs_mount}"
+                                            "mountPath": f"{self.job_archive_efs_mount}",
                                         }
-                                    ]
+                                    ],
                                 }
                             ],
                             "volumes": [
@@ -230,11 +230,11 @@ class FlinkOperatorBakery(Bakery):
                                     "name": "efs-flink-history",
                                     "persistentVolumeClaim": {
                                         "claimName": "flink-historyserver-efs-pvc"
-                                    }
+                                    },
                                 }
-                            ]
+                            ],
                         }
-                    }
+                    },
                 },
                 "taskManager": {
                     "replicas": 5,
