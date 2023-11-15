@@ -150,6 +150,25 @@ class FlinkOperatorBakery(Bakery):
         """,
     )
 
+    job_archive_efs_mount = Unicode(
+        "/opt/history/jobs",
+        config=False,
+        help="""
+        A non-configurable mount path showing where past jobs are
+        archived so the job manager's REST API can still returns
+        information after completing
+        
+        The reason this is non-configurable is b/c the same mount path
+        gets put into the default flink configuration by the Terraform
+        to set up the following keys:
+        
+        jobmanager.archive.fs.dir
+        taskmanager.archive.fs.dir
+        
+        see: https://github.com/pangeo-forge/pangeo-forge-cloud-federation/blob/main/terraform/aws/operator.tf#L42-L53
+        """,
+    )
+
     def make_flink_deployment(self, name: str, worker_image: str):
         """
         Return YAML for a FlinkDeployment
@@ -169,12 +188,38 @@ class FlinkOperatorBakery(Bakery):
                     "resource": self.job_manager_resources,
                     "podTemplate": {
                         "spec": {
-                            "containers": [
+                            "securityContext": {
+                                # flink uid/guid
+                                "fsGroup": 9999
+                            },
+                            "initContainers": [
                                 {
+                                    "name": "efs-mount-ownership-fix",
+                                    "image": "busybox:1.36.1",
+                                    "command": [
+                                        "sh",
+                                        "-c",
+                                        # makes sure the flink uid/gid is owner of the archival mount
+                                        f"chown 9999:9999 {self.job_archive_efs_mount} && ls -lhd {self.job_archive_efs_mount}"
+                                    ],
                                     "volumeMounts": [
                                         {
                                             "name": "efs-flink-history",
-                                            "mountPath": "/opt/job/history"
+                                            "mountPath": f"{self.job_archive_efs_mount}"
+                                        }
+                                    ]
+                                }
+                            ],
+                            "containers": [
+                                {
+                                    # NOTE: "name" and "image" are required here
+                                    # everything else gets back-filled in by the operator
+                                    "name": "flink-main-container",
+                                    "image": f"flink:{self.flink_version}",
+                                    "volumeMounts": [
+                                        {
+                                            "name": "efs-flink-history",
+                                            "mountPath": f"{self.job_archive_efs_mount}"
                                         }
                                     ]
                                 }
