@@ -10,7 +10,7 @@ import time
 
 import escapism
 from apache_beam.pipeline import PipelineOptions
-from traitlets import Dict, Integer, Unicode, Bool
+from traitlets import Bool, Dict, Integer, Unicode
 
 from .base import Bakery
 
