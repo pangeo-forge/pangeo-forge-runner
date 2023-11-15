@@ -14,21 +14,24 @@ jobs:
     # run on:
     #  - all pushes to main
     #  - schedule defined above
-    #  - a PR was just labeled 'test-dataflow'
-    #  - a PR with 'test-dataflow' label was opened, reopened, or synchronized
+    #  - a PR was just labeled 'test-dataflow' or 'test-all'
+    #  - a PR with 'test-dataflow' or 'test-all' label was opened, reopened, or synchronized
     if: |
       github.event_name == 'push' ||
       github.event_name == 'schedule' ||
+      github.event.label.name == 'test-all' ||
       github.event.label.name == 'test-dataflow' ||
+      contains( github.event.pull_request.labels.*.name, 'test-all') ||
       contains( github.event.pull_request.labels.*.name, 'test-dataflow')
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.9"]
+        python-version: ["3.9", "3.10", "3.11"]
         recipes-version: [
           "pangeo-forge-recipes==0.9.4",
           "pangeo-forge-recipes==0.10.0",
+          "pangeo-forge-recipes==0.10.3",
         ]
 
     steps:
@@ -46,13 +49,13 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         python -m pip install -r dev-requirements.txt
-        python -m pip install -e .
+        python -m pip install -e .[dataflow]
         python -m pip install -U ${{ matrix.recipes-version }}
 
     # FIXME: should gcsfs actually be part of some optional installs in setup.py?
     - name: Install gcsfs
       run: |
-        python -m pip install 'gcsfs==2022.8.2'
+        python -m pip install 'gcsfs>=2023.4.0'
 
     - name: 'Run Dataflow Integration Test'
       run: |

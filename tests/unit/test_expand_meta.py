@@ -1,4 +1,6 @@
 import json
+import os
+import secrets
 import subprocess
 
 invocations = [
@@ -75,3 +77,12 @@ def test_expand_meta_no_json():
         out = subprocess.check_output(cmd, encoding="utf-8")
         last_line = out.splitlines()[-1]
         assert json.loads(last_line) == invocation["meta"]
+
+
+def test_missing_config_file():
+    non_existent_path = secrets.token_hex() + ".py"
+    assert not os.path.exists(non_existent_path)
+    cmd = ["pangeo-forge-runner", "expand-meta", "--config", non_existent_path]
+    proc = subprocess.run(cmd, encoding="utf-8", capture_output=True, text=True)
+    assert proc.returncode == 1
+    assert "Could not read config from file" in proc.stderr

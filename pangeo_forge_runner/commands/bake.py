@@ -13,10 +13,16 @@ from traitlets import Bool, Type, Unicode, validate
 
 from .. import Feedstock
 from ..bakery.base import Bakery
+from ..bakery.flink import FlinkOperatorBakery
 from ..bakery.local import LocalDirectBakery
+from ..plugin import get_injections, get_injectionspecs_from_entrypoints
 from ..storage import InputCacheStorage, MetadataCacheStorage, TargetStorage
 from ..stream_capture import redirect_stderr, redirect_stdout
 from .base import BaseCommand, common_aliases, common_flags
+
+PFR_0_9_REQUIREMENTS_FILE_PATH = (
+    Path(__file__).parent / "pangeo-forge-recipes-0.9-requirements.txt"
+)
 
 
 class Bake(BaseCommand):
@@ -98,17 +104,33 @@ class Bake(BaseCommand):
         return proposal.value
 
     container_image = Unicode(
-        # Provides apache_beam 2.42, which we pin to in setup.py
-        "quay.io/pangeo/forge:5e51a29",
+        "",
         config=True,
         help="""
         Container image to use for this job.
 
-        Should be accessible to whatever Beam runner is being used.
+        For GCP DataFlow leaving it blank defaults to letting beam 
+        automatically figure out the image to use for the workers 
+        based on version of beam and python in use.
+        
+        For Flink it's required that you pass an beam image
+        for the version of python and beam you are targeting
+        for example: apache/beam_python3.10_sdk:2.51.0
+        more info: https://hub.docker.com/layers/apache/
 
         Note that some runners (like the local one) may not support this!
         """,
     )
+
+    @validate("container_image")
+    def _validate_container_image(self, proposal):
+        if self.bakery_class == FlinkOperatorBakery and not proposal.value:
+            raise ValueError(
+                "'container_name' is required when using the 'FlinkOperatorBakery' "
+                "for the version of python and apache-beam you are targeting. "
+                "See the sdk images available: https://hub.docker.com/layers/apache/"
+            )
+        return proposal.value
 
     def autogenerate_job_name(self):
         """
@@ -168,30 +190,30 @@ class Bake(BaseCommand):
             extra={"status": "setup"},
         )
 
+        injection_specs = get_injectionspecs_from_entrypoints()
+
         with self.fetch() as checkout_dir:
             if not self.job_name:
                 self.job_name = self.autogenerate_job_name()
 
-            callable_args_injections = {
-                "StoreToZarr": {
-                    "target_root": target_storage.get_forge_target(
-                        job_name=self.job_name
-                    ),
-                }
+            injection_values = {
+                "TARGET_STORAGE": target_storage.get_forge_target(
+                    job_name=self.job_name
+                ),
             }
 
             cache_target = input_cache_storage.get_forge_target(job_name=self.job_name)
             if cache_target:
-                callable_args_injections |= {
-                    # FIXME: a plugin/entrypoint system should handle injections.
-                    # hardcoding object names here assumes too much.
-                    "OpenURLWithFSSpec": {"cache": cache_target},
-                }
+                injection_values |= {"INPUT_CACHE_STORAGE": cache_target}
+            print(injection_values)
+            print(injection_specs)
 
             feedstock = Feedstock(
                 Path(checkout_dir) / self.feedstock_subdir,
                 prune=self.prune,
-                callable_args_injections=callable_args_injections,
+                callable_args_injections=get_injections(
+                    injection_specs, injection_values
+                ),
             )
 
             self.log.info("Parsing recipes...", extra={"status": "running"})
@@ -214,13 +236,20 @@ class Bake(BaseCommand):
 
             bakery: Bakery = self.bakery_class(parent=self)
 
-            # Check for a requirements.txt file and send it to beam if we have one
-            requirements_path = feedstock.feedstock_dir / "requirements.txt"
             extra_options = {}
-            if requirements_path.exists():
-                extra_options["requirements_file"] = str(requirements_path)
 
             for name, recipe in recipes.items():
+                # if pangeo-forge-recipes is <=0.9, we have to specify a requirements.txt
+                # file even if it isn't present, as the image used otherwise will not have pangeo-forge-recipes
+                if isinstance(recipe, PTransform):
+                    requirements_path = feedstock.feedstock_dir / "requirements.txt"
+                    if requirements_path.exists():
+                        extra_options["requirements_file"] = str(requirements_path)
+                else:
+                    extra_options["requirements_file"] = str(
+                        PFR_0_9_REQUIREMENTS_FILE_PATH
+                    )
+
                 pipeline_options = bakery.get_pipeline_options(
                     job_name=self.job_name,
                     # FIXME: Bring this in from meta.yaml?
