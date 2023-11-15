@@ -155,15 +155,15 @@ class FlinkOperatorBakery(Bakery):
         config=False,
         help="""
         A non-configurable mount path showing where past jobs are
-        archived so the job manager's REST API can still returns
+        archived so the job manager's REST API can still return
         information after completing
         
         The reason this is non-configurable is b/c the same mount path
-        gets put into the default flink configuration by the Terraform
-        to set up the following keys:
+        is saved to the default flink configuration by the Terraform
+        for the following keys. We don't want this to be configurable
         
-        jobmanager.archive.fs.dir
-        taskmanager.archive.fs.dir
+        jobmanager.archive.fs.dir: /opt/history/jobs
+        taskmanager.archive.fs.dir: /opt/history/jobs
         
         see: https://github.com/pangeo-forge/pangeo-forge-cloud-federation/blob/main/terraform/aws/operator.tf#L42-L53
         """,
@@ -213,7 +213,8 @@ class FlinkOperatorBakery(Bakery):
                             "containers": [
                                 {
                                     # NOTE: "name" and "image" are required here
-                                    # everything else gets back-filled in by the operator
+                                    # and were taken from existing deployed manifests
+                                    # all other attributes get back-filled in by the operator
                                     "name": "flink-main-container",
                                     "image": f"flink:{self.flink_version}",
                                     "volumeMounts": [
