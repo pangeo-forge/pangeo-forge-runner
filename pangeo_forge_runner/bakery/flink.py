@@ -10,7 +10,7 @@ import time
 
 import escapism
 from apache_beam.pipeline import PipelineOptions
-from traitlets import Dict, Integer, Unicode
+from traitlets import Dict, Integer, Unicode, Bool
 
 from .base import Bakery
 
@@ -148,6 +148,15 @@ class FlinkOperatorBakery(Bakery):
 
         Defaults to -1, which is no limit.
         """,
+    )
+
+    enable_job_archiving = Bool(
+        False,
+        config=True,
+        help="""
+            Enable the ability for past jobs to be archived so the job 
+            manager's REST API can still return information after completing
+            """,
     )
 
     job_archive_efs_mount = Unicode(
