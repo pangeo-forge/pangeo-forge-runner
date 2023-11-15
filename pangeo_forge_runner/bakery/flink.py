@@ -178,13 +178,71 @@ class FlinkOperatorBakery(Bakery):
         """,
     )
 
+    def _job_manager_pod_template_with_archiving(self):
+        """Return the job manager pod template
+
+        Returns:
+            a dicitonary representing the job manager pod template
+        """
+        return {
+            "podTemplate": {
+                "spec": {
+                    "securityContext": {
+                        # flink uid/guid
+                        "fsGroup": 9999
+                    },
+                    "initContainers": [
+                        {
+                            "name": "efs-mount-ownership-fix",
+                            "image": "busybox:1.36.1",
+                            "command": [
+                                "sh",
+                                "-c",
+                                # makes sure the flink uid/gid is owner of the archival mount
+                                f"chown 9999:9999 {self.job_archive_efs_mount} && ls -lhd {self.job_archive_efs_mount}",
+                            ],
+                            "volumeMounts": [
+                                {
+                                    "name": "efs-flink-history",
+                                    "mountPath": f"{self.job_archive_efs_mount}",
+                                }
+                            ],
+                        }
+                    ],
+                    "containers": [
+                        {
+                            # NOTE: "name" and "image" are required here
+                            # and were taken from existing deployed manifests
+                            # all other attributes get back-filled in by the operator
+                            "name": "flink-main-container",
+                            "image": f"flink:{self.flink_version}",
+                            "volumeMounts": [
+                                {
+                                    "name": "efs-flink-history",
+                                    "mountPath": f"{self.job_archive_efs_mount}",
+                                }
+                            ],
+                        }
+                    ],
+                    "volumes": [
+                        {
+                            "name": "efs-flink-history",
+                            "persistentVolumeClaim": {
+                                "claimName": "flink-historyserver-efs-pvc"
+                            },
+                        }
+                    ],
+                }
+            },
+        }
+
     def make_flink_deployment(self, name: str, worker_image: str):
         """
         Return YAML for a FlinkDeployment
         """
         image = f"flink:{self.flink_version}"
         flink_version_str = f'v{self.flink_version.replace(".", "_")}'
-        return {
+        flink_deploy = {
             "apiVersion": "flink.apache.org/v1beta1",
             "kind": "FlinkDeployment",
             "metadata": {"name": name},
@@ -195,55 +253,6 @@ class FlinkOperatorBakery(Bakery):
                 "serviceAccount": "flink",
                 "jobManager": {
                     "resource": self.job_manager_resources,
-                    "podTemplate": {
-                        "spec": {
-                            "securityContext": {
-                                # flink uid/guid
-                                "fsGroup": 9999
-                            },
-                            "initContainers": [
-                                {
-                                    "name": "efs-mount-ownership-fix",
-                                    "image": "busybox:1.36.1",
-                                    "command": [
-                                        "sh",
-                                        "-c",
-                                        # makes sure the flink uid/gid is owner of the archival mount
-                                        f"chown 9999:9999 {self.job_archive_efs_mount} && ls -lhd {self.job_archive_efs_mount}",
-                                    ],
-                                    "volumeMounts": [
-                                        {
-                                            "name": "efs-flink-history",
-                                            "mountPath": f"{self.job_archive_efs_mount}",
-                                        }
-                                    ],
-                                }
-                            ],
-                            "containers": [
-                                {
-                                    # NOTE: "name" and "image" are required here
-                                    # and were taken from existing deployed manifests
-                                    # all other attributes get back-filled in by the operator
-                                    "name": "flink-main-container",
-                                    "image": f"flink:{self.flink_version}",
-                                    "volumeMounts": [
-                                        {
-                                            "name": "efs-flink-history",
-                                            "mountPath": f"{self.job_archive_efs_mount}",
-                                        }
-                                    ],
-                                }
-                            ],
-                            "volumes": [
-                                {
-                                    "name": "efs-flink-history",
-                                    "persistentVolumeClaim": {
-                                        "claimName": "flink-historyserver-efs-pvc"
-                                    },
-                                }
-                            ],
-                        }
-                    },
                 },
                 "taskManager": {
                     "replicas": 5,
@@ -270,6 +279,12 @@ class FlinkOperatorBakery(Bakery):
                 },
             },
         }
+
+        if self.enable_job_archiving:
+            flink_deploy["spec"]["jobManager"].update(
+                self._job_manager_pod_template_with_archiving()
+            )
+        return flink_deploy
 
     def get_pipeline_options(
         self, job_name: str, container_image: str, extra_options: dict
