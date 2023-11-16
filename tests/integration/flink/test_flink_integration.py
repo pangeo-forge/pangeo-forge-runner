@@ -21,10 +21,10 @@ def test_flink_bake(minio_service, flinkversion, pythonversion, beamversion):
         recipe_version_ref = str(pfr_version)
     else:
         recipe_version_ref = "0.9.x"
-        pytest.xfail(
-            f"{pfr_version = }, which is < 0.10. "
-            "Flink tests timeout with this recipes version, so we xfail this test."
-        )
+        # pytest.xfail(
+        #     f"{pfr_version = }, which is < 0.10. "
+        #     "Flink tests timeout with this recipes version, so we xfail this test."
+        # )
 
     bucket = "s3://gpcp-out"
     config = {
@@ -77,7 +77,7 @@ def test_flink_bake(minio_service, flinkversion, pythonversion, beamversion):
             # the recipe version used to write the recipe module
             recipe_version_ref,
             "-f",
-            f.name,
+            f.name
         ]
 
         print("\nSubmitting job...")
