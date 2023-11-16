@@ -104,6 +104,7 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install -r dev-requirements.txt
         python -m pip install -e .[flink]
+        python -m pip install -U ${{ matrix.recipes-version }}
 
     - name: Set up min.io as a k3s service
       run: |
