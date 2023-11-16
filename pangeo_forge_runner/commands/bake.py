@@ -5,6 +5,7 @@ import os
 import re
 import string
 import time
+from importlib.metadata import distributions
 from pathlib import Path
 
 import escapism
@@ -173,6 +174,10 @@ class Bake(BaseCommand):
         """
         Start the baking process
         """
+        if not "pangeo-forge-recipes" in [d.metadata["Name"] for d in distributions()]:
+            raise ValueError(
+                "To use the `bake` command, `pangeo-forge-recipes` must be installed."
+            )
         # Create our storage configurations. Traitlets will do its magic, populate these
         # with appropriate config from config file / commandline / defaults.
         target_storage = TargetStorage(parent=self)

@@ -4,6 +4,7 @@ import tempfile
 import time
 from importlib.metadata import version
 
+import pytest
 import xarray as xr
 from packaging.version import parse as parse_version
 
@@ -20,6 +21,10 @@ def test_flink_bake(minio_service, flinkversion, pythonversion, beamversion):
         recipe_version_ref = str(pfr_version)
     else:
         recipe_version_ref = "0.9.x"
+        pytest.xfail(
+            f"{pfr_version = }, which is < 0.10. "
+            "Flink tests timeout with this recipes version, so we xfail this test."
+        )
 
     bucket = "s3://gpcp-out"
     config = {

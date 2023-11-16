@@ -14,7 +14,6 @@ setup(
     install_requires=[
         "jupyter-repo2docker",
         "ruamel.yaml",
-        "pangeo-forge-recipes>=0.9.2",
         "escapism",
         "jsonschema",
         "traitlets",
