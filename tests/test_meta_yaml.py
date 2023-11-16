@@ -2,10 +2,12 @@ import copy
 from textwrap import dedent
 
 import pytest
-import yaml
 from jsonschema import ValidationError, validate
+from ruamel.yaml import YAML
 
 from pangeo_forge_runner.meta_yaml.schema import schema
+
+yaml = YAML()
 
 
 @pytest.fixture
@@ -40,7 +42,7 @@ def with_recipes_list() -> str:
 
 @pytest.fixture
 def valid_meta_yaml(with_recipes_list: str) -> dict:
-    return yaml.safe_load(with_recipes_list)
+    return yaml.load(with_recipes_list)
 
 
 @pytest.fixture
@@ -60,7 +62,7 @@ def valid_meta_yaml_dict_object(with_recipes_list: str) -> dict:
         """
         ),
     )
-    return yaml.safe_load(with_dict_object)
+    return yaml.load(with_dict_object)
 
 
 def test_schema_valid(valid_meta_yaml):
