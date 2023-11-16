@@ -1,40 +1,48 @@
 from typing import List, Union
 
-from pydantic import BaseModel, HttpUrl
+from pydantic import TypeAdapter
+from pydantic.dataclasses import dataclass
 
 
-class RecipeObject(BaseModel):
+@dataclass
+class RecipeObject:
     id: str  # TODO: require to be unique within meta.yaml namespace
     object: str  # TODO: require format '{module_name}:{recipe_instance_name}'
 
 
-class RecipeDictObject(BaseModel):
+@dataclass
+class RecipeDictObject:
     dict_object: str  # TODO: require format '{module_name}:{dict_instance_name}'
 
 
-class Provider(BaseModel):
+@dataclass
+class Provider:
     name: str
     description: str
     roles: List[str]  # TODO: enum choices e.g. Roles.producer, Roles.licensor
-    url: HttpUrl
+    url: str
 
 
-class Provenance(BaseModel):
+@dataclass
+class Provenance:
     providers: List[Provider]
     license: str  # TODO: enum choices e.g. Licenses.cc_by_40 = "CC-BY-4.0" etc.
 
 
-class Maintainer(BaseModel):
+@dataclass
+class Maintainer:
     name: str
     orcid: str  # TODO: format requirement
     github: str  # TODO: allowable characters
 
 
-class Bakery(BaseModel):
+@dataclass
+class Bakery:
     id: str  # TODO: exists in database
 
 
-class MetaYaml(BaseModel):
+@dataclass
+class MetaYaml:
     title: str
     description: str
     pangeo_forge_version: str
@@ -45,4 +53,4 @@ class MetaYaml(BaseModel):
     bakery: Bakery
 
 
-schema = MetaYaml.schema()
+schema = TypeAdapter(MetaYaml).json_schema()
