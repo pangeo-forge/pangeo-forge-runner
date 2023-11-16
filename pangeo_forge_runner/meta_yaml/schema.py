@@ -1,9 +1,5 @@
+from dataclasses import dataclass
 from typing import List, Union
-
-try:
-    from pydantic.dataclasses import dataclass
-except (ImportError, ModuleNotFoundError):
-    from dataclasses import dataclass
 
 
 @dataclass
@@ -44,12 +40,18 @@ class Bakery:
 
 
 @dataclass
-class MetaYaml:
+class MetaYamlMinimal:
+    # TODO: this should always be a list
+    # recipes: List[Union[RecipeObject, RecipeDictObject]]
+    recipes: Union[List[RecipeObject], RecipeDictObject]
+
+
+@dataclass
+class MetaYamlExtended(MetaYamlMinimal):
     title: str
     description: str
     pangeo_forge_version: str
     pangeo_notebook_version: str
-    recipes: Union[List[RecipeObject], RecipeDictObject]
     provenance: Provenance
     maintainers: List[Maintainer]
     bakery: Bakery
@@ -57,5 +59,10 @@ class MetaYaml:
 
 def get_schema():
     from pydantic import TypeAdapter
+    from pydantic.dataclasses import dataclass as pydantic_dataclass
 
-    return TypeAdapter(MetaYaml).json_schema()
+    @pydantic_dataclass
+    class MetaYamlExtendedModel(MetaYamlExtended):
+        pass
+
+    return TypeAdapter(MetaYamlExtendedModel).json_schema()
