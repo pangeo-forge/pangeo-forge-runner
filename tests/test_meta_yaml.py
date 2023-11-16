@@ -5,9 +5,14 @@ import pytest
 from jsonschema import ValidationError, validate
 from ruamel.yaml import YAML
 
-from pangeo_forge_runner.meta_yaml.schema import schema
+from pangeo_forge_runner.meta_yaml.schema import get_schema
 
 yaml = YAML()
+
+
+@pytest.fixture
+def schema():
+    return get_schema()
 
 
 @pytest.fixture
@@ -65,11 +70,11 @@ def valid_meta_yaml_dict_object(with_recipes_list: str) -> dict:
     return yaml.load(with_dict_object)
 
 
-def test_schema_valid(valid_meta_yaml):
+def test_schema_valid(valid_meta_yaml, schema):
     validate(valid_meta_yaml, schema=schema)
 
 
-def test_schema_valid_dict_object(valid_meta_yaml_dict_object):
+def test_schema_valid_dict_object(valid_meta_yaml_dict_object, schema):
     validate(valid_meta_yaml_dict_object, schema=schema)
 
 
@@ -86,7 +91,7 @@ def test_schema_valid_dict_object(valid_meta_yaml_dict_object):
         "bakery",
     ],
 )
-def test_missing_toplevel_field(valid_meta_yaml, field):
+def test_missing_toplevel_field(valid_meta_yaml, field, schema):
     invalid_meta_yaml = copy.deepcopy(valid_meta_yaml)
     del invalid_meta_yaml[field]
     with pytest.raises(ValidationError, match=f"'{field}' is a required property"):
@@ -100,7 +105,7 @@ def test_missing_toplevel_field(valid_meta_yaml, field):
         "object",
     ],
 )
-def test_missing_recipes_subfield(valid_meta_yaml, subfield):
+def test_missing_recipes_subfield(valid_meta_yaml, subfield, schema):
     invalid_meta_yaml = copy.deepcopy(valid_meta_yaml)
     del invalid_meta_yaml["recipes"][0][subfield]
 
@@ -115,7 +120,7 @@ def test_missing_recipes_subfield(valid_meta_yaml, subfield):
         "license",
     ],
 )
-def test_missing_provenance_subfield(valid_meta_yaml, subfield):
+def test_missing_provenance_subfield(valid_meta_yaml, subfield, schema):
     invalid_meta_yaml = copy.deepcopy(valid_meta_yaml)
     del invalid_meta_yaml["provenance"][subfield]
 
@@ -132,7 +137,7 @@ def test_missing_provenance_subfield(valid_meta_yaml, subfield):
         "url",
     ],
 )
-def test_missing_providers_subfield(valid_meta_yaml, subfield):
+def test_missing_providers_subfield(valid_meta_yaml, subfield, schema):
     invalid_meta_yaml = copy.deepcopy(valid_meta_yaml)
     del invalid_meta_yaml["provenance"]["providers"][0][subfield]
 
@@ -148,7 +153,7 @@ def test_missing_providers_subfield(valid_meta_yaml, subfield):
         "github",
     ],
 )
-def test_missing_maintainers_subfield(valid_meta_yaml, subfield):
+def test_missing_maintainers_subfield(valid_meta_yaml, subfield, schema):
     invalid_meta_yaml = copy.deepcopy(valid_meta_yaml)
     del invalid_meta_yaml["maintainers"][0][subfield]
 
@@ -162,7 +167,7 @@ def test_missing_maintainers_subfield(valid_meta_yaml, subfield):
         "id",
     ],
 )
-def test_missing_bakery_subfield(valid_meta_yaml, subfield):
+def test_missing_bakery_subfield(valid_meta_yaml, subfield, schema):
     invalid_meta_yaml = copy.deepcopy(valid_meta_yaml)
     del invalid_meta_yaml["bakery"][subfield]
 

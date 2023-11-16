@@ -1,7 +1,9 @@
 from typing import List, Union
 
-from pydantic import TypeAdapter
-from pydantic.dataclasses import dataclass
+try:
+    from pydantic.dataclasses import dataclass
+except (ImportError, ModuleNotFoundError):
+    from dataclasses import dataclass
 
 
 @dataclass
@@ -53,4 +55,7 @@ class MetaYaml:
     bakery: Bakery
 
 
-schema = TypeAdapter(MetaYaml).json_schema()
+def get_schema():
+    from pydantic import TypeAdapter
+
+    return TypeAdapter(MetaYaml).json_schema()
