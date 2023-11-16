@@ -1,0 +1,36 @@
+name: Meta Yaml Tests
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "*" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11"]
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies & our package
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install -r dev-requirements.txt
+        python -m pip install -e .[validate-yaml]
+
+    - name: Test with pytest
+      run: |
+        pytest -vvv -s --cov=pangeo_forge_runner tests/test_meta_yaml.py
+
+    - name: Upload Coverage to Codecov
+      uses: codecov/codecov-action@v2
