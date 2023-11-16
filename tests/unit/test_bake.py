@@ -102,19 +102,21 @@ def test_container_name_validation(container_image, raises):
 
 
 @pytest.mark.parametrize(
-    ("recipe_id", "expected_error", "custom_job_name"),
+    ("recipe_id", "expected_error", "custom_job_name", "no_input_cache"),
     (
-        [None, None, None],
-        ["gpcp-from-gcs", None, None],
+        [None, None, None, False],
+        ["gpcp-from-gcs", None, None, False],
         [
             "invalid_recipe_id",
             "ValueError: self.recipe_id='invalid_recipe_id' not in ['gpcp-from-gcs']",
             None,
+            False
         ],
-        [None, None, "special-name-for-job"],
+        [None, None, "special-name-for-job", False],
+        [None, None, None, True],
     ),
 )
-def test_gpcp_bake(minio, recipe_id, expected_error, custom_job_name):
+def test_gpcp_bake(minio, recipe_id, expected_error, custom_job_name, no_input_cache):
     fsspec_args = {
         "key": minio["username"],
         "secret": minio["password"],
@@ -143,6 +145,12 @@ def test_gpcp_bake(minio, recipe_id, expected_error, custom_job_name):
         },
     }
 
+    if no_input_cache:
+        config["InputCacheStorage"] = {
+            "fsspec_class": "AbstractFileSystem",
+            "fsspec_args": {},
+            "root_path": "",
+        }
     if recipe_id:
         config["Bake"].update({"recipe_id": recipe_id})
     if custom_job_name:
