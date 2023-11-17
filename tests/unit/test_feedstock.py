@@ -4,6 +4,7 @@ import pytest
 from ruamel.yaml import YAML
 
 from pangeo_forge_runner.feedstock import Feedstock
+from pangeo_forge_runner.meta_yaml import MetaYaml
 
 yaml = YAML()
 
@@ -54,7 +55,9 @@ def tmp_feedstock(request, tmp_path_factory: pytest.TempPathFactory):
 def test_feedstock(tmp_feedstock):
     tmpdir, meta_yaml, recipes_section_type = tmp_feedstock
     f = Feedstock(feedstock_dir=tmpdir)
-    assert f.meta == yaml.load(meta_yaml)
+    # equality of HasTraits instances doesn't work as I might expect,
+    # so just check equality of the relevant trait (`.recipes`)
+    assert f.meta.recipes == MetaYaml(**yaml.load(meta_yaml)).recipes
 
     expanded_meta = f.get_expanded_meta()
     recipes = f.parse_recipes()

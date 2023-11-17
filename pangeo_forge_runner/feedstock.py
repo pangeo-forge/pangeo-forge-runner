@@ -5,6 +5,7 @@ from typing import Optional
 
 from ruamel.yaml import YAML
 
+from .meta_yaml import MetaYaml
 from .recipe_rewriter import RecipeRewriter
 
 yaml = YAML()
@@ -30,7 +31,7 @@ class Feedstock:
         """
         self.feedstock_dir = feedstock_dir
         with open(self.feedstock_dir / "meta.yaml") as f:
-            self.meta = yaml.load(f)
+            self.meta = MetaYaml(**yaml.load(f))
 
         self.prune = prune
         self.callable_args_injections = (
@@ -75,18 +76,17 @@ class Feedstock:
         *Executes arbitrary code* defined in the feedstock recipes.
         """
         recipes = {}
-        recipes_config = self.meta.get("recipes")
-        if isinstance(recipes_config, list):
-            for r in recipes_config:
+        if isinstance(self.meta.recipes, list):
+            for r in self.meta.recipes:
                 recipes[r["id"]] = self._import(r["object"])
-        elif isinstance(recipes_config, dict):
-            recipes = self._import(recipes_config["dict_object"])
+        elif isinstance(self.meta.recipes, dict):
+            recipes = self._import(self.meta.recipes["dict_object"])
         else:
             raise ValueError("Could not parse recipes config in meta.yaml")
 
         return recipes
 
-    def get_expanded_meta(self):
+    def get_expanded_meta(self) -> dict:
         """
         Return full meta.yaml file, expanding recipes if needed.
 
@@ -94,11 +94,11 @@ class Feedstock:
         'object' keys *may* be present, but not guaranteed.
         """
         meta_copy = deepcopy(self.meta)
-        if "recipes" in self.meta and "dict_object" in self.meta["recipes"]:
+        if self.meta.recipes and "dict_object" in self.meta.recipes:
             # We have a dict_object, so let's parse the recipes, and provide
             # keep just the ids, discarding the values - as the values do not
             # actually serialize.
             recipes = self.parse_recipes()
-            meta_copy["recipes"] = [{"id": k} for k, v in recipes.items()]
+            meta_copy.recipes = [{"id": k} for k, v in recipes.items()]
 
-        return meta_copy
+        return meta_copy.trait_values()
