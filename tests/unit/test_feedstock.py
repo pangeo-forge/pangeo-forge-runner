@@ -64,7 +64,7 @@ def test_feedstock(tmp_feedstock):
 
     for recipe_metadata in expanded_meta["recipes"]:
         # the recipe_object metadata  looks something like this:
-        #   {'recipes': [{'id': 'my_recipe'}]}
+        #   {'recipes': [{'id': 'my_recipe', 'object': 'DICT_VALUE_PLACEHOLDER'}]}
         # and the dict_object metadata looks like this:
         #   {'recipes': [{'id': 'aws-noaa-sea-surface-temp-whoi', 'object': 'recipe:recipe'}]}
         # both have an "id" field:
@@ -73,7 +73,7 @@ def test_feedstock(tmp_feedstock):
         if recipes_section_type == "recipe_object":
             assert "object" in recipe_metadata
         elif recipes_section_type == "dict_object":
-            assert "object" not in recipe_metadata
+            assert recipe_metadata["object"] == "DICT_VALUE_PLACEHOLDER"
 
     for r in recipes.values():
         # the values of the recipes dict should all be python objects

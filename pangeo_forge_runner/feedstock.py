@@ -99,7 +99,10 @@ class Feedstock:
             # keep just the ids, discarding the values - as the values do not
             # actually serialize.
             recipes = self.parse_recipes()
-            meta_copy.recipes = [{"id": k} for k, v in recipes.items()]
+            meta_copy.recipes = [
+                {"id": k, "object": "DICT_VALUE_PLACEHOLDER"}
+                for k, _ in recipes.items()
+            ]
 
         return (
             # the traitlets MetaYaml schema will give us empty containers
