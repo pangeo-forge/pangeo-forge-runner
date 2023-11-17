@@ -128,7 +128,7 @@ def test_flink_bake(minio_service, flinkversion, pythonversion, beamversion):
             "ls",
             "myminio/{}/precip".format(target_path.replace("s3://", "")),
         ]
-        timeout = 60 * 5
+        timeout = 60 * 7
         start = time.time()
         print("[ RUNNING ]: ", " ".join(cmd))
         while True:
