@@ -40,14 +40,33 @@ class MetaYaml(HasTraits):
         ```
         """,
     )
-    provenance = Dict(  # TODO: add detail
+    provenance = Dict(
         allow_none=True,
         help="""
         Dataset provenance information including provider, license, etc.
         """,
+        per_key_traits={
+            "providers": List(
+                Dict(
+                    per_key_traits={
+                        "name": Unicode(),
+                        "description": Unicode(),
+                        "roles": List(),  # TODO: enum
+                        "url": Unicode(),
+                    },
+                ),
+            ),
+            "license": Unicode(),  # TODO: guidance on suggested formatting (enum?)
+        },
     )
-    maintainers = List(  # TODO: add detail
-        Dict(),
+    maintainers = List(
+        Dict(
+            per_key_traits={
+                "name": Unicode(help="Full name of the maintainer."),
+                "orcid": Unicode(help="Maintainer's ORCID ID"),  # TODO: regex
+                "github": Unicode(help="Maintainer's GitHub username."),
+            },
+        ),
         allow_none=True,
         help="""
         Maintainers of this Pangeo Forge feedstock.

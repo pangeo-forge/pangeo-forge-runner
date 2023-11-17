@@ -86,7 +86,7 @@ class Feedstock:
 
         return recipes
 
-    def get_expanded_meta(self) -> dict:
+    def get_expanded_meta(self, drop_none=True) -> dict:
         """
         Return full meta.yaml file, expanding recipes if needed.
 
@@ -101,4 +101,10 @@ class Feedstock:
             recipes = self.parse_recipes()
             meta_copy.recipes = [{"id": k} for k, v in recipes.items()]
 
-        return meta_copy.trait_values()
+        return (
+            # the traitlets MetaYaml schema will give us empty containers
+            # by default, but in most cases lets assume we don't want that
+            {k: v for k, v in meta_copy.trait_values().items() if v}
+            if drop_none
+            else meta_copy.trait_values()
+        )
