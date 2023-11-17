@@ -30,7 +30,10 @@ def test_recipes_dict():
 
     with open(list_recipe / "meta.yaml") as f:
         meta = yaml.load(f)
-        meta["recipes"] = [{"id": "test_1"}, {"id": "test_2"}]
+        meta["recipes"] = [
+            {"id": "test_1", "object": "DICT_VALUE_PLACEHOLDER"},
+            {"id": "test_2", "object": "DICT_VALUE_PLACEHOLDER"},
+        ]
         assert meta == feed.get_expanded_meta()
 
 
