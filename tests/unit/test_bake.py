@@ -184,7 +184,9 @@ def test_gpcp_bake(minio, recipe_id, expected_error, custom_job_name, no_input_c
         if expected_error:
             assert proc.returncode == 1
             stdout[-1] == expected_error
-
+        elif no_input_cache and recipe_version_ref == "0.9.x":
+            # no_input_cache is only supported in 0.10.x and above
+            assert proc.returncode == 1
         else:
             assert proc.returncode == 0
 
