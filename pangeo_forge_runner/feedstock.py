@@ -76,10 +76,10 @@ class Feedstock:
         *Executes arbitrary code* defined in the feedstock recipes.
         """
         recipes = {}
-        if isinstance(self.meta.recipes, list):
+        if self.meta.recipes and isinstance(self.meta.recipes, list):
             for r in self.meta.recipes:
                 recipes[r["id"]] = self._import(r["object"])
-        elif isinstance(self.meta.recipes, dict):
+        elif self.meta.recipes and isinstance(self.meta.recipes, dict):
             recipes = self._import(self.meta.recipes["dict_object"])
         else:
             raise ValueError("Could not parse recipes config in meta.yaml")
