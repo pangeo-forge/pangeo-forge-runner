@@ -110,7 +110,7 @@ def test_container_name_validation(container_image, raises):
             "invalid_recipe_id",
             "ValueError: self.recipe_id='invalid_recipe_id' not in ['gpcp-from-gcs']",
             None,
-            False
+            False,
         ],
         [None, None, "special-name-for-job", False],
         [None, None, None, True],
@@ -147,7 +147,7 @@ def test_gpcp_bake(minio, recipe_id, expected_error, custom_job_name, no_input_c
 
     if no_input_cache:
         config["InputCacheStorage"] = {
-            "fsspec_class": "AbstractFileSystem",
+            "fsspec_class": "fsspec.AbstractFileSystem",
             "fsspec_args": {},
             "root_path": "",
         }
@@ -221,7 +221,6 @@ def test_gpcp_bake(minio, recipe_id, expected_error, custom_job_name, no_input_c
             )
             # --prune prunes to two time steps by default, so we expect 2 items here
             assert len(gpcp.precip) == 2
-            print(gpcp)
 
             # `mc` isn't the best way, but we want to display all the files in our minio
             with tempfile.TemporaryDirectory() as mcd:
