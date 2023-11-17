@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pytest
 from ruamel.yaml import YAML
+from traitlets import TraitError
 
 from pangeo_forge_runner import Feedstock
 
@@ -35,6 +36,5 @@ def test_recipes_dict():
 
 def test_recipes_broken():
     list_recipe = HERE / "test-recipes/broken-recipe/feedstock"
-    feed = Feedstock(list_recipe)
-    with pytest.raises(ValueError):
-        feed.parse_recipes()
+    with pytest.raises(TraitError):
+        _ = Feedstock(list_recipe)

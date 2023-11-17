@@ -1,4 +1,4 @@
-from traitlets import Dict, HasTraits, List, Unicode, Union
+from traitlets import Dict, HasTraits, List, TraitError, Unicode, Union, validate
 
 
 class MetaYaml(HasTraits):
@@ -6,6 +6,23 @@ class MetaYaml(HasTraits):
     Only the ``recipes`` field is strictly required for ``pangeo-forge-runner`` to function.
     All other fields are recommended but not required.
     """
+
+    def __init__(self, recipes=None, **kwargs):
+        """The only required field is ``recipes``, so we put it explicitly in the init
+        signature to ensure it is not omitted, as demonstrated in:
+        https://github.com/ipython/traitlets/issues/490#issuecomment-479716288
+        """
+        super().__init__(**kwargs)
+        self.recipes = recipes
+
+    @validate("recipes")
+    def _validate_recipes(self, proposal):
+        """Ensure the ``recipes`` trait is not passed as an empty container."""
+        if not proposal["value"]:
+            raise TraitError(
+                f"The ``recipes`` trait, passed as {proposal['value']}, cannot be empty."
+            )
+        return proposal["value"]
 
     title = Unicode(
         allow_none=True,
