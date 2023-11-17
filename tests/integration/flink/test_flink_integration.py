@@ -117,10 +117,12 @@ def test_flink_bake(minio_service, flinkversion, pythonversion, beamversion):
         target_path = config["TargetStorage"]["root_path"].format(
             job_name=config["Bake"]["job_name"]
         )
+        minio_client_expected_output_count = 4
         if pfr_version >= parse_version("0.10"):
             # in pangeo-forge-recipes>=0.10.0, an additional `StoreToZarr.store_name` kwarg
             # is appended to the formatted root path at execution time. for ref `0.10.x`,
             # the value of that kwarg is "gpcp", so we append that here.
+            minio_client_expected_output_count = 3
             target_path += "/gpcp"
 
         cmd = [
@@ -128,7 +130,7 @@ def test_flink_bake(minio_service, flinkversion, pythonversion, beamversion):
             "ls",
             "myminio/{}/precip".format(target_path.replace("s3://", "")),
         ]
-        timeout = 60 * 7
+        timeout = 60 * 5
         start = time.time()
         print("[ RUNNING ]: ", " ".join(cmd))
         while True:
@@ -146,7 +148,7 @@ def test_flink_bake(minio_service, flinkversion, pythonversion, beamversion):
             try:
                 output = proc.stdout.splitlines()
                 print(f"[ MINIO OUTPUT ]: {output[-1]}")
-                if len(output) == 4:
+                if len(output) == minio_client_expected_output_count:
                     break
             except:
                 pass
