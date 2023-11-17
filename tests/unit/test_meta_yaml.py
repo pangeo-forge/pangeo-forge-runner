@@ -91,21 +91,23 @@ def test_missing_toplevel_field(valid_meta_yaml, field):
         _ = MetaYaml(**meta_yaml_copy)
 
 
-# @pytest.mark.parametrize(
-#     "subfield",
-#     [
-#         "id",
-#         "object",
-#     ],
-# )
-# def test_missing_recipes_subfield(valid_meta_yaml, subfield, schema):
-#     invalid_meta_yaml = copy.deepcopy(valid_meta_yaml)
-#     del invalid_meta_yaml["recipes"][0][subfield]
+@pytest.mark.parametrize(
+    "subfield",
+    [
+        "id",
+        "object",
+    ],
+)
+def test_missing_recipes_subfield(valid_meta_yaml, subfield):
+    invalid_meta_yaml = copy.deepcopy(valid_meta_yaml)
+    del invalid_meta_yaml["recipes"][0][subfield]
 
-#     with pytest.raises(ValidationError, match=f"'{subfield}' is a required property"):
-#         validate(invalid_meta_yaml, schema=schema)
+    with pytest.raises(TraitError):
+        _ = MetaYaml(**invalid_meta_yaml)
 
 
+# TODO: In a future "strict" mode, ensure provenance fields are all provided.
+# --------------------------------------------------------------------------
 # @pytest.mark.parametrize(
 #     "subfield",
 #     [
@@ -116,11 +118,13 @@ def test_missing_toplevel_field(valid_meta_yaml, field):
 # def test_missing_provenance_subfield(valid_meta_yaml, subfield, schema):
 #     invalid_meta_yaml = copy.deepcopy(valid_meta_yaml)
 #     del invalid_meta_yaml["provenance"][subfield]
+#
+#     with pytest.raises(TraitError):
+#         _ = MetaYaml(**meta_yaml_copy)
 
-#     with pytest.raises(ValidationError, match=f"'{subfield}' is a required property"):
-#         validate(invalid_meta_yaml, schema=schema)
 
-
+# TODO: In a future "strict" mode, ensure providers fields are all provided.
+# --------------------------------------------------------------------------
 # @pytest.mark.parametrize(
 #     "subfield",
 #     [
@@ -133,11 +137,13 @@ def test_missing_toplevel_field(valid_meta_yaml, field):
 # def test_missing_providers_subfield(valid_meta_yaml, subfield, schema):
 #     invalid_meta_yaml = copy.deepcopy(valid_meta_yaml)
 #     del invalid_meta_yaml["provenance"]["providers"][0][subfield]
-
+#
 #     with pytest.raises(ValidationError, match=f"'{subfield}' is a required property"):
-#         validate(invalid_meta_yaml, schema=schema)
+#         _ = MetaYaml(**meta_yaml_copy)
 
 
+# TODO: In a future "strict" mode, ensure maintainers fields are all provided.
+# ----------------------------------------------------------------------------
 # @pytest.mark.parametrize(
 #     "subfield",
 #     [
@@ -149,20 +155,6 @@ def test_missing_toplevel_field(valid_meta_yaml, field):
 # def test_missing_maintainers_subfield(valid_meta_yaml, subfield, schema):
 #     invalid_meta_yaml = copy.deepcopy(valid_meta_yaml)
 #     del invalid_meta_yaml["maintainers"][0][subfield]
-
-#     with pytest.raises(ValidationError, match=f"'{subfield}' is a required property"):
-#         validate(invalid_meta_yaml, schema=schema)
-
-
-# @pytest.mark.parametrize(
-#     "subfield",
-#     [
-#         "id",
-#     ],
-# )
-# def test_missing_bakery_subfield(valid_meta_yaml, subfield, schema):
-#     invalid_meta_yaml = copy.deepcopy(valid_meta_yaml)
-#     del invalid_meta_yaml["bakery"][subfield]
-
-#     with pytest.raises(ValidationError, match=f"'{subfield}' is a required property"):
-#         validate(invalid_meta_yaml, schema=schema)
+#
+#     with pytest.raises(TraitError):
+#         _ = MetaYaml(**meta_yaml_copy)

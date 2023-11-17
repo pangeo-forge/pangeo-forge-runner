@@ -1,4 +1,14 @@
+import jsonschema
 from traitlets import Dict, HasTraits, List, TraitError, Unicode, Union, validate
+
+recipes_field_per_element_schema = {
+    "type": "object",
+    "properties": {
+        "id": {"type": "string"},
+        "object": {"type": "string"},
+    },
+    "required": ["id", "object"],
+}
 
 
 class MetaYaml(HasTraits):
@@ -17,11 +27,20 @@ class MetaYaml(HasTraits):
 
     @validate("recipes")
     def _validate_recipes(self, proposal):
-        """Ensure the ``recipes`` trait is not passed as an empty container."""
+        """Ensure the ``recipes`` trait is not passed as an empty container and that
+        each element of the field contains all expected subfields.
+        """
         if not proposal["value"]:
             raise TraitError(
                 f"The ``recipes`` trait, passed as {proposal['value']}, cannot be empty."
             )
+
+        if isinstance(proposal["value"], list):
+            for recipe_spec in proposal["value"]:
+                try:
+                    jsonschema.validate(recipe_spec, recipes_field_per_element_schema)
+                except jsonschema.ValidationError as e:
+                    raise TraitError(e)
         return proposal["value"]
 
     title = Unicode(
