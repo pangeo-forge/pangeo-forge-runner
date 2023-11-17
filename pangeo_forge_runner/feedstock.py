@@ -100,6 +100,9 @@ class Feedstock:
             # actually serialize.
             recipes = self.parse_recipes()
             meta_copy.recipes = [
+                # In place of the values, we add a placeholder string, so that the
+                # re-assignment to the MetaYaml schema here will pass validation
+                # of the `recipes` field, which requires "id" and "object" fields.
                 {"id": k, "object": "DICT_VALUE_PLACEHOLDER"}
                 for k, _ in recipes.items()
             ]
