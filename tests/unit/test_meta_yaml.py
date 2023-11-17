@@ -106,6 +106,11 @@ def test_missing_recipes_subfield(valid_meta_yaml, subfield):
         _ = MetaYaml(**invalid_meta_yaml)
 
 
+def test_recipes_field_cannot_be_empty_container():
+    with pytest.raises(TraitError):
+        _ = MetaYaml(recipes=[])
+
+
 # TODO: In a future "strict" mode, ensure provenance fields are all provided.
 # --------------------------------------------------------------------------
 # @pytest.mark.parametrize(
