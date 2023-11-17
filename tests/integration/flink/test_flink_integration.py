@@ -77,7 +77,7 @@ def test_flink_bake(minio_service, flinkversion, pythonversion, beamversion):
             # the recipe version used to write the recipe module
             recipe_version_ref,
             "-f",
-            f.name
+            f.name,
         ]
 
         print("\nSubmitting job...")
