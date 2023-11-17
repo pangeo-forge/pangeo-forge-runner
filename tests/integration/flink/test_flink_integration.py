@@ -117,12 +117,12 @@ def test_flink_bake(minio_service, flinkversion, pythonversion, beamversion):
         target_path = config["TargetStorage"]["root_path"].format(
             job_name=config["Bake"]["job_name"]
         )
-        minio_client_expected_output_count = 4
+        minio_client_expected_output_count = 3
         if pfr_version >= parse_version("0.10"):
             # in pangeo-forge-recipes>=0.10.0, an additional `StoreToZarr.store_name` kwarg
             # is appended to the formatted root path at execution time. for ref `0.10.x`,
             # the value of that kwarg is "gpcp", so we append that here.
-            minio_client_expected_output_count = 3
+            minio_client_expected_output_count = 4
             target_path += "/gpcp"
 
         cmd = [
