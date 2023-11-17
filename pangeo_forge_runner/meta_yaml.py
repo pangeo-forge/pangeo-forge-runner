@@ -40,12 +40,6 @@ class MetaYaml(HasTraits):
         ```
         """,
     )
-    pangeo_forge_version = Unicode(  # TODO: drop
-        allow_none=True,
-    )
-    pangeo_notebook_version = Unicode(  # TODO: drop
-        allow_none=True,
-    )
     provenance = Dict(  # TODO: add detail
         allow_none=True,
         help="""
@@ -58,7 +52,4 @@ class MetaYaml(HasTraits):
         help="""
         Maintainers of this Pangeo Forge feedstock.
         """,
-    )
-    bakery = Dict(  # TODO: drop
-        allow_none=True,
     )
