@@ -9,7 +9,7 @@ from pangeo_forge_runner.meta_yaml import MetaYaml
 yaml = YAML()
 
 
-@pytest.fixture(params=["recipe_object", "dict_object"])
+@pytest.fixture(params=["recipe_object", "dict_object", "both"])
 def tmp_feedstock(request, tmp_path_factory: pytest.TempPathFactory):
     tmpdir = tmp_path_factory.mktemp("feedstock")
     if request.param == "recipe_object":
@@ -44,6 +44,25 @@ def tmp_feedstock(request, tmp_path_factory: pytest.TempPathFactory):
         """
         )
 
+    elif request.param == "both":
+        meta_yaml = dedent(
+            """\
+        recipes:
+          - id: aws-noaa-sea-surface-temp-whoi
+            object: 'recipe:recipe'
+          - dict_object: 'recipe:recipes'
+        """
+        )
+        recipe_py = dedent(
+            """\
+        class Recipe:
+          pass
+
+        recipe = Recipe()
+        recipes = {"my_recipe": Recipe()}
+        """
+        )
+
     with open(tmpdir / "meta.yaml", mode="w") as f:
         f.write(meta_yaml)
     with open(tmpdir / "recipe.py", mode="w") as f:
@@ -59,21 +78,25 @@ def test_feedstock(tmp_feedstock):
     # so just check equality of the relevant trait (`.recipes`)
     assert f.meta.recipes == MetaYaml(**yaml.load(meta_yaml)).recipes
 
-    expanded_meta = f.get_expanded_meta()
     recipes = f.parse_recipes()
 
-    for recipe_metadata in expanded_meta["recipes"]:
-        # the recipe_object metadata  looks something like this:
-        #   {'recipes': [{'id': 'my_recipe', 'object': 'DICT_VALUE_PLACEHOLDER'}]}
-        # and the dict_object metadata looks like this:
-        #   {'recipes': [{'id': 'aws-noaa-sea-surface-temp-whoi', 'object': 'recipe:recipe'}]}
-        # both have an "id" field:
-        assert "id" in recipe_metadata
-        # but only the "recipe_object" has an "object" field:
-        if recipes_section_type == "recipe_object":
-            assert "object" in recipe_metadata
-        elif recipes_section_type == "dict_object":
-            assert recipe_metadata["object"] == "DICT_VALUE_PLACEHOLDER"
+    # the recipe_object metadata  looks something like this:
+    #   {'recipes': [{'id': 'my_recipe', 'object': 'DICT_VALUE_PLACEHOLDER'}]}
+    # and the dict_object metadata looks like this:
+    #   {'recipes': [{'id': 'aws-noaa-sea-surface-temp-whoi', 'object': 'recipe:recipe'}]}
+    if recipes_section_type == "recipe_object":
+        expanded_meta = f.get_expanded_meta()
+        assert expanded_meta["recipes"] == [
+            {"id": "aws-noaa-sea-surface-temp-whoi", "object": "recipe:recipe"},
+        ]
+    elif recipes_section_type == "dict_object":
+        expanded_meta = f.get_expanded_meta()
+        assert expanded_meta["recipes"] == [
+            {"id": "my_recipe", "object": "DICT_VALUE_PLACEHOLDER"},
+        ]
+    elif recipes_section_type == "both":
+        with pytest.raises(NotImplementedError):
+            _ = f.get_expanded_meta()
 
     for r in recipes.values():
         # the values of the recipes dict should all be python objects
