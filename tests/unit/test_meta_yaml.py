@@ -54,7 +54,7 @@ def valid_meta_yaml_dict_object(with_recipes_list: str) -> dict:
         dedent(
             """\
         recipes:
-          dict_object: 'recipe:recipes'
+          - dict_object: 'recipe:recipes'
         """
         ),
     )
@@ -109,6 +109,16 @@ def test_missing_recipes_subfield(valid_meta_yaml, subfield):
 def test_recipes_field_cannot_be_empty_container():
     with pytest.raises(TraitError):
         _ = MetaYaml(recipes=[])
+
+
+def test_recipes_field_invalid_keys():
+    with pytest.raises(TraitError):
+        # "dict_object" key can't be used in combination with other keys
+        _ = MetaYaml(recipes={"id": "abcdefg", "dict_object": "abc:def"})
+    with pytest.raises(TraitError):
+        # the only valid keys are {"id", "object"} together,
+        # or "dict_object" alone. other keys are not allowed.
+        _ = MetaYaml(recipes={"some_other_key": "abc:def"})
 
 
 # TODO: In a future "strict" mode, ensure provenance fields are all provided.

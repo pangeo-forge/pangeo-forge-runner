@@ -1,13 +1,17 @@
 import jsonschema
-from traitlets import Dict, HasTraits, List, TraitError, Unicode, Union, validate
+from traitlets import Dict, HasTraits, List, TraitError, Unicode, validate
 
 recipes_field_per_element_schema = {
     "type": "object",
     "properties": {
         "id": {"type": "string"},
         "object": {"type": "string"},
+        "dict_object": {"type": "string"},
     },
-    "required": ["id", "object"],
+    "oneOf": [
+        {"required": ["id", "object"]},
+        {"required": ["dict_object"]},
+    ],
 }
 
 
@@ -55,8 +59,8 @@ class MetaYaml(HasTraits):
         Description of the dataset.
         """,
     )
-    recipes = Union(
-        [List(Dict()), Dict()],
+    recipes = List(
+        Dict(),
         help="""
         Specifies the deployable Python objects to run in the recipe module.
         If the recipes are assigned to their own Python variable names,
@@ -72,7 +76,7 @@ class MetaYaml(HasTraits):
 
         ```yaml
         recipes:
-          dict_object: "recipe:name_of_recipes_dict"
+          - dict_object: "recipe:name_of_recipes_dict"
         ```
         """,
     )

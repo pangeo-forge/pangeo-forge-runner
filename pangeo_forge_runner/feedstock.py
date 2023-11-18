@@ -76,13 +76,22 @@ class Feedstock:
         *Executes arbitrary code* defined in the feedstock recipes.
         """
         recipes = {}
-        if isinstance(self.meta.recipes, list):
-            for r in self.meta.recipes:
+        for r in self.meta.recipes:
+            assert any(
+                # MetaYaml schema validation of self.meta ensures that one of these two
+                # conditions is true, but just assert anyway, to make sure there are no
+                # edge cases that slip through the cracks.
+                [
+                    key_set == set(r.keys())
+                    for key_set in ({"id", "object"}, {"dict_object"})
+                ]
+            )
+            if {"id", "object"} == set(r.keys()):
                 recipes[r["id"]] = self._import(r["object"])
-        elif isinstance(self.meta.recipes, dict):
-            recipes = self._import(self.meta.recipes["dict_object"])
-        else:
-            raise ValueError("Could not parse recipes config in meta.yaml")
+            elif {"dict_object"} == set(r.keys()):
+                dict_object = self._import(r["dict_object"])
+                for k, v in dict_object.items():
+                    recipes[k] = v
 
         return recipes
 
@@ -94,18 +103,26 @@ class Feedstock:
         'object' keys *may* be present, but not guaranteed.
         """
         meta_copy = deepcopy(self.meta)
-        if self.meta.recipes and "dict_object" in self.meta.recipes:
-            # We have a dict_object, so let's parse the recipes, and provide
-            # keep just the ids, discarding the values - as the values do not
-            # actually serialize.
-            recipes = self.parse_recipes()
-            meta_copy.recipes = [
-                # In place of the values, we add a placeholder string, so that the
-                # re-assignment to the MetaYaml schema here will pass validation
-                # of the `recipes` field, which requires "id" and "object" fields.
-                {"id": k, "object": "DICT_VALUE_PLACEHOLDER"}
-                for k, _ in recipes.items()
+        for i, r in enumerate(self.meta.recipes):
+            if "dict_object" in r:
+                # We have a dict_object, so let's parse the recipes, and provide
+                # keep just the ids, discarding the values - as the values do not
+                # actually serialize.
+                recipes = self.parse_recipes()
+                meta_copy.recipes[i] = [
+                    # In place of the values, we add a placeholder string, so that the
+                    # re-assignment to the MetaYaml schema here will pass validation
+                    # of the `recipes` field, which requires "id" and "object" fields.
+                    {"id": k, "object": "DICT_VALUE_PLACEHOLDER"}
+                    for k, _ in recipes.items()
+                ]
+        if any([isinstance(r, list) for r in meta_copy.recipes]):
+            # if we expanded any dict_objects above, then we'll have some nested lists
+            # which we need to flatten here before moving on
+            all_aslists = [
+                (r if isinstance(r, list) else [r]) for r in meta_copy.recipes
             ]
+            meta_copy.recipes = sum(all_aslists, [])
 
         return (
             # the traitlets MetaYaml schema will give us empty containers

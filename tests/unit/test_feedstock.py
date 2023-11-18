@@ -32,7 +32,7 @@ def tmp_feedstock(request, tmp_path_factory: pytest.TempPathFactory):
         meta_yaml = dedent(
             """\
         recipes:
-          dict_object: 'recipe:recipes'
+          - dict_object: 'recipe:recipes'
         """
         )
         recipe_py = dedent(
