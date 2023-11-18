@@ -77,15 +77,21 @@ class Feedstock:
         """
         recipes = {}
         for r in self.meta.recipes:
+            assert any(
+                # MetaYaml schema validation of self.meta ensures that one of these two
+                # conditions is true, but just assert anyway, to make sure there are no
+                # edge cases that slip through the cracks.
+                [
+                    key_set == set(r.keys())
+                    for key_set in ({"id", "object"}, {"dict_object"})
+                ]
+            )
             if {"id", "object"} == set(r.keys()):
                 recipes[r["id"]] = self._import(r["object"])
             elif {"dict_object"} == set(r.keys()):
                 dict_object = self._import(r["dict_object"])
                 for k, v in dict_object.items():
                     recipes[k] = v
-            else:
-                # MetaYaml schema validation should prevent us from ever hitting this.
-                raise ValueError("Could not parse recipes config in meta.yaml")
 
         return recipes
 
