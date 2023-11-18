@@ -208,10 +208,11 @@ def test_gpcp_bake(
                     assert job_name.startswith(custom_job_name)
                 else:
                     assert job_name.startswith("gh-pforgetest-gpcp-from-gcs-")
-            if "dictobj" in recipes_version_ref:
-                assert job_name.endswith(
-                    hashlib.sha256(recipe_name.encode()).hexdigest()[:5]
-                )
+
+                if "dictobj" in recipes_version_ref:
+                    assert job_name.endswith(
+                        hashlib.sha256(recipe_name.encode()).hexdigest()[:5]
+                    )
 
             # In pangeo-forge-recipes>=0.10.0, the actual zarr store is produced in a
             # *subpath* of target_storage.rootpath, rather than in the
