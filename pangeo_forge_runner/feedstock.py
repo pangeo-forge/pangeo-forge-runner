@@ -103,27 +103,22 @@ class Feedstock:
         'object' keys *may* be present, but not guaranteed.
         """
         meta_copy = deepcopy(self.meta)
-        for i, r in enumerate(self.meta.recipes):
-            if "dict_object" in r:
-                # We have a dict_object, so let's parse the recipes, and provide
-                # keep just the ids, discarding the values - as the values do not
-                # actually serialize.
-                recipes = self.parse_recipes()
-                meta_copy.recipes[i] = [
-                    # In place of the values, we add a placeholder string, so that the
-                    # re-assignment to the MetaYaml schema here will pass validation
-                    # of the `recipes` field, which requires "id" and "object" fields.
-                    {"id": k, "object": "DICT_VALUE_PLACEHOLDER"}
-                    for k, _ in recipes.items()
-                ]
-        if any([isinstance(r, list) for r in meta_copy.recipes]):
-            # if we expanded any dict_objects above, then we'll have some nested lists
-            # which we need to flatten here before moving on
-            all_aslists = [
-                (r if isinstance(r, list) else [r]) for r in meta_copy.recipes
+        if any(["dict_object" in r for r in self.meta.recipes]):
+            if not all(["dict_object" in r for r in self.meta.recipes]):
+                raise NotImplementedError(
+                    "Mixing explicit recipe objects and dict_objects in a "
+                    "single feedstock is not yet supported."
+                )
+            # We have at least one dict_object, so let's parse the recipes,
+            # keeping just the ids, discarding the values - as the values do not
+            # actually serialize.
+            meta_copy.recipes = [
+                # In place of dict values, we add a placeholder string, so that the
+                # re-assignment to the MetaYaml schema here will pass validation
+                # of the `recipes` field, which requires "id" and "object" fields.
+                {"id": k, "object": "DICT_VALUE_PLACEHOLDER"}
+                for k, _ in self.parse_recipes().items()
             ]
-            meta_copy.recipes = sum(all_aslists, [])
-
         return (
             # the traitlets MetaYaml schema will give us empty containers
             # by default, but in most cases lets assume we don't want that
