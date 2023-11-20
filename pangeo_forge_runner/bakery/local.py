@@ -44,5 +44,5 @@ class LocalDirectBakery(Bakery):
             save_main_session=True,
             # this might solve serialization issues; cf. https://beam.apache.org/blog/beam-2.36.0/
             pickle_library="cloudpickle",
-            **extra_options
+            **extra_options,
         )
