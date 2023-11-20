@@ -1,3 +1,4 @@
+import hashlib
 import json
 import re
 import subprocess
@@ -101,6 +102,20 @@ def test_container_name_validation(container_image, raises):
         assert bake.container_image == container_image
 
 
+@pytest.fixture(params=["recipe_object", "dict_object"])
+def recipes_version_ref(request):
+    pfr_version = parse_version(version("pangeo-forge-recipes"))
+    if pfr_version >= parse_version("0.10"):
+        recipes_version_ref = "0.10.x"
+    else:
+        recipes_version_ref = "0.9.x"
+    return (
+        recipes_version_ref
+        if not request.param == "dict_object"
+        else f"{recipes_version_ref}-dictobj"
+    )
+
+
 @pytest.mark.parametrize(
     ("recipe_id", "expected_error", "custom_job_name"),
     (
@@ -114,7 +129,17 @@ def test_container_name_validation(container_image, raises):
         [None, None, "special-name-for-job"],
     ),
 )
-def test_gpcp_bake(minio, recipe_id, expected_error, custom_job_name):
+def test_gpcp_bake(
+    minio, recipe_id, expected_error, custom_job_name, recipes_version_ref
+):
+    if recipes_version_ref == "0.9.x-dictobj" or (
+        recipes_version_ref == "0.10.x-dictobj" and recipe_id
+    ):
+        # TODO: clarify fixturing story to avoid this hackiness
+        pytest.skip(
+            "We only test dictobjs for recipes >0.10.0, and without recipe_id's"
+        )
+
     fsspec_args = {
         "key": minio["username"],
         "secret": minio["password"],
@@ -148,12 +173,6 @@ def test_gpcp_bake(minio, recipe_id, expected_error, custom_job_name):
     if custom_job_name:
         config["Bake"].update({"job_name": custom_job_name})
 
-    pfr_version = parse_version(version("pangeo-forge-recipes"))
-    if pfr_version >= parse_version("0.10"):
-        recipe_version_ref = "0.10.x"
-    else:
-        recipe_version_ref = "0.9.x"
-
     with tempfile.NamedTemporaryFile("w", suffix=".json") as f:
         json.dump(config, f)
         f.flush()
@@ -165,7 +184,7 @@ def test_gpcp_bake(minio, recipe_id, expected_error, custom_job_name):
             "--ref",
             # in the test feedstock, tags are named for the recipes version
             # which was used to write the recipe module
-            recipe_version_ref,
+            recipes_version_ref,
             "--json",
             "-f",
             f.name,
@@ -180,14 +199,20 @@ def test_gpcp_bake(minio, recipe_id, expected_error, custom_job_name):
         else:
             assert proc.returncode == 0
 
-            for line in stdout:
-                if "Running job for recipe gpcp" in line:
-                    job_name = json.loads(line)["job_name"]
+            job_name_logs = [
+                json.loads(line) for line in stdout if "Running job for recipe " in line
+            ]
+            job_names = {line["recipe"]: line["job_name"] for line in job_name_logs}
+            for recipe_name, job_name in job_names.items():
+                if custom_job_name:
+                    assert job_name.startswith(custom_job_name)
+                else:
+                    assert job_name.startswith("gh-pforgetest-gpcp-from-gcs-")
 
-            if custom_job_name:
-                assert job_name == custom_job_name
-            else:
-                assert job_name.startswith("gh-pforgetest-gpcp-from-gcs-")
+                if "dictobj" in recipes_version_ref:
+                    assert job_name.endswith(
+                        hashlib.sha256(recipe_name.encode()).hexdigest()[:5]
+                    )
 
             # In pangeo-forge-recipes>=0.10.0, the actual zarr store is produced in a
             # *subpath* of target_storage.rootpath, rather than in the
@@ -195,25 +220,34 @@ def test_gpcp_bake(minio, recipe_id, expected_error, custom_job_name):
             # versions of pangeo-forge-recipes. https://github.com/pangeo-forge/pangeo-forge-recipes/pull/495
             # has more information
 
-            if pfr_version >= parse_version("0.10"):
-                zarr_store_path = config["TargetStorage"]["root_path"] + "gpcp/"
+            if recipes_version_ref == "0.10.x":
+                zarr_store_full_paths = [config["TargetStorage"]["root_path"] + "gpcp/"]
+            elif recipes_version_ref == "0.10.x-dictobj":
+                zarr_store_root_path = config["TargetStorage"]["root_path"]
+                zarr_store_full_paths = [
+                    zarr_store_root_path + store_name
+                    for store_name in ["gpcp-dict-key-0", "gpcp-dict-key-1"]
+                ]
             else:
-                zarr_store_path = config["TargetStorage"]["root_path"]
-            # Open the generated dataset with xarray!
-            gpcp = xr.open_dataset(
-                # We specify a store_name of "gpcp" in the test recipe
-                zarr_store_path,
-                backend_kwargs={"storage_options": fsspec_args},
-                engine="zarr",
-            )
+                zarr_store_full_paths = [config["TargetStorage"]["root_path"]]
 
-            assert (
-                gpcp.title
-                == "Global Precipitation Climatatology Project (GPCP) Climate Data Record (CDR), Daily V1.3"
-            )
-            # --prune prunes to two time steps by default, so we expect 2 items here
-            assert len(gpcp.precip) == 2
-            print(gpcp)
+            # Open the generated datasets with xarray!
+            for path in zarr_store_full_paths:
+                print(f"Opening dataset for {path = }")
+                ds = xr.open_dataset(
+                    # We specify a store_name of "gpcp" in the test recipe
+                    path,
+                    backend_kwargs={"storage_options": fsspec_args},
+                    engine="zarr",
+                )
+
+                assert (
+                    ds.title
+                    == "Global Precipitation Climatatology Project (GPCP) Climate Data Record (CDR), Daily V1.3"
+                )
+                # --prune prunes to two time steps by default, so we expect 2 items here
+                assert len(ds.precip) == 2
+                print(ds)
 
             # `mc` isn't the best way, but we want to display all the files in our minio
             with tempfile.TemporaryDirectory() as mcd:
