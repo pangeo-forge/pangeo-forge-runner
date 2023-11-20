@@ -10,9 +10,9 @@ an Amazon [EKS](https://aws.amazon.com/eks/) k8s cluster!
 
 Current support is for the following versions:
 
-| **pangeo-forge-runner version** | **flink k8s operator version** | **flink version** |                  **apache-beam version**                 |
-|:----------------------------:|:--------------------------------:|:--------------------:|:--------------------------------------------------------------:|
-| \>\=0.9.1 | 1.5.0                            | 1.16                | 2.[47-51].0<br>(all versions listed [here](https://repo.maven.apache.org/maven2/org/apache/beam/beam-runners-flink-1.16/)) |
+| **pangeo-forge-recipes version** | **pangeo-forge-runner version** | **flink k8s operator version** | **flink version** |                  **apache-beam version**                 |
+|:--------------------------------:|:----------------------------:|:--------------------------------:|:--------------------:|:--------------------------------------------------------------:|
+| >=0.10.0 | \>\=0.9.1 | 1.5.0                            | 1.16                | 2.[47-51].0<br>(all versions listed [here](https://repo.maven.apache.org/maven2/org/apache/beam/beam-runners-flink-1.16/)) |
 
 
 ## Setting up EKS
@@ -115,7 +115,7 @@ The example below taken from the [integration test recipe](https://github.com/pf
 
 The inputs and metadata can be cached so items don't have to be resolved again during the next recipe run. Defining where
 the caching happens is part of the runner file configuration. More about that in the [next session](#configfiles). Note 
-that in those upcoming examples keys `InputCacheStorage` and `MetadataCacheStorage` target these options.
+that in those upcoming examples keys `InputCacheStorage`` target these options.
 
 ### Where Data is Output
 
@@ -162,16 +162,6 @@ and `fsspec` [third-party implementations](https://filesystem-spec.readthedocs.i
         },
        // Input data cache should *not* be partitioned by `{{job_name}}`, as we want to get the datafile from the source only once
        "root_path": "s3://<bucket-name>/<some-prefix>/input/cache"
-     },
-     "MetadataCacheStorage": {
-       "fsspec_class": "s3fs.S3FileSystem",
-         "fsspec_args": {
-          "key": "<your-aws-access-key>",
-          "secret": "<your-aws-access-secret>",
-          "client_kwargs":{"region_name":"<your-aws-bucket-region>"}
-        },
-       // Metadata cache should be per `{{job_name}}`, as kwargs changing can change metadata
-       "root_path": "s3://<bucket-name>/<some-prefix>/{{job_name}}/metadata"
      }
    }
    ```
@@ -199,11 +189,6 @@ and `fsspec` [third-party implementations](https://filesystem-spec.readthedocs.i
    c.InputCacheStorage.fsspec_args = s3_args
    # Input data cache should *not* be partitioned by `{{job_name}}`, as we want to get the datafile from the source only once
    c.InputCacheStorage.root_path = f"{BUCKET_PREFIX}/cache/input"
-
-   c.MetadataCacheStorage.fsspec_class = s3_fsspec
-   c.MetadataCacheStorage.fsspec_args = s3_args
-   # Metadata cache should be per `{{job_name}}`, as kwargs changing can change metadata
-   c.MetadataCacheStorage.root_path = f"{BUCKET_PREFIX}/{{job_name}}/cache/metadata"
    ```
 
 
