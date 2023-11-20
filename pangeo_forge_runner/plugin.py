@@ -126,9 +126,8 @@ def get_injectionspecs_from_entrypoints():
         # entrypoint based injection specs.
         injection_specs = {
             "Config": {
-                "target_root": "TARGET_STORAGE",
-                "cache": "INPUT_CACHE_STORAGE",
-                "metadata_cache": "INPUT_CACHE_STORAGE",
+                "target_storage": "TARGET_STORAGE",
+                "input_cache_storage": "INPUT_CACHE_STORAGE",
             },
             "StoreToZarr": {
                 "target_root": "TARGET_STORAGE",
