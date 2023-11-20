@@ -156,9 +156,17 @@ class DataflowBakery(Bakery):
         if self.project_id is None:
             raise ValueError("DataflowBakery.project_id must be set")
 
+        experiments = ["use_runner_v2"]
+
         if self.use_dataflow_prime:
             # dataflow prime does not support setting machine types explicitly!
             sizing_options = {"dataflow_service_options": ["enable_prime"]}
+            # Enable vertical autoscaling https://cloud.google.com/dataflow/docs/vertical-autoscaling#batch
+            experiments += [
+                "enable_batch_vmr",
+                "enable_vertical_memory_autoscaling",
+                "auto_use_sibling_sdk_workers=false",
+            ]
         else:
             sizing_options = {"machine_type": self.machine_type}
 
@@ -175,7 +183,7 @@ class DataflowBakery(Bakery):
             region=self.region,
             # The v2 Runner is required to use custom container images
             # https://cloud.google.com/dataflow/docs/guides/using-custom-containers#usage
-            experiments=["use_runner_v2"],
+            experiments=experiments,
             sdk_container_image=container_image,
             sdk_location="container",
             # https://cloud.google.com/dataflow/docs/resources/faq#how_do_i_handle_nameerrors
