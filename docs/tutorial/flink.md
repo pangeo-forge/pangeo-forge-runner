@@ -12,7 +12,7 @@ Current support is for the following versions:
 
 | **pangeo-forge-recipes version** | **pangeo-forge-runner version** | **flink k8s operator version** | **flink version** |                  **apache-beam version**                 |
 |:--------------------------------:|:----------------------------:|:--------------------------------:|:--------------------:|:--------------------------------------------------------------:|
-| >=0.10.0 | \>\=0.9.1 | 1.5.0                            | 1.16                | 2.[47-51].0<br>(all versions listed [here](https://repo.maven.apache.org/maven2/org/apache/beam/beam-runners-flink-1.16/)) |
+| \>\=0.10.0 | \>\=0.9.1 | 1.5.0                            | 1.16                | 2.[47-51].0<br>(all versions listed [here](https://repo.maven.apache.org/maven2/org/apache/beam/beam-runners-flink-1.16/)) |
 
 
 ## Setting up EKS
