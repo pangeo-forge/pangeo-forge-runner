@@ -8,11 +8,11 @@ This allows us to bake recipes on *any* Kubernetes cluster! In this tutorial, we
 for [integration tests](https://github.com/pangeo-forge/pangeo-forge-runner/tree/main/tests/integration) on 
 an Amazon [EKS](https://aws.amazon.com/eks/) k8s cluster!
 
-Current support is for the following versions:
+Current support:
 
 | **pangeo-forge-recipes version** | **pangeo-forge-runner version** | **flink k8s operator version** | **flink version** |                  **apache-beam version**                 |
 |:--------------------------------:|:----------------------------:|:--------------------------------:|:--------------------:|:--------------------------------------------------------------:|
-| \>\=0.10.0 | \>\=0.9.1 | 1.5.0                            | 1.16                | 2.[47-51].0<br>(all versions listed [here](https://repo.maven.apache.org/maven2/org/apache/beam/beam-runners-flink-1.16/)) |
+| \>\=0.10.0 | \>\=0.9.1 | 1.6.1                           | 1.16                | 2.[47-51].0<br>(all versions listed [here](https://repo.maven.apache.org/maven2/org/apache/beam/beam-runners-flink-1.16/)) |
 
 
 ## Setting up EKS
@@ -206,14 +206,15 @@ Note that `-f <path-to-your-runner-config>.<json||py>` would point to our JSON o
    ```bash
    pangeo-forge-runner bake \
        --repo="https://github.com/pforgetest/gpcp-from-gcs-feedstock.git"  \
-       --ref="main" \
+       --ref="0.10.3" \
        -f <path-to-your-runner-config>.<json||py> \
        --FlinkOperatorBakery.job_manager_resources='{"memory": "2048m", "cpu": 1.0}' \
-       --FlinkOperatorBakery.task_manager_resources='{"memory": "2047m", "cpu": 1.0}' \
+       --FlinkOperatorBakery.task_manager_resources='{"memory": "2048m", "cpu": 1.0}' \
        --FlinkOperatorBakery.flink_configuration='{"taskmanager.numberOfTaskSlots": "1", "taskmanager.memory.flink.size": "1536m", "taskmanager.memory.task.off-heap.size": "256m", "taskmanager.memory.jvm-overhead.max": "1024m"}' \
        --FlinkOperatorBakery.parallelism=1 \
        --FlinkOperatorBakery.flink_version="1.16" \
-       --Bake.job_name=gpcp \
+       --Bake.prune=True \
+       --Bake.job_name=recipe \
        --Bake.container_image='apache/beam_python3.9_sdk:2.50.0' \
        --Bake.bakery_class="pangeo_forge_runner.bakery.flink.FlinkOperatorBakery"
    ```
@@ -229,15 +230,16 @@ where `<path-to-your-runner-config>.<json||py>` is your configuration file talke
    ```bash
    pangeo-forge-runner bake \
        --repo=https://github.com/pforgetest/gpcp-from-gcs-feedstock.git  \
-       --ref="main" \
+       --ref="0.10.3" \
        -f <path-to-your-runner-config>.<json||py>
        --FlinkOperatorBakery.flink_version="1.16" \
-       --Bake.job_name=gpcp \
-       --Bake.container_image='apache/beam_python3.9_sdk:2.47.0' \
+       --Bake.prune=True \
+       --Bake.job_name=recipe \
+       --Bake.container_image='apache/beam_python3.9_sdk:2.50.0' \
        --Bake.bakery_class="pangeo_forge_runner.bakery.flink.FlinkOperatorBakery"
    ```
 
-You can add `Bake.prune=True` too if you want to only test the recipe and run the first two time steps like the integration tests do.
+Note that `Bake.prune=True` onlys tests the recipe by running the first two time steps like the integration tests do.
 
 ## Monitoring Job Output via the Flink Dashboard 
 
@@ -381,7 +383,7 @@ can't have a fractional allocation of total process memory and so it's best to s
    ```bash
    pangeo-forge-runner bake \
         --repo=https://github.com/pforgetest/gpcp-from-gcs-feedstock.git  \
-       --ref="main" \
+       --ref="0.10.3" \
        -f <path-to-your-runner-config>.<json||py> \
        
         # corresponds to: https://nightlies.apache.org/flink/flink-docs-release-1.16/docs/deployment/config/#jobmanager.memory.process.size
@@ -396,7 +398,8 @@ can't have a fractional allocation of total process memory and so it's best to s
         # corresponds to: https://nightlies.apache.org/flink/flink-docs-release-1.16/docs/deployment/config/#pipeline-max-parallelism
        --FlinkOperatorBakery.parallelism=1 \
        --FlinkOperatorBakery.flink_version="1.16" \
-       --Bake.job_name=gpcp \
+       --Bake.prune=True \
+       --Bake.job_name=recipe \
        
        # corresponds: https://nightlies.apache.org/flink/flink-docs-release-1.16/docs/deployment/config/#kubernetes-container-image
        --Bake.container_image='apache/beam_python3.9_sdk:2.50.0' \
