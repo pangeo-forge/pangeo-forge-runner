@@ -132,7 +132,12 @@ def recipes_version_ref(request):
     ),
 )
 def test_gpcp_bake(
-    minio, recipe_id, expected_error, custom_job_name, no_input_cache, recipes_version_ref
+    minio,
+    recipe_id,
+    expected_error,
+    custom_job_name,
+    no_input_cache,
+    recipes_version_ref,
 ):
     if recipes_version_ref == "0.9.x-dictobj" or (
         recipes_version_ref == "0.10.x-dictobj" and recipe_id
