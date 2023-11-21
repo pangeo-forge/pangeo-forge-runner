@@ -10,8 +10,6 @@ invocations = [
         "meta": {
             "title": "Global Precipitation Climatology Project",
             "description": "Global Precipitation Climatology Project (GPCP) Daily Version 1.3 gridded, merged ty satellite/gauge precipitation Climate data Record (CDR) from 1996 to present.\n",
-            "pangeo_forge_version": "0.9.0",
-            "pangeo_notebook_version": "2022.06.02",
             "recipes": [{"id": "gpcp-from-gcs", "object": "recipe:recipe"}],
             "provenance": {
                 "providers": [
@@ -37,7 +35,6 @@ invocations = [
                     "github": "cisaacstern",
                 }
             ],
-            "bakery": {"id": "pangeo-ldeo-nsf-earthcube"},
         },
     }
 ]
