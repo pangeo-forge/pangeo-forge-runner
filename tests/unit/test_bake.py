@@ -117,20 +117,27 @@ def recipes_version_ref(request):
 
 
 @pytest.mark.parametrize(
-    ("recipe_id", "expected_error", "custom_job_name"),
+    ("recipe_id", "expected_error", "custom_job_name", "no_input_cache"),
     (
-        [None, None, None],
-        ["gpcp-from-gcs", None, None],
+        [None, None, None, False],
+        ["gpcp-from-gcs", None, None, False],
         [
             "invalid_recipe_id",
             "ValueError: self.recipe_id='invalid_recipe_id' not in ['gpcp-from-gcs']",
             None,
+            False,
         ],
-        [None, None, "special-name-for-job"],
+        [None, None, "special-name-for-job", False],
+        [None, None, None, True],
     ),
 )
 def test_gpcp_bake(
-    minio, recipe_id, expected_error, custom_job_name, recipes_version_ref
+    minio,
+    recipe_id,
+    expected_error,
+    custom_job_name,
+    no_input_cache,
+    recipes_version_ref,
 ):
     if recipes_version_ref == "0.9.x-dictobj" or (
         recipes_version_ref == "0.10.x-dictobj" and recipe_id
@@ -168,6 +175,12 @@ def test_gpcp_bake(
         },
     }
 
+    if no_input_cache:
+        config["InputCacheStorage"] = {
+            "fsspec_class": "fsspec.AbstractFileSystem",
+            "fsspec_args": {},
+            "root_path": "",
+        }
     if recipe_id:
         config["Bake"].update({"recipe_id": recipe_id})
     if custom_job_name:
@@ -195,7 +208,9 @@ def test_gpcp_bake(
         if expected_error:
             assert proc.returncode == 1
             stdout[-1] == expected_error
-
+        elif no_input_cache and recipes_version_ref == "0.9.x":
+            # no_input_cache is only supported in 0.10.x and above
+            assert proc.returncode == 1
         else:
             assert proc.returncode == 0
 
