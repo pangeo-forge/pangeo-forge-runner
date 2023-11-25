@@ -1,5 +1,7 @@
 from unittest.mock import patch
+
 import pytest
+
 from pangeo_forge_runner.bakery.flink import FlinkOperatorBakery
 
 
