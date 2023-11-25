@@ -41,7 +41,8 @@ def test_make_flink_deployment(enabled_job_archiving, deploy_name, container_ima
     :return:
     """
 
-    fbake = FlinkOperatorBakery(enabled_job_archiving=enabled_job_archiving)
+    fbake = FlinkOperatorBakery
+    fbake.enable_job_archiving = enabled_job_archiving
     manifest = fbake.make_flink_deployment(deploy_name, container_image)
     if enabled_job_archiving:
         pod_template = manifest["spec"]["jobManager"].get("podTemplate")
