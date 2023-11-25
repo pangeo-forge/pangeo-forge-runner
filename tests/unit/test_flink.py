@@ -45,6 +45,6 @@ def test_make_flink_deployment(archiving_enabled, deploy_name, container_image):
         assert pod_template is not None
         for key in ["securityContext", "containers", "initContainers", "volumes"]:
             assert key in pod_template["spec"]
-    if not archiving_enabled:
+    else:
         pod_template = manifest["spec"]["jobManager"].get("podTemplate")
         assert pod_template is None
