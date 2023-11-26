@@ -1,0 +1,6 @@
+escapism
+importlib-metadata
+jsonschema
+jupyter-repo2docker
+ruamel.yaml
+traitlets

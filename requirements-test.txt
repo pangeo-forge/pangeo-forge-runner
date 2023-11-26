@@ -1,0 +1,6 @@
+pytest
+pytest-cov
+pytest-mock
+# These are used by the gpcp feedstock integration tests
+gcsfs
+s3fs

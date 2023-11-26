@@ -3,7 +3,7 @@ requires = ["setuptools>=45", "setuptools_scm[toml]>=6.2"]
 
 [project]
 name = "pangeo-forge-runner"
-dynamic = ["version"]
+dynamic = ["version", "dependencies", "optional-dependencies"]
 requires-python = ">=3.9"
 description = "Commandline tool to manage pangeo-forge feedstocks"
 readme = "README.md"
@@ -23,30 +23,6 @@ classifiers = [
 ]
 license = { text = "Apache-2.0" }
 keywords = ["pangeo", "data"]
-dependencies = [
-    "escapism",
-    "importlib-metadata",
-    "jsonschema",
-    "jupyter-repo2docker",
-    "ruamel.yaml",
-    "traitlets",
-]
-
-[project.optional-dependencies]
-dataflow = [
-    "apache-beam[gcp]",
-]
-flink = [
-    "apache-beam>=2.47.0",
-]
-test = [
-    "pytest",
-    "pytest-cov",
-    "pytest-mock",
-    # These are used by the gpcp feedstock integration tests
-    "gcsfs",
-    "s3fs",
-]
 
 [project.scripts]
 pangeo-forge-runner = "pangeo_forge_runner.cli:main"
@@ -56,12 +32,20 @@ Homepage = "https://github.com/pangeo-forge/pangeo-forge-runner"
 Tracker = "https://github.com/pangeo-forge/pangeo-forge-runner/issues"
 Documentation = "https://pangeo-forge-runner.readthedocs.io/en/latest/"
 
-[tool.setuptools_scm]
-write_to = "pangeo_forge_runner/_version.py"
-write_to_template = "__version__ = '{version}'"
+[tool.setuptools.dynamic.dependencies]
+file = ["requirements.txt"]
+
+[tool.setuptools.dynamic.optional-dependencies]
+test = { file = ["requirements-test.txt"] }
+dataflow = { file = ["requirements-dataflow.txt"] }
+flink = { file = ["requirements-flink.txt"] }
 
 [tool.setuptools.package-data]
 pangeo_forge_runner = ["py.typed"]
+
+[tool.setuptools_scm]
+write_to = "pangeo_forge_runner/_version.py"
+write_to_template = "__version__ = '{version}'"
 
 [tool.isort]
 # Prevent isort & black from fighting each otherd
