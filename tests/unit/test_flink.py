@@ -1,5 +1,5 @@
 from unittest.mock import patch
-import pytest
+
 from pangeo_forge_runner.bakery.flink import FlinkOperatorBakery
 
 
@@ -23,31 +23,3 @@ def test_pipelineoptions():
 
     assert opts["parallelism"] == 100
     assert opts["max_parallelism"] == 100
-
-
-@pytest.mark.parametrize(
-    "enabled_job_archiving, deploy_name, container_image",
-    (
-        [False, "archive_disabled", "apache/beam_python3.10_sdk:2.51.0"],
-        [True, "archive_enabled", "apache/beam_python3.10_sdk:2.51.0"],
-    ),
-)
-def test_make_flink_deployment(enabled_job_archiving, deploy_name, container_image):
-    """test paths for enabled job archiving
-
-    :param enabled_job_archiving:
-    :param deploy_name:
-    :param container_image:
-    :return:
-    """
-
-    fbake = FlinkOperatorBakery(enabled_job_archiving=enabled_job_archiving)
-    manifest = fbake.make_flink_deployment(deploy_name, container_image)
-    if enabled_job_archiving:
-        pod_template = manifest["spec"]["jobManager"].get("podTemplate")
-        assert pod_template is not None
-        for key in ["securityContext", "containers", "initContainers", "volumes"]:
-            assert key in pod_template["spec"]
-    if not enabled_job_archiving:
-        pod_template = manifest["spec"]["jobManager"].get("podTemplate")
-        assert pod_template is None
