@@ -154,37 +154,34 @@ class FlinkOperatorBakery(Bakery):
         False,
         config=True,
         help="""
-            Enable the ability for past jobs to be archived so the job 
-            manager's REST API can still return information after completing
-            """,
+        Enable the ability for past jobs to be archived so the job 
+        manager's REST API can still return information after completing
+        """,
     )
 
     job_archive_efs_mount = Unicode(
         "/opt/history/jobs",
-        config=False,
+        config=True,
         help="""
-        A non-configurable mount path showing where past jobs are
-        archived so the job manager's REST API can still return
-        information after completing
+        The NFS mount path where past jobs are archived so the historyserver 
+        REST API can return some information about job statuses after 
+        job managers are torn down
         
-        The reason this is non-configurable is b/c the same mount path
-        is saved to the default flink configuration by the Terraform
-        for the following keys. We don't want this to be configurable
+        The default path here corresponds to what the pangeo-forge-cloud-federation Terraform deploys as the mount path:
+        https://github.com/pangeo-forge/pangeo-forge-cloud-federation/blob/main/terraform/aws/operator.tf
         
-        jobmanager.archive.fs.dir: /opt/history/jobs
-        taskmanager.archive.fs.dir: /opt/history/jobs
-        
-        see: https://github.com/pangeo-forge/pangeo-forge-cloud-federation/blob/main/terraform/aws/operator.tf#L42-L53
+        If using that Terraform you can configure the path via `historyserver_mount_path`:
+        https://github.com/pangeo-forge/pangeo-forge-cloud-federation/blob/main/terraform/aws/variables.tf
         """,
     )
 
-    def _job_manager_pod_template_with_archiving(self):
-        """Return the job manager pod template
+    def add_job_manager_pod_template(self, current_flink_deploy: dict):
+        """Add the job manager pod template to the existing flink deploy
 
         Returns:
-            a dicitonary representing the job manager pod template
+            a dictionary representing the whole `kind: flinkdeployment`
         """
-        return {
+        pod_template = {
             "podTemplate": {
                 "spec": {
                     "securityContext": {
@@ -236,6 +233,11 @@ class FlinkOperatorBakery(Bakery):
             },
         }
 
+        # shallow copy
+        new_flink_deploy = current_flink_deploy.copy()
+        new_flink_deploy["spec"]["jobManager"].update(pod_template)
+        return new_flink_deploy
+
     def make_flink_deployment(self, name: str, worker_image: str):
         """
         Return YAML for a FlinkDeployment
@@ -281,9 +283,7 @@ class FlinkOperatorBakery(Bakery):
         }
 
         if self.enable_job_archiving:
-            flink_deploy["spec"]["jobManager"].update(
-                self._job_manager_pod_template_with_archiving()
-            )
+            flink_deploy = self.add_job_manager_pod_template(flink_deploy)
         return flink_deploy
 
     def get_pipeline_options(
