@@ -1,6 +1,7 @@
 """
 Bakery for baking pangeo-forge recipes in GCP DataFlow
 """
+import copy
 import hashlib
 import json
 import shutil
@@ -234,7 +235,7 @@ class FlinkOperatorBakery(Bakery):
         }
 
         # shallow copy
-        new_flink_deploy = current_flink_deploy.copy()
+        new_flink_deploy = copy.deepcopy(current_flink_deploy)
         new_flink_deploy["spec"]["jobManager"].update(pod_template)
         return new_flink_deploy
 
