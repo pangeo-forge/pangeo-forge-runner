@@ -262,13 +262,17 @@ class Bake(BaseCommand):
 
                 # FlinkOperatorBakery job names need to be unique regardless of the number
                 # of recipes to accommodate reruns and race conditions (two users running same recipe)
-                if self.bakery_class == FlinkOperatorBakery and not per_recipe_unique_job_name:
-                    unique_suffix = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(4))
+                if (
+                    self.bakery_class == FlinkOperatorBakery
+                    and not per_recipe_unique_job_name
+                ):
+                    unique_suffix = "".join(
+                        secrets.choice(string.ascii_letters + string.digits)
+                        for _ in range(4)
+                    )
                     # character length limitations for k8s is already handled downstream
                     # in FlinkOperatorBakery.get_pipeline_options
-                    per_recipe_unique_job_name = (
-                            self.job_name + "-" + unique_suffix
-                    )
+                    per_recipe_unique_job_name = self.job_name + "-" + unique_suffix
 
                 # if pangeo-forge-recipes is <=0.9, we have to specify a requirements.txt
                 # file even if it isn't present, as the image used otherwise will not have pangeo-forge-recipes
