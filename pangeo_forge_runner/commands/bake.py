@@ -4,6 +4,7 @@ Command to run a pangeo-forge recipe
 import hashlib
 import os
 import re
+import secrets
 import string
 import time
 from importlib.metadata import distributions
@@ -259,13 +260,14 @@ class Bake(BaseCommand):
                 else:
                     per_recipe_unique_job_name = None
 
-                # FlinkOperatorBakery job names need to be unique regardless of the number of recipes for reruns
+                # FlinkOperatorBakery job names need to be unique regardless of the number
+                # of recipes to accommodate reruns and race conditions (two users running same recipe)
                 if self.bakery_class == FlinkOperatorBakery and not per_recipe_unique_job_name:
-                    recipe_name_hash = hashlib.sha256(name.encode()).hexdigest()[:5]
+                    unique_suffix = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(4))
                     # character length limitations for k8s is already handled downstream
                     # in FlinkOperatorBakery.get_pipeline_options
                     per_recipe_unique_job_name = (
-                            self.job_name + "-" + recipe_name_hash
+                            self.job_name + "-" + unique_suffix
                     )
 
                 # if pangeo-forge-recipes is <=0.9, we have to specify a requirements.txt
