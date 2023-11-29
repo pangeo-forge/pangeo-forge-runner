@@ -259,7 +259,7 @@ class Bake(BaseCommand):
                 else:
                     per_recipe_unique_job_name = None
 
-                # FlinkOperatorBakery job names need to be unique regardless of the number of recipes
+                # FlinkOperatorBakery job names need to be unique regardless of the number of recipes for reruns
                 if self.bakery_class == FlinkOperatorBakery and not per_recipe_unique_job_name:
                     recipe_name_hash = hashlib.sha256(name.encode()).hexdigest()[:5]
                     # character length limitations for k8s is already handled downstream
