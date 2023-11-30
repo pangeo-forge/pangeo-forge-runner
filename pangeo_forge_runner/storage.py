@@ -44,6 +44,15 @@ class StorageTargetConfig(LoggingConfigurable):
         """,
     )
 
+    def is_default(self):
+        """
+        Return if `root_path` is an empty string
+
+        `.root_path` is an empty string by default. For optional storage targets,
+        this is used to mean it's unconfigured.
+        """
+        return self.fsspec_class == AbstractFileSystem and not self.root_path
+
     def get_forge_target(self, job_name: str):
         """
         Return correct pangeo-forge-recipes Target

@@ -4,10 +4,64 @@ requires = ["setuptools>=45", "setuptools_scm[toml]>=6.2"]
 [project]
 name = "pangeo-forge-runner"
 dynamic = ["version"]
+requires-python = ">=3.9"
+description = "Commandline tool to manage pangeo-forge feedstocks"
+readme = "README.md"
+authors = [
+  { name = "Yuvi Panda", email = "yuvipanda@gmail.com" }
+]
+classifiers = [
+    "Development Status :: 1 - Planning",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Topic :: Scientific/Engineering",
+]
+license = { text = "Apache-2.0" }
+keywords = ["pangeo", "data"]
+dependencies = [
+    "escapism",
+    "importlib-metadata",
+    "jsonschema",
+    "jupyter-repo2docker",
+    "ruamel.yaml",
+    "traitlets",
+]
+
+[project.optional-dependencies]
+dataflow = [
+    "apache-beam[gcp]",
+]
+flink = [
+    "apache-beam>=2.47.0",
+]
+test = [
+    "pytest",
+    "pytest-cov",
+    "pytest-mock",
+    # These are used by the gpcp feedstock integration tests
+    "gcsfs",
+    "s3fs",
+]
+
+[project.scripts]
+pangeo-forge-runner = "pangeo_forge_runner.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/pangeo-forge/pangeo-forge-runner"
+Tracker = "https://github.com/pangeo-forge/pangeo-forge-runner/issues"
+Documentation = "https://pangeo-forge-runner.readthedocs.io/en/latest/"
 
 [tool.setuptools_scm]
 write_to = "pangeo_forge_runner/_version.py"
 write_to_template = "__version__ = '{version}'"
+
+[tool.setuptools.package-data]
+pangeo_forge_runner = ["py.typed"]
 
 [tool.isort]
 # Prevent isort & black from fighting each otherd

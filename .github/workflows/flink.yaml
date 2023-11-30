@@ -46,7 +46,12 @@ jobs:
             "apache-beam==2.51.0",
         ]
         # keep here to be explicit for future users what version
-        # of Flink we are supporting
+        # of Flink we are supporting.
+        #
+        # Even though the operator says it's running Flink 1.17
+        # there is no portable runner .jar available yet :scream: :thanksflink:
+        # https://repo.maven.apache.org/maven2/org/apache/beam/beam-runners-flink*
+        # but things seem stable for 1.16 :fingerscrossed:
         flink-version: [ "1.16", ]
 
     steps:
@@ -81,7 +86,10 @@ jobs:
 
     - name: Setup FlinkOperator
       run: |
-        FLINK_OPERATOR_VERSION=1.5.0
+        # as noted here: https://github.com/pangeo-forge/pangeo-forge-cloud-federation/pull/6#issuecomment-1821285529
+        # and more specifically here: https://cwiki.apache.org/confluence/display/FLINK/Release+Schedule+and+Planning
+        # "Support for two (current and previous) releases with bug fixes"
+        FLINK_OPERATOR_VERSION=1.6.1
         helm repo add flink-operator-repo https://downloads.apache.org/flink/flink-kubernetes-operator-${FLINK_OPERATOR_VERSION}
         helm install flink-kubernetes-operator flink-operator-repo/flink-kubernetes-operator --wait
 
@@ -105,8 +113,7 @@ jobs:
     - name: Install dependencies & our package
       run: |
         python -m pip install --upgrade pip
-        python -m pip install -r dev-requirements.txt
-        python -m pip install -e .[flink]
+        python -m pip install -e .[test,flink]
         python -m pip install -U ${{ matrix.recipes-version }}
 
     - name: Set up min.io as a k3s service
