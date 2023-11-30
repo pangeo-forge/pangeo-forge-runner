@@ -10,6 +10,8 @@ import pytest
 import xarray as xr
 from packaging.version import parse as parse_version
 
+from pangeo_forge_runner.bakery.flink import FlinkOperatorBakery
+from pangeo_forge_runner.bakery.local import LocalDirectBakery
 from pangeo_forge_runner.commands.bake import Bake
 
 
@@ -114,6 +116,29 @@ def recipes_version_ref(request):
         if not request.param == "dict_object"
         else f"{recipes_version_ref}-dictobj"
     )
+
+
+@pytest.mark.parametrize(
+    ("job_name", "bakery_class", "expected_job_startswith"),
+    (
+        ["recipe", FlinkOperatorBakery, "recipe-"],
+        ["recipe", LocalDirectBakery, "recipe"],
+        [None, LocalDirectBakery, None],
+    ),
+)
+def test_add_unique_suffix_to_flink_jobs(
+    job_name, bakery_class, expected_job_startswith
+):
+    bake = Bake()
+    if bakery_class == FlinkOperatorBakery:
+        actual_job_name = bake.add_unique_suffix_to_flink_jobs(job_name)
+        assert actual_job_name.startswith(expected_job_startswith)
+        pattern = r"^[a-zA-Z]+-[0-9a-zA-Z]{5}$"
+        assert bool(re.search(pattern, actual_job_name))
+    else:
+        actual_job_name = bake.add_unique_suffix_to_flink_jobs(job_name)
+        assert actual_job_name == actual_job_name
+        assert actual_job_name == expected_job_startswith
 
 
 @pytest.mark.parametrize(

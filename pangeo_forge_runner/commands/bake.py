@@ -172,6 +172,21 @@ class Bake(BaseCommand):
 
         return job_name
 
+    def add_unique_suffix_to_flink_jobs(self, per_recipe_unique_job_name):
+        """FlinkOperatorBakery job names always need to be unique
+
+        to accommodate reruns and race conditions (two users running same recipe)
+        """
+        if self.bakery_class == FlinkOperatorBakery:
+            unique_suffix = "".join(
+                secrets.choice(string.ascii_letters + string.digits) for _ in range(4)
+            )
+            # character length limitations for k8s is already handled downstream
+            # in FlinkOperatorBakery.get_pipeline_options
+            return self.job_name + "-" + unique_suffix
+        else:
+            return per_recipe_unique_job_name
+
     def start(self):
         """
         Start the baking process
@@ -260,15 +275,10 @@ class Bake(BaseCommand):
                 else:
                     per_recipe_unique_job_name = None
 
-                # FlinkOperatorBakery job names need to be unique regardless of the number
-                # of recipes to accommodate reruns and race conditions (two users running same recipe)
-                if self.bakery_class == FlinkOperatorBakery and not per_recipe_unique_job_name:
-                    unique_suffix = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(4))
-                    # character length limitations for k8s is already handled downstream
-                    # in FlinkOperatorBakery.get_pipeline_options
-                    per_recipe_unique_job_name = (
-                            self.job_name + "-" + unique_suffix
-                    )
+                # no-op here if self.bakery_class != FlinkOperatorBakery
+                per_recipe_unique_job_name = self.add_unique_suffix_to_flink_jobs(
+                    per_recipe_unique_job_name
+                )
 
                 # if pangeo-forge-recipes is <=0.9, we have to specify a requirements.txt
                 # file even if it isn't present, as the image used otherwise will not have pangeo-forge-recipes
