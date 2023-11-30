@@ -179,7 +179,7 @@ class Bake(BaseCommand):
         """
         if self.bakery_class == FlinkOperatorBakery:
             unique_suffix = "".join(
-                secrets.choice(string.ascii_letters + string.digits) for _ in range(4)
+                secrets.choice(string.ascii_letters + string.digits) for _ in range(5)
             )
             # character length limitations for k8s is already handled downstream
             # in FlinkOperatorBakery.get_pipeline_options

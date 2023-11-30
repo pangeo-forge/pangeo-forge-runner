@@ -130,6 +130,9 @@ def test_add_unique_suffix_to_flink_jobs(
     job_name, bakery_class, expected_job_startswith
 ):
     bake = Bake()
+    bake.job_name = job_name
+    bake.bakery_class = bakery_class
+
     if bakery_class == FlinkOperatorBakery:
         actual_job_name = bake.add_unique_suffix_to_flink_jobs(job_name)
         assert actual_job_name.startswith(expected_job_startswith)
@@ -137,7 +140,7 @@ def test_add_unique_suffix_to_flink_jobs(
         assert bool(re.search(pattern, actual_job_name))
     else:
         actual_job_name = bake.add_unique_suffix_to_flink_jobs(job_name)
-        assert actual_job_name == actual_job_name
+        assert job_name == actual_job_name
         assert actual_job_name == expected_job_startswith
 
 
