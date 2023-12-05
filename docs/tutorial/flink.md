@@ -12,7 +12,7 @@ Current support:
 
 | **pangeo-forge-recipes version** | **pangeo-forge-runner version** | **flink k8s operator version** | **flink version** |                  **apache-beam version**                 |
 |:--------------------------------:|:----------------------------:|:--------------------------------:|:--------------------:|:--------------------------------------------------------------:|
-| \>\=0.10.0 | \>\=0.9.1 | 1.6.1                           | 1.16                | 2.[47-51].0<br>(all versions listed [here](https://repo.maven.apache.org/maven2/org/apache/beam/beam-runners-flink-1.16/)) |
+| \>\=0.10.0 | \>\=0.9.1 | 1.6.1                           | 1.16                | >=2.47.0<br>(all versions listed [here](https://repo.maven.apache.org/maven2/org/apache/beam/beam-runners-flink-1.16/)) |
 
 
 ## Setting up EKS
@@ -61,11 +61,6 @@ ask you to run a command to get EKS credentials locally that might look like thi
    ```
 
 ## Setting up Runner Configuration
-
-Dataset recipes can be configured at runtime in a few different ways and with a couple
-of different configuration file formats
-
-### Runner Configuration
 
 Let's first look at defining *where* the data that our recipes will use is stored. There are three aspects of this question
 we must answer: 
@@ -123,11 +118,11 @@ Defining where the data is output is also part of the runner file configuration.
 that in those upcoming examples the key `TargetStorage` defines this option.
 
 
-<a name="configfiles"></a>
-
+(configfiles)=
 ### Configuration Files
 
-Let's build a configuration file for where data is cached and output. Below we show two different formats for this configuration file.
+Let's build a configuration file for where data is cached and output. It's recommended to configure dataset recipes
+using configuration files. A couple of different configuration file formats can be used as seen below.
 
 Notice the use of `{{job_name}}` in the `root_path` configuration examples below.
 `{{job_name}}` is special within `root_path` and will be treated as a template-value based on
@@ -135,11 +130,11 @@ Notice the use of `{{job_name}}` in the `root_path` configuration examples below
 to be provided, will be generated automatically.
 
 Also notice that we are going to store everything in s3 below because we chose `s3fs.S3FileSystem`. This isn't a requirement.
-Pangeo-Forge aims to be storage agnostic. By depending on `fsspec`  we're able to plug in supported backends.
+Pangeo-Forge aims to be storage agnostic. By depending on `fsspec` we're able to plug in supported backends.
 Review other well-known `fsspec` [built-in implementations](https://filesystem-spec.readthedocs.io/en/latest/api.html#built-in-implementations)
 and `fsspec` [third-party implementations](https://filesystem-spec.readthedocs.io/en/latest/api.html#other-known-implementations).
 
-1. JSON configuration:
+1. JSON based configuration file:
 
    ```json
    {
@@ -150,7 +145,6 @@ and `fsspec` [third-party implementations](https://filesystem-spec.readthedocs.i
           "secret": "<your-aws-access-secret>",
           "client_kwargs":{"region_name":"<your-aws-bucket-region>"}
         },
-       // Target output should be partitioned by `{{job_name}}`
        "root_path": "s3://<bucket-name>/<some-prefix>/{{job_name}}/output"
      },
      "InputCacheStorage": {
@@ -160,13 +154,12 @@ and `fsspec` [third-party implementations](https://filesystem-spec.readthedocs.i
           "secret": "<your-aws-access-secret>",
           "client_kwargs":{"region_name":"<your-aws-bucket-region>"}
         },
-       // Input data cache should *not* be partitioned by `{{job_name}}`, as we want to get the datafile from the source only once
        "root_path": "s3://<bucket-name>/<some-prefix>/input/cache"
      }
    }
    ```
 
-2. Python based configuration file
+2. Python based configuration file (configuration is based on the [traitlets library](https://traitlets.readthedocs.io/en/stable/)):
 
    ```python
    BUCKET_PREFIX = "s3://<bucket-name>/<some-prefix>/"
@@ -198,25 +191,56 @@ A [subset of the configuration schema](https://github.com/pangeo-forge/pangeo-fo
 that we just talked about related to inputs/outputs/caches gets dependency injected into the recipe by the runner. 
 
 Various other runner options ([documented here](https://pangeo-forge-runner.readthedocs.io/en/latest/reference/index.html) and [flink-specific here](https://nightlies.apache.org/flink/flink-docs-release-1.16/docs/deployment/config/)) 
-can also be passed either in the file configuration format above or directly during CLI `bake` calls. 
+can also be passed either in the file configuration format above or directly during CLI `bake` calls. It's recommended that you use
+the file configuration because some argument values are JSON based.
 
-Here's a quick example of something slightly more complicated where you're passing [flink-specific configuration options](https://nightlies.apache.org/flink/flink-docs-release-1.16/docs/deployment/config/) and runner options. 
-Note that `-f <path-to-your-runner-config>.<json||py>` would point to our JSON or `traitlet` runner configuration file we just talked about above:
+Here's a quick example of a configuration file and `bake` command slightly more complicated where you're passing [flink-specific configuration options](https://nightlies.apache.org/flink/flink-docs-release-1.16/docs/deployment/config/) and runner options. 
+Note that `-f <path-to-your-runner-config>.<json||py>` would point to the runner configuration file talked about above:
+
+   ```python
+   import json
+   BUCKET_PREFIX = "s3://<bucket-name>/<some-prefix>/"
+   # The storage backend we want
+   s3_fsspec = "s3fs.S3FileSystem"
+   # Credentials for the backend
+   s3_args = {
+       "key": "<your-aws-access-key>",
+       "secret": "<your-aws-access-secret>",
+       "client_kwargs":{"region_name":"<your-aws-bucket-region>"}
+   }
+   # Take note: this is just python. We can reuse these values below
+   c.FlinkOperatorBakery.job_manager_resources = json.dumps({"memory": "2048m", "cpu": 1.0})
+   c.FlinkOperatorBakery.task_manager_resources = json.dumps({"memory": "2048m", "cpu": 1.0})
+   c.FlinkOperatorBakery.flink_configuration= json.dumps({
+      "taskmanager.numberOfTaskSlots": "1", 
+      "taskmanager.memory.flink.size": "1536m", 
+      "taskmanager.memory.task.off-heap.size": "256m", 
+      "taskmanager.memory.jvm-overhead.max": "1024m"
+   })
+   c.FlinkOperatorBakery.parallelism = 1
+   c.FlinkOperatorBakery.flink_version = "1.16"
+   
+   c.Bake.container_image = 'apache/beam_python3.9_sdk:2.50.0'
+   c.Bake.bakery_class = "pangeo_forge_runner.bakery.flink.FlinkOperatorBakery"
+
+   c.TargetStorage.fsspec_class = s3_fsspec
+   # Target output should be partitioned by `{{job_name}}`
+   c.TargetStorage.root_path = f"{BUCKET_PREFIX}/{{job_name}}/output"
+   c.TargetStorage.fsspec_args = s3_args
+
+   c.InputCacheStorage.fsspec_class = filesystem_class
+   c.InputCacheStorage.fsspec_args = s3_args
+   # Input data cache should *not* be partitioned by `{{job_name}}`, as we want to get the datafile from the source only once
+   c.InputCacheStorage.root_path = f"{BUCKET_PREFIX}/cache/input"
+   ```
 
    ```bash
    pangeo-forge-runner bake \
        --repo="https://github.com/pforgetest/gpcp-from-gcs-feedstock.git"  \
        --ref="0.10.3" \
        -f <path-to-your-runner-config>.<json||py> \
-       --FlinkOperatorBakery.job_manager_resources='{"memory": "2048m", "cpu": 1.0}' \
-       --FlinkOperatorBakery.task_manager_resources='{"memory": "2048m", "cpu": 1.0}' \
-       --FlinkOperatorBakery.flink_configuration='{"taskmanager.numberOfTaskSlots": "1", "taskmanager.memory.flink.size": "1536m", "taskmanager.memory.task.off-heap.size": "256m", "taskmanager.memory.jvm-overhead.max": "1024m"}' \
-       --FlinkOperatorBakery.parallelism=1 \
-       --FlinkOperatorBakery.flink_version="1.16" \
-       --Bake.prune=True \
        --Bake.job_name=recipe \
-       --Bake.container_image='apache/beam_python3.9_sdk:2.50.0' \
-       --Bake.bakery_class="pangeo_forge_runner.bakery.flink.FlinkOperatorBakery"
+       --prune
    ```
 
 Where you put things is your choice but _please be careful_: you don't want to commit AWS secrets into GH!
@@ -224,19 +248,48 @@ Where you put things is your choice but _please be careful_: you don't want to c
 ## Running the Recipe
 
 Now let's run the [integration test recipe](https://github.com/pforgetest/gpcp-from-gcs-feedstock.git)!
-Below is the minimal required args for running something successful for Flink on `pangeo-forge-runner>=0.9.1`
+Below is the minimal required configuration args for running something successful for Flink on `pangeo-forge-runner>=0.9.1`
 where `<path-to-your-runner-config>.<json||py>` is your configuration file talked about above:
+
+   ```python
+   import json
+   BUCKET_PREFIX = "s3://<bucket-name>/<some-prefix>/"
+   # The storage backend we want
+   s3_fsspec = "s3fs.S3FileSystem"
+   # Credentials for the backend
+   s3_args = {
+       "key": "<your-aws-access-key>",
+       "secret": "<your-aws-access-secret>",
+       "client_kwargs":{"region_name":"<your-aws-bucket-region>"}
+   }
+   # Take note: this is just python. We can reuse these values below
+   c.FlinkOperatorBakery.flink_configuration= json.dumps({
+      "taskmanager.numberOfTaskSlots": "1", 
+   })
+   c.FlinkOperatorBakery.parallelism = 1
+   c.FlinkOperatorBakery.flink_version = "1.16"
+   
+   c.Bake.container_image = 'apache/beam_python3.9_sdk:2.50.0'
+   c.Bake.bakery_class = "pangeo_forge_runner.bakery.flink.FlinkOperatorBakery"
+
+   c.TargetStorage.fsspec_class = s3_fsspec
+   # Target output should be partitioned by `{{job_name}}`
+   c.TargetStorage.root_path = f"{BUCKET_PREFIX}/{{job_name}}/output"
+   c.TargetStorage.fsspec_args = s3_args
+
+   c.InputCacheStorage.fsspec_class = filesystem_class
+   c.InputCacheStorage.fsspec_args = s3_args
+   # Input data cache should *not* be partitioned by `{{job_name}}`, as we want to get the datafile from the source only once
+   c.InputCacheStorage.root_path = f"{BUCKET_PREFIX}/cache/input"
+   ```
 
    ```bash
    pangeo-forge-runner bake \
        --repo=https://github.com/pforgetest/gpcp-from-gcs-feedstock.git  \
        --ref="0.10.3" \
        -f <path-to-your-runner-config>.<json||py>
-       --FlinkOperatorBakery.flink_version="1.16" \
-       --Bake.prune=True \
        --Bake.job_name=recipe \
-       --Bake.container_image='apache/beam_python3.9_sdk:2.50.0' \
-       --Bake.bakery_class="pangeo_forge_runner.bakery.flink.FlinkOperatorBakery"
+       --prune
    ```
 
 Note that `Bake.prune=True` onlys tests the recipe by running the first two time steps like the integration tests do.
