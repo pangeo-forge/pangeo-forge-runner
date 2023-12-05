@@ -166,7 +166,7 @@ and `fsspec` [third-party implementations](https://filesystem-spec.readthedocs.i
    }
    ```
 
-2. `traitlet` configuration:
+2. Python based configuration file
 
    ```python
    BUCKET_PREFIX = "s3://<bucket-name>/<some-prefix>/"
