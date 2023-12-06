@@ -198,7 +198,6 @@ Here's a quick example of a configuration file and `bake` command slightly more 
 Note that `-f <path-to-your-runner-config>.<json||py>` would point to the runner configuration file talked about above:
 
    ```python
-   import json
    BUCKET_PREFIX = "s3://<bucket-name>/<some-prefix>/"
    # The storage backend we want
    s3_fsspec = "s3fs.S3FileSystem"
@@ -209,17 +208,17 @@ Note that `-f <path-to-your-runner-config>.<json||py>` would point to the runner
        "client_kwargs":{"region_name":"<your-aws-bucket-region>"}
    }
    # Take note: this is just python. We can reuse these values below
-   c.FlinkOperatorBakery.job_manager_resources = json.dumps({"memory": "2048m", "cpu": 1.0})
-   c.FlinkOperatorBakery.task_manager_resources = json.dumps({"memory": "2048m", "cpu": 1.0})
-   c.FlinkOperatorBakery.flink_configuration= json.dumps({
+   c.FlinkOperatorBakery.job_manager_resources = {"memory": "2048m", "cpu": 1.0}
+   c.FlinkOperatorBakery.task_manager_resources = {"memory": "2048m", "cpu": 1.0}
+   c.FlinkOperatorBakery.flink_configuration= {
       "taskmanager.numberOfTaskSlots": "1", 
       "taskmanager.memory.flink.size": "1536m", 
       "taskmanager.memory.task.off-heap.size": "256m", 
       "taskmanager.memory.jvm-overhead.max": "1024m"
-   })
+   }
    c.FlinkOperatorBakery.parallelism = 1
    c.FlinkOperatorBakery.flink_version = "1.16"
-   
+   # NOTE: image name must match the version of python and apache-beam being used locally
    c.Bake.container_image = 'apache/beam_python3.9_sdk:2.50.0'
    c.Bake.bakery_class = "pangeo_forge_runner.bakery.flink.FlinkOperatorBakery"
 
@@ -252,7 +251,6 @@ Below is the minimal required configuration args for running something successfu
 where `<path-to-your-runner-config>.<json||py>` is your configuration file talked about above:
 
    ```python
-   import json
    BUCKET_PREFIX = "s3://<bucket-name>/<some-prefix>/"
    # The storage backend we want
    s3_fsspec = "s3fs.S3FileSystem"
@@ -263,12 +261,12 @@ where `<path-to-your-runner-config>.<json||py>` is your configuration file talke
        "client_kwargs":{"region_name":"<your-aws-bucket-region>"}
    }
    # Take note: this is just python. We can reuse these values below
-   c.FlinkOperatorBakery.flink_configuration= json.dumps({
+   c.FlinkOperatorBakery.flink_configuration= {
       "taskmanager.numberOfTaskSlots": "1", 
-   })
+   }
    c.FlinkOperatorBakery.parallelism = 1
    c.FlinkOperatorBakery.flink_version = "1.16"
-   
+   # NOTE: image name must match the version of python and apache-beam being used locally
    c.Bake.container_image = 'apache/beam_python3.9_sdk:2.50.0'
    c.Bake.bakery_class = "pangeo_forge_runner.bakery.flink.FlinkOperatorBakery"
 
