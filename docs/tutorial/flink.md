@@ -178,7 +178,7 @@ and `fsspec` [third-party implementations](https://filesystem-spec.readthedocs.i
    c.TargetStorage.root_path = f"{BUCKET_PREFIX}/{{job_name}}/output"
    c.TargetStorage.fsspec_args = s3_args
 
-   c.InputCacheStorage.fsspec_class = filesystem_class
+   c.InputCacheStorage.fsspec_class = s3_fsspec
    c.InputCacheStorage.fsspec_args = s3_args
    # Input data cache should *not* be partitioned by `{{job_name}}`, as we want to get the datafile from the source only once
    c.InputCacheStorage.root_path = f"{BUCKET_PREFIX}/cache/input"
@@ -227,7 +227,7 @@ Note that `-f <path-to-your-runner-config>.<json||py>` would point to the runner
    c.TargetStorage.root_path = f"{BUCKET_PREFIX}/{{job_name}}/output"
    c.TargetStorage.fsspec_args = s3_args
 
-   c.InputCacheStorage.fsspec_class = filesystem_class
+   c.InputCacheStorage.fsspec_class = s3_fsspec
    c.InputCacheStorage.fsspec_args = s3_args
    # Input data cache should *not* be partitioned by `{{job_name}}`, as we want to get the datafile from the source only once
    c.InputCacheStorage.root_path = f"{BUCKET_PREFIX}/cache/input"
@@ -275,7 +275,7 @@ where `<path-to-your-runner-config>.<json||py>` is your configuration file talke
    c.TargetStorage.root_path = f"{BUCKET_PREFIX}/{{job_name}}/output"
    c.TargetStorage.fsspec_args = s3_args
 
-   c.InputCacheStorage.fsspec_class = filesystem_class
+   c.InputCacheStorage.fsspec_class = s3_fsspec
    c.InputCacheStorage.fsspec_args = s3_args
    # Input data cache should *not* be partitioned by `{{job_name}}`, as we want to get the datafile from the source only once
    c.InputCacheStorage.root_path = f"{BUCKET_PREFIX}/cache/input"
@@ -285,7 +285,7 @@ where `<path-to-your-runner-config>.<json||py>` is your configuration file talke
    pangeo-forge-runner bake \
        --repo=https://github.com/pforgetest/gpcp-from-gcs-feedstock.git  \
        --ref="0.10.3" \
-       -f <path-to-your-runner-config>.<json||py>
+       -f <path-to-your-runner-config>.<json||py> \
        --Bake.job_name=recipe \
        --prune
    ```
