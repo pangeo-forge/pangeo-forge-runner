@@ -1,3 +1,5 @@
+from dataclasses import fields
+
 from fsspec import AbstractFileSystem
 from traitlets import Dict, Type, Unicode
 from traitlets.config import LoggingConfigurable
@@ -65,10 +67,18 @@ class StorageTargetConfig(LoggingConfigurable):
 
         cls = getattr(storage, self.pangeo_forge_target_class)
 
-        return cls(
-            self.fsspec_class(**self.fsspec_args),
-            root_path=self.root_path.format(job_name=job_name),
-        )
+        # pangeo-forge-recipes >=0.10.5 have a new `fsspec_kwargs` kwarg
+        if any(field.name == "fsspec_kwargs" for field in fields(cls)):
+            return cls(
+                self.fsspec_class(**self.fsspec_args),
+                root_path=self.root_path.format(job_name=job_name),
+                fsspec_kwargs=self.fsspec_args,
+            )
+        else:
+            return cls(
+                self.fsspec_class(**self.fsspec_args),
+                root_path=self.root_path.format(job_name=job_name),
+            )
 
     def __str__(self):
         """
