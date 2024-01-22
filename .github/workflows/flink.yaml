@@ -43,7 +43,7 @@ jobs:
             # "apache-beam==2.48.0",
             # "apache-beam==2.49.0",
             # "apache-beam==2.50.0",
-            "apache-beam==2.51.0",
+            "apache-beam==2.52.0",
         ]
         # keep here to be explicit for future users what version
         # of Flink we are supporting.
