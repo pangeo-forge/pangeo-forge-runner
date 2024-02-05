@@ -1,6 +1,7 @@
-from apache_beam.pipeline import PipelineOptions
 from traitlets import Bool
 from traitlets.config import LoggingConfigurable
+
+from ..dtypes import ApacheBeamPipelineOptions
 
 
 class Bakery(LoggingConfigurable):
@@ -24,7 +25,7 @@ class Bakery(LoggingConfigurable):
 
     def get_pipeline_options(
         self, job_name: str, container_image: str, extra_options: dict
-    ) -> PipelineOptions:
+    ) -> ApacheBeamPipelineOptions:
         """
         Return a PipelineOptions object that will configure a Pipeline to run on this Bakery
 

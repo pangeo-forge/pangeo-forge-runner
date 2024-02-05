@@ -4,9 +4,9 @@ Bakery for baking pangeo-forge recipes in GCP DataFlow
 import shutil
 import subprocess
 
-from apache_beam.pipeline import PipelineOptions
 from traitlets import Bool, Integer, TraitError, Unicode, default, validate
 
+from ..dtypes import ApacheBeamPipelineOptions
 from .base import Bakery
 
 
@@ -147,7 +147,7 @@ class DataflowBakery(Bakery):
 
     def get_pipeline_options(
         self, job_name: str, container_image: str, extra_options: dict
-    ) -> PipelineOptions:
+    ) -> ApacheBeamPipelineOptions:
         """
         Return PipelineOptions for use with this Bakery
         """

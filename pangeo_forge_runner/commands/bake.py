@@ -4,13 +4,13 @@ Command to run a pangeo-forge recipe
 import hashlib
 import os
 import re
+import site
 import string
+import sys
 import time
-from importlib.metadata import distributions
 from pathlib import Path
 
 import escapism
-from apache_beam import Pipeline, PTransform
 from traitlets import Bool, Type, Unicode, validate
 
 from .. import Feedstock
@@ -18,7 +18,6 @@ from ..bakery.base import Bakery
 from ..bakery.flink import FlinkOperatorBakery
 from ..bakery.local import LocalDirectBakery
 from ..plugin import get_injections, get_injectionspecs_from_entrypoints
-from ..storage import InputCacheStorage, MetadataCacheStorage, TargetStorage
 from ..stream_capture import redirect_stderr, redirect_stdout
 from .base import BaseCommand, common_aliases, common_flags
 
@@ -175,159 +174,191 @@ class Bake(BaseCommand):
         """
         Start the baking process
         """
-        if not "pangeo-forge-recipes" in [d.metadata["Name"] for d in distributions()]:
-            raise ValueError(
-                "To use the `bake` command, `pangeo-forge-recipes` must be installed."
-            )
-        # Create our storage configurations. Traitlets will do its magic, populate these
-        # with appropriate config from config file / commandline / defaults.
-        target_storage = TargetStorage(parent=self)
-        input_cache_storage = InputCacheStorage(parent=self)
-        metadata_cache_storage = MetadataCacheStorage(parent=self)
-
-        self.log.info(
-            f"Target Storage is {target_storage}\n", extra={"status": "setup"}
-        )
-        self.log.info(
-            f"Input Cache Storage is {input_cache_storage}\n", extra={"status": "setup"}
-        )
-        self.log.info(
-            f"Metadata Cache Storage is {metadata_cache_storage}\n",
-            extra={"status": "setup"},
-        )
-
-        injection_specs = get_injectionspecs_from_entrypoints()
-
         with self.fetch() as checkout_dir:
-            if not self.job_name:
-                self.job_name = self.autogenerate_job_name()
-
-            injection_values = {
-                "TARGET_STORAGE": target_storage.get_forge_target(
-                    job_name=self.job_name
-                ),
-            }
-
-            if not input_cache_storage.is_default():
-                cache_target = input_cache_storage.get_forge_target(
-                    job_name=self.job_name
+            with self.install_recipe_reqs(Path(checkout_dir)) as tmp_venv_dir:
+                sys.path.insert(0, str(tmp_venv_dir / "bin"))
+                # set up python executable path to be patched on apache_beam.Pipeline.run() below
+                desired_python_executable_path = os.path.join(
+                    str(tmp_venv_dir / "bin" / "python3")
                 )
-                injection_values |= {"INPUT_CACHE_STORAGE": cache_target}
-
-            feedstock = Feedstock(
-                Path(checkout_dir) / self.feedstock_subdir,
-                prune=self.prune,
-                callable_args_injections=get_injections(
-                    injection_specs, injection_values
-                ),
-            )
-
-            self.log.info("Parsing recipes...", extra={"status": "running"})
-            with redirect_stderr(self.log, {"status": "running"}), redirect_stdout(
-                self.log, {"status": "running"}
-            ):
-                recipes = feedstock.parse_recipes()
-
-            if self.recipe_id:
-                if self.recipe_id not in recipes:
-                    raise ValueError(f"{self.recipe_id=} not in {list(recipes)}")
-                self.log.info(f"Baking only recipe_id='{self.recipe_id}'")
-                recipes = {k: r for k, r in recipes.items() if k == self.recipe_id}
-
-            if self.prune:
-                # Prune recipes to only run on certain items if we are asked to
-                if hasattr(next(iter(recipes.values())), "copy_pruned"):
-                    # pangeo-forge-recipes version < 0.10 has a `copy_pruned` method
-                    recipes = {k: r.copy_pruned() for k, r in recipes.items()}
-
-            bakery: Bakery = self.bakery_class(parent=self)
-
-            extra_options = {}
-
-            for name, recipe in recipes.items():
-                if len(recipes) > 1:
-                    recipe_name_hash = hashlib.sha256(name.encode()).hexdigest()[:5]
-                    per_recipe_unique_job_name = (
-                        self.job_name[: 62 - 6] + "-" + recipe_name_hash
-                    )
-                    self.log.info(
-                        f"Deploying > 1 recipe. Modifying base {self.job_name = } for recipe "
-                        f"{name = } with {recipe_name_hash = }. Submitting job with modified "
-                        f"{per_recipe_unique_job_name = }. Note: job names must be <= 63 chars. "
-                        "If job_name was > 57 chars, it was truncated to accomodate modification."
-                    )
-                else:
-                    per_recipe_unique_job_name = None
-
-                # if pangeo-forge-recipes is <=0.9, we have to specify a requirements.txt
-                # file even if it isn't present, as the image used otherwise will not have pangeo-forge-recipes
-                if isinstance(recipe, PTransform):
-                    requirements_path = feedstock.feedstock_dir / "requirements.txt"
-                    if requirements_path.exists():
-                        extra_options["requirements_file"] = str(requirements_path)
-                else:
-                    extra_options["requirements_file"] = str(
-                        PFR_0_9_REQUIREMENTS_FILE_PATH
-                    )
-
-                pipeline_options = bakery.get_pipeline_options(
-                    job_name=(per_recipe_unique_job_name or self.job_name),
-                    # FIXME: Bring this in from meta.yaml?
-                    container_image=self.container_image,
-                    extra_options=extra_options,
+                site.addsitedir(
+                    str(tmp_venv_dir / "lib" / "python3.10" / "site-packages")
                 )
 
-                # Set argv explicitly to empty so Apache Beam doesn't try to parse the commandline
-                # for pipeline options - we have traitlets doing that for us.
-                pipeline = Pipeline(options=pipeline_options, argv=[])
-                # Chain our recipe to the pipeline. This mutates the `pipeline` object!
-                # We expect `recipe` to either be a beam PTransform, or an object with a 'to_beam'
-                # method that returns a transform.
-                if isinstance(recipe, PTransform):
-                    # This means we are in pangeo-forge-recipes >=0.9
-                    pipeline | recipe
-                elif hasattr(recipe, "to_beam"):
-                    # We are in pangeo-forge-recipes <=0.9
-                    # The import has to be here, as this import is not valid in pangeo-forge-recipes>=0.9
-                    # NOTE: `StorageConfig` only requires a target; input and metadata caches are optional,
-                    # so those are handled conditionally if provided.
-                    from pangeo_forge_recipes.storage import StorageConfig
+                # `install_recipe_reqs` context manager should have all dynamic recipe requirements installed
+                # in an activated virtualenv so check that all dependencies are here
+                # alert if deps in requirements.txt are missing things
+                from importlib.metadata import distributions
 
-                    recipe.storage_config = StorageConfig(
-                        target_storage.get_forge_target(job_name=self.job_name),
+                deps = ["pangeo-forge-recipes", "fsspec", "apache-beam"]
+                missing_deps = []
+                for dep in deps:
+                    if not dep in [d.metadata["Name"] for d in distributions()]:
+                        missing_deps.append(dep)
+                if missing_deps:
+                    raise ValueError(
+                        f"To use the `bake` command, The packages `{missing_deps}` must be listed in your recipe's requirements.txt"
                     )
-                    for attrname, optional_storage in zip(
-                        ("cache", "metadata"),
-                        (input_cache_storage, metadata_cache_storage),
-                    ):
-                        if not optional_storage.is_default():
-                            setattr(
-                                recipe.storage_config,
-                                attrname,
-                                optional_storage.get_forge_target(
-                                    job_name=self.job_name
-                                ),
-                            )
-                    # with configured storage now attached, compile recipe to beam
-                    pipeline | recipe.to_beam()
 
-                # Some bakeries are blocking - if Beam is configured to use them, calling
-                # pipeline.run() blocks. Some are not. We handle that here, and provide
-                # appropriate feedback to the user too.
-                extra = {
-                    "recipe": name,
-                    "job_name": (per_recipe_unique_job_name or self.job_name),
+                # now we can safely do the dynamic recipe imports
+                from apache_beam import Pipeline, PTransform
+
+                from ..storage import (
+                    InputCacheStorage,
+                    MetadataCacheStorage,
+                    TargetStorage,
+                )
+
+                # Create our storage configurations. Traitlets will do its magic, populate these
+                # with appropriate config from config file / commandline / defaults.
+                target_storage = TargetStorage(parent=self)
+                input_cache_storage = InputCacheStorage(parent=self)
+                metadata_cache_storage = MetadataCacheStorage(parent=self)
+
+                self.log.info(
+                    f"Target Storage is {target_storage}\n", extra={"status": "setup"}
+                )
+                self.log.info(
+                    f"Input Cache Storage is {input_cache_storage}\n",
+                    extra={"status": "setup"},
+                )
+                self.log.info(
+                    f"Metadata Cache Storage is {metadata_cache_storage}\n",
+                    extra={"status": "setup"},
+                )
+
+                injection_specs = get_injectionspecs_from_entrypoints()
+
+                if not self.job_name:
+                    self.job_name = self.autogenerate_job_name()
+
+                injection_values = {
+                    "TARGET_STORAGE": target_storage.get_forge_target(
+                        job_name=self.job_name
+                    ),
                 }
-                if bakery.blocking:
-                    self.log.info(
-                        f"Running job for recipe {name}\n",
-                        extra=extra | {"status": "running"},
+
+                if not input_cache_storage.is_default():
+                    cache_target = input_cache_storage.get_forge_target(
+                        job_name=self.job_name
                     )
-                    pipeline.run()
-                else:
-                    result = pipeline.run()
-                    job_id = result.job_id()
-                    self.log.info(
-                        f"Submitted job {job_id} for recipe {name}",
-                        extra=extra | {"job_id": job_id, "status": "submitted"},
+                    injection_values |= {"INPUT_CACHE_STORAGE": cache_target}
+
+                feedstock = Feedstock(
+                    Path(checkout_dir) / self.feedstock_subdir,
+                    prune=self.prune,
+                    callable_args_injections=get_injections(
+                        injection_specs, injection_values
+                    ),
+                )
+
+                self.log.info("Parsing recipes...", extra={"status": "running"})
+                with redirect_stderr(self.log, {"status": "running"}), redirect_stdout(
+                    self.log, {"status": "running"}
+                ):
+                    recipes = feedstock.parse_recipes()
+
+                if self.recipe_id:
+                    if self.recipe_id not in recipes:
+                        raise ValueError(f"{self.recipe_id=} not in {list(recipes)}")
+                    self.log.info(f"Baking only recipe_id='{self.recipe_id}'")
+                    recipes = {k: r for k, r in recipes.items() if k == self.recipe_id}
+
+                if self.prune:
+                    # Prune recipes to only run on certain items if we are asked to
+                    if hasattr(next(iter(recipes.values())), "copy_pruned"):
+                        # pangeo-forge-recipes version < 0.10 has a `copy_pruned` method
+                        recipes = {k: r.copy_pruned() for k, r in recipes.items()}
+
+                bakery: Bakery = self.bakery_class(parent=self)
+
+                extra_options = {}
+
+                for name, recipe in recipes.items():
+                    if len(recipes) > 1:
+                        recipe_name_hash = hashlib.sha256(name.encode()).hexdigest()[:5]
+                        per_recipe_unique_job_name = (
+                            self.job_name[: 62 - 6] + "-" + recipe_name_hash
+                        )
+                        self.log.info(
+                            f"Deploying > 1 recipe. Modifying base {self.job_name = } for recipe "
+                            f"{name = } with {recipe_name_hash = }. Submitting job with modified "
+                            f"{per_recipe_unique_job_name = }. Note: job names must be <= 63 chars. "
+                            "If job_name was > 57 chars, it was truncated to accomodate modification."
+                        )
+                    else:
+                        per_recipe_unique_job_name = None
+
+                    # if pangeo-forge-recipes is >=0.9, we have to specify a requirements.txt
+                    # file even if it isn't present, as the image used otherwise will not have pangeo-forge-recipes
+                    if isinstance(recipe, PTransform):
+                        requirements_path = feedstock.feedstock_dir / "requirements.txt"
+                        if requirements_path.exists():
+                            extra_options["requirements_file"] = str(requirements_path)
+                    else:
+                        extra_options["requirements_file"] = str(
+                            PFR_0_9_REQUIREMENTS_FILE_PATH
+                        )
+
+                    pipeline_options = bakery.get_pipeline_options(
+                        job_name=(per_recipe_unique_job_name or self.job_name),
+                        # FIXME: Bring this in from meta.yaml?
+                        container_image=self.container_image,
+                        extra_options=extra_options,
                     )
+
+                    # Set argv explicitly to empty so Apache Beam doesn't try to parse the commandline
+                    # for pipeline options - we have traitlets doing that for us.
+                    pipeline = Pipeline(options=pipeline_options, argv=[])
+                    # Chain our recipe to the pipeline. This mutates the `pipeline` object!
+                    # We expect `recipe` to either be a beam PTransform, or an object with a 'to_beam'
+                    # method that returns a transform.
+                    if isinstance(recipe, PTransform):
+                        # This means we are in pangeo-forge-recipes >=0.9
+                        pipeline | recipe
+                    elif hasattr(recipe, "to_beam"):
+                        # We are in pangeo-forge-recipes <=0.9
+                        # The import has to be here, as this import is not valid in pangeo-forge-recipes>=0.9
+                        # NOTE: `StorageConfig` only requires a target; input and metadata caches are optional,
+                        # so those are handled conditionally if provided.
+                        from pangeo_forge_recipes.storage import StorageConfig
+
+                        recipe.storage_config = StorageConfig(
+                            target_storage.get_forge_target(job_name=self.job_name),
+                        )
+                        for attrname, optional_storage in zip(
+                            ("cache", "metadata"),
+                            (input_cache_storage, metadata_cache_storage),
+                        ):
+                            if not optional_storage.is_default():
+                                setattr(
+                                    recipe.storage_config,
+                                    attrname,
+                                    optional_storage.get_forge_target(
+                                        job_name=self.job_name
+                                    ),
+                                )
+                        # with configured storage now attached, compile recipe to beam
+                        pipeline | recipe.to_beam()
+
+                    # Some bakeries are blocking - if Beam is configured to use them, calling
+                    # pipeline.run() blocks. Some are not. We handle that here, and provide
+                    # appropriate feedback to the user too.
+                    extra = {
+                        "recipe": name,
+                        "job_name": (per_recipe_unique_job_name or self.job_name),
+                    }
+                    if bakery.blocking:
+                        self.log.info(
+                            f"Running job for recipe {name}\n",
+                            extra=extra | {"status": "running"},
+                        )
+                        with self.patch_sys_executable(desired_python_executable_path):
+                            pipeline.run()
+                    else:
+                        result = pipeline.run()
+                        job_id = result.job_id()
+                        self.log.info(
+                            f"Submitted job {job_id} for recipe {name}",
+                            extra=extra | {"job_id": job_id, "status": "submitted"},
+                        )

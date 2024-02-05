@@ -10,9 +10,9 @@ import tempfile
 import time
 
 import escapism
-from apache_beam.pipeline import PipelineOptions
 from traitlets import Bool, Dict, Integer, Unicode
 
+from ..dtypes import ApacheBeamPipelineOptions
 from .base import Bakery
 
 
@@ -289,7 +289,7 @@ class FlinkOperatorBakery(Bakery):
 
     def get_pipeline_options(
         self, job_name: str, container_image: str, extra_options: dict
-    ) -> PipelineOptions:
+    ) -> ApacheBeamPipelineOptions:
         """
         Return PipelineOptions for use with this Bakery
         """

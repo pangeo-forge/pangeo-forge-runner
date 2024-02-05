@@ -30,15 +30,13 @@ dependencies = [
     "jupyter-repo2docker",
     "ruamel.yaml",
     "traitlets",
+    "virtualenv",
+    "pre-commit",
+    "fsspec",
+    "shell-source",
 ]
 
 [project.optional-dependencies]
-dataflow = [
-    "apache-beam[gcp]",
-]
-flink = [
-    "apache-beam>=2.47.0",
-]
 test = [
     "pytest",
     "pytest-cov",
