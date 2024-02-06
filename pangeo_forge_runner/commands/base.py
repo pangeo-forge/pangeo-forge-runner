@@ -160,23 +160,6 @@ class BaseCommand(Application):
         """,
     )
 
-    def _read_requirements(self, version_control_checkout: Path) -> List:
-        """"""
-        requirements_path = (
-            version_control_checkout / self.feedstock_subdir / "requirements.txt"
-        )
-        if not requirements_path.is_file():
-            raise ValueError(f"No requirements.txt file found at {requirements_path}")
-
-        with open(requirements_path) as req:
-            # TODO: this could be harder than this and we need lots of tests
-            requirements = [
-                f"{line.strip()}"
-                for line in req
-                if line.strip() and not line.startswith("#")
-            ]
-        return requirements
-
     @contextmanager
     def patch_sys_executable(self, tmp_venv_bin_path):
         original = sys.executable
@@ -185,32 +168,6 @@ class BaseCommand(Application):
             yield
         finally:
             sys.executable = original
-
-    @contextmanager
-    def install_recipe_reqs(self, version_control_checkout: Path) -> Optional[Path]:
-        requirements_list = self._read_requirements(version_control_checkout)
-        self.log.info(f"found recipe requirements: {requirements_list}")
-
-        # using pre_commit package to creat a temp venv
-        with tempfile.TemporaryDirectory() as venv_temp_dir:
-            self.log.info(f"venv temp directory created at: {venv_temp_dir}")
-
-            prefix = Path(venv_temp_dir) / "prefix"
-            prefix.mkdir()
-            self.log.info(f"pre-commit prefix directory created at: {prefix}")
-
-            setup_file = prefix / "setup.py"
-            setup_file.write_text(
-                f"import setuptools; setuptools.setup(install_requires={requirements_list})"
-            )
-
-            prefix = Prefix(str(prefix))
-            with envcontext((("VIRTUALENV_CREATOR", "venv"),)):
-                python.install_environment(prefix, C.DEFAULT, ())
-                with python.in_env(prefix, C.DEFAULT):
-                    yield Path(os.environ["VIRTUAL_ENV"])
-
-            assert python.health_check(prefix, C.DEFAULT) is None
 
     @contextmanager
     def fetch(self) -> Generator[str, None, None]:
