@@ -161,15 +161,6 @@ class BaseCommand(Application):
     )
 
     @contextmanager
-    def patch_sys_executable(self, tmp_venv_bin_path):
-        original = sys.executable
-        sys.executable = tmp_venv_bin_path
-        try:
-            yield
-        finally:
-            sys.executable = original
-
-    @contextmanager
     def fetch(self) -> Generator[str, None, None]:
         """
         Fetch repo from configured url at ref, and return a directory where it can be accessed.

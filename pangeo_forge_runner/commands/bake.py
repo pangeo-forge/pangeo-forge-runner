@@ -346,8 +346,7 @@ class Bake(BaseCommand):
                             f"Running job for recipe {name}\n",
                             extra=extra | {"status": "running"},
                         )
-                        with self.patch_sys_executable(desired_python_executable_path):
-                            pipeline.run()
+                        pipeline.run()
                     else:
                         result = pipeline.run()
                         job_id = result.job_id()
