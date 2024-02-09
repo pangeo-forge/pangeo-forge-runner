@@ -251,7 +251,8 @@ class Bake(BaseCommand):
                     )
                 else:
                     per_recipe_unique_job_name = None
-
+                
+                # Add recipe-specific dependencies
                 requirements_path = feedstock.feedstock_dir / "requirements.txt"
                 if requirements_path.exists():
                     extra_options["requirements_file"] = str(requirements_path)
