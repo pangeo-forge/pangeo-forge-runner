@@ -4,14 +4,13 @@ Command to run a pangeo-forge recipe
 import hashlib
 import os
 import re
-import site
 import string
-import sys
 import time
 from pathlib import Path
 
 import escapism
 from traitlets import Bool, Type, Unicode, validate
+from venvception import venv
 
 from .. import Feedstock
 from ..bakery.base import Bakery
@@ -175,18 +174,10 @@ class Bake(BaseCommand):
         Start the baking process
         """
         with self.fetch() as checkout_dir:
-            with self.install_recipe_reqs(Path(checkout_dir)) as tmp_venv_dir:
-                sys.path.insert(0, str(tmp_venv_dir / "bin"))
-                # set up python executable path to be patched on apache_beam.Pipeline.run() below
-                desired_python_executable_path = os.path.join(
-                    str(tmp_venv_dir / "bin" / "python3")
-                )
-                site.addsitedir(
-                    str(tmp_venv_dir / "lib" / "python3.10" / "site-packages")
-                )
-
-                # `install_recipe_reqs` context manager should have all dynamic recipe requirements installed
-                # in an activated virtualenv so check that all dependencies are here
+            with venv(Path(checkout_dir) / self.feedstock_subdir / "requirements.txt"):
+                # in the `venv` context manager, all dynamic recipe requirements should
+                # be installed in an activated virtualenv.
+                # Here, we check that all dependencies are available and
                 # alert if deps in requirements.txt are missing things
                 from importlib.metadata import distributions
 
@@ -353,8 +344,7 @@ class Bake(BaseCommand):
                             f"Running job for recipe {name}\n",
                             extra=extra | {"status": "running"},
                         )
-                        with self.patch_sys_executable(desired_python_executable_path):
-                            pipeline.run()
+                        pipeline.run()
                     else:
                         result = pipeline.run()
                         job_id = result.job_id()

@@ -172,6 +172,8 @@ class DataflowBakery(Bakery):
 
         # Set flags explicitly to empty so Apache Beam doesn't try to parse the commandline
         # for pipeline options - we have traitlets doing that for us.
+        from apache_beam.pipeline import PipelineOptions
+
         opts = dict(
             flags=[],
             runner="DataflowRunner",
