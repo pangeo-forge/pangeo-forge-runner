@@ -1,18 +1,10 @@
-import importlib
 import logging
 import os
-import subprocess
 import sys
 import tempfile
 from collections.abc import Generator
 from contextlib import contextmanager
-from pathlib import Path
-from typing import Optional
 
-import pre_commit.constants as C
-from pre_commit.envcontext import envcontext
-from pre_commit.languages import python
-from pre_commit.prefix import Prefix
 from pythonjsonlogger import jsonlogger
 from repo2docker import contentproviders
 from traitlets import Bool, Dict, Instance, List, Unicode

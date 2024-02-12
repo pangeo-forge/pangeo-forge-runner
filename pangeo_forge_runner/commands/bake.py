@@ -4,9 +4,7 @@ Command to run a pangeo-forge recipe
 import hashlib
 import os
 import re
-import site
 import string
-import sys
 import time
 from pathlib import Path
 
@@ -178,7 +176,7 @@ class Bake(BaseCommand):
         with self.fetch() as checkout_dir:
             with venv(
                 Path(checkout_dir) / self.feedstock_subdir / "requirements.txt"
-            ) as tmp_venv_dir:
+            ):
                 # in the `venv` context manager, all dynamic recipe requirements should
                 # be installed in an activated virtualenv.
                 # Here, we check that all dependencies are available and
