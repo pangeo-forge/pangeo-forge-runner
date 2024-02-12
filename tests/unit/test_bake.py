@@ -193,11 +193,7 @@ def test_gpcp_bake(
             "pangeo-forge-runner",
             "bake",
             "--repo",
-            "https://github.com/pforgetest/gpcp-from-gcs-feedstock.git",
-            "--ref",
-            # in the test feedstock, tags are named for the recipes version
-            # which was used to write the recipe module
-            recipes_version_ref,
+            f"../test_data/gpcp-from-gcs/feedstock-{recipes_version_ref}",
             "--json",
             "-f",
             f.name,

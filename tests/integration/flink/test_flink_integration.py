@@ -71,11 +71,7 @@ def test_flink_bake(minio_service, flinkversion, pythonversion, beamversion):
             "pangeo-forge-runner",
             "bake",
             "--repo",
-            "https://github.com/pforgetest/gpcp-from-gcs-feedstock.git",
-            "--ref",
-            # in the test feedstock, tags are named for
-            # the recipe version used to write the recipe module
-            recipe_version_ref,
+            f"../test_data/gpcp-from-gcs/feedstock-{recipe_version_ref}",
             "-f",
             f.name,
         ]

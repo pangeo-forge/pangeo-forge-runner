@@ -74,7 +74,7 @@ we must answer:
 ### Where Data is Discovered
 
 Recipe input is defined in the recipe itself. Most recipes will define a `pangeo_forge_recipes.patterns.FilePattern` that provides the pipeline with input file locations.
-The example below taken from the [integration test recipe](https://github.com/pforgetest/gpcp-from-gcs-feedstock/blob/main/feedstock/recipe.py)
+The example below taken from [this example recipe](https://github.com/pforgetest/gpcp-from-gcs-feedstock/blob/main/feedstock/recipe.py)
 
    ```python
    import apache_beam as beam

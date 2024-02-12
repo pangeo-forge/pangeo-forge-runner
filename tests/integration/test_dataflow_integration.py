@@ -43,11 +43,7 @@ def test_dataflow_integration():
             "pangeo-forge-runner",
             "bake",
             "--repo",
-            "https://github.com/pforgetest/gpcp-from-gcs-feedstock.git",
-            "--ref",
-            # in the test feedstock, tags are named for the recipes version
-            # which was used to write the recipe module
-            recipe_version_ref,
+            f"../test_data/gpcp-from-gcs/feedstock-{recipe_version_ref}",
             "--json",
             "-f",
             f.name,
