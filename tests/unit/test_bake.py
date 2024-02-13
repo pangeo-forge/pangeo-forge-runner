@@ -210,7 +210,6 @@ def test_gpcp_bake(
             # no_input_cache is only supported in 0.10.x and above
             assert proc.returncode == 1
         else:
-            import pdb; pdb.set_trace()
             assert proc.returncode == 0
 
             job_name_logs = [
