@@ -1,3 +1,0 @@
-gcsfs
-pangeo-forge-recipes==0.10.3
-s3fs
