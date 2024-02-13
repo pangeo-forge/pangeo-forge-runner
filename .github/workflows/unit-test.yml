@@ -41,6 +41,7 @@ jobs:
         chmod +x mc
         mv mc /usr/local/bin/mc
 
+
         minio --version
         mc --version
 
