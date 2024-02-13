@@ -3,6 +3,10 @@ name: Release
 on:
   push:
     tags: ["**"]
+  pull_request:
+    # make sure build works on every pr,
+    # but we don't publish unless it's a tag push event
+    branches: [ "*" ]
 
 jobs:
   deploy:
@@ -20,11 +24,10 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install --upgrade setuptools setuptools-scm wheel twine toml
+          python -m pip install --upgrade setuptools setuptools-scm build twine
       - name: Build
         run: |
-          python setup.py sdist bdist_wheel
-          python setup.py --version
+          python -m build
           twine check dist/*
           ls -l dist
       - name: Publish

@@ -15,3 +15,9 @@ in an opinionated fashion.
 ```{eval-rst}
 .. autoconfigurable::  pangeo_forge_runner.bakery.local.LocalDirectBakery
 ```
+
+## FlinkOperatorBakery
+
+```{eval-rst}
+.. autoconfigurable::  pangeo_forge_runner.bakery.flink.FlinkOperatorBakery
+```

@@ -1,10 +1,13 @@
 """
 Command to run a pangeo-forge recipe
 """
+
+import hashlib
 import os
 import re
 import string
 import time
+from importlib.metadata import distributions
 from pathlib import Path
 
 import escapism
@@ -13,10 +16,16 @@ from traitlets import Bool, Type, Unicode, validate
 
 from .. import Feedstock
 from ..bakery.base import Bakery
+from ..bakery.flink import FlinkOperatorBakery
 from ..bakery.local import LocalDirectBakery
+from ..plugin import get_injections, get_injectionspecs_from_entrypoints
 from ..storage import InputCacheStorage, MetadataCacheStorage, TargetStorage
 from ..stream_capture import redirect_stderr, redirect_stdout
 from .base import BaseCommand, common_aliases, common_flags
+
+PFR_0_9_REQUIREMENTS_FILE_PATH = (
+    Path(__file__).parent / "pangeo-forge-recipes-0.9-requirements.txt"
+)
 
 
 class Bake(BaseCommand):
@@ -98,17 +107,33 @@ class Bake(BaseCommand):
         return proposal.value
 
     container_image = Unicode(
-        # Provides apache_beam 2.42, which we pin to in setup.py
-        "quay.io/pangeo/forge:5e51a29",
+        "",
         config=True,
         help="""
         Container image to use for this job.
 
-        Should be accessible to whatever Beam runner is being used.
+        For GCP DataFlow leaving it blank defaults to letting beam 
+        automatically figure out the image to use for the workers 
+        based on version of beam and python in use.
+        
+        For Flink it's required that you pass an beam image
+        for the version of python and beam you are targeting
+        for example: apache/beam_python3.10_sdk:2.51.0
+        more info: https://hub.docker.com/layers/apache/
 
         Note that some runners (like the local one) may not support this!
         """,
     )
+
+    @validate("container_image")
+    def _validate_container_image(self, proposal):
+        if self.bakery_class == FlinkOperatorBakery and not proposal.value:
+            raise ValueError(
+                "'container_name' is required when using the 'FlinkOperatorBakery' "
+                "for the version of python and apache-beam you are targeting. "
+                "See the sdk images available: https://hub.docker.com/layers/apache/"
+            )
+        return proposal.value
 
     def autogenerate_job_name(self):
         """
@@ -151,6 +176,10 @@ class Bake(BaseCommand):
         """
         Start the baking process
         """
+        if not "pangeo-forge-recipes" in [d.metadata["Name"] for d in distributions()]:
+            raise ValueError(
+                "To use the `bake` command, `pangeo-forge-recipes` must be installed."
+            )
         # Create our storage configurations. Traitlets will do its magic, populate these
         # with appropriate config from config file / commandline / defaults.
         target_storage = TargetStorage(parent=self)
@@ -168,35 +197,36 @@ class Bake(BaseCommand):
             extra={"status": "setup"},
         )
 
+        injection_specs = get_injectionspecs_from_entrypoints()
+
         with self.fetch() as checkout_dir:
             if not self.job_name:
                 self.job_name = self.autogenerate_job_name()
 
-            callable_args_injections = {
-                "StoreToZarr": {
-                    "target_root": target_storage.get_forge_target(
-                        job_name=self.job_name
-                    ),
-                }
+            injection_values = {
+                "TARGET_STORAGE": target_storage.get_forge_target(
+                    job_name=self.job_name
+                ),
             }
 
-            cache_target = input_cache_storage.get_forge_target(job_name=self.job_name)
-            if cache_target:
-                callable_args_injections |= {
-                    # FIXME: a plugin/entrypoint system should handle injections.
-                    # hardcoding object names here assumes too much.
-                    "OpenURLWithFSSpec": {"cache": cache_target},
-                }
+            if not input_cache_storage.is_default():
+                cache_target = input_cache_storage.get_forge_target(
+                    job_name=self.job_name
+                )
+                injection_values |= {"INPUT_CACHE_STORAGE": cache_target}
 
             feedstock = Feedstock(
                 Path(checkout_dir) / self.feedstock_subdir,
                 prune=self.prune,
-                callable_args_injections=callable_args_injections,
+                callable_args_injections=get_injections(
+                    injection_specs, injection_values
+                ),
             )
 
             self.log.info("Parsing recipes...", extra={"status": "running"})
-            with redirect_stderr(self.log, {"status": "running"}), redirect_stdout(
-                self.log, {"status": "running"}
+            with (
+                redirect_stderr(self.log, {"status": "running"}),
+                redirect_stdout(self.log, {"status": "running"}),
             ):
                 recipes = feedstock.parse_recipes()
 
@@ -214,15 +244,36 @@ class Bake(BaseCommand):
 
             bakery: Bakery = self.bakery_class(parent=self)
 
-            # Check for a requirements.txt file and send it to beam if we have one
-            requirements_path = feedstock.feedstock_dir / "requirements.txt"
             extra_options = {}
-            if requirements_path.exists():
-                extra_options["requirements_file"] = str(requirements_path)
 
             for name, recipe in recipes.items():
+                if len(recipes) > 1:
+                    recipe_name_hash = hashlib.sha256(name.encode()).hexdigest()[:5]
+                    per_recipe_unique_job_name = (
+                        self.job_name[: 62 - 6] + "-" + recipe_name_hash
+                    )
+                    self.log.info(
+                        f"Deploying > 1 recipe. Modifying base {self.job_name = } for recipe "
+                        f"{name = } with {recipe_name_hash = }. Submitting job with modified "
+                        f"{per_recipe_unique_job_name = }. Note: job names must be <= 63 chars. "
+                        "If job_name was > 57 chars, it was truncated to accomodate modification."
+                    )
+                else:
+                    per_recipe_unique_job_name = None
+
+                # if pangeo-forge-recipes is <=0.9, we have to specify a requirements.txt
+                # file even if it isn't present, as the image used otherwise will not have pangeo-forge-recipes
+                if isinstance(recipe, PTransform):
+                    requirements_path = feedstock.feedstock_dir / "requirements.txt"
+                    if requirements_path.exists():
+                        extra_options["requirements_file"] = str(requirements_path)
+                else:
+                    extra_options["requirements_file"] = str(
+                        PFR_0_9_REQUIREMENTS_FILE_PATH
+                    )
+
                 pipeline_options = bakery.get_pipeline_options(
-                    job_name=self.job_name,
+                    job_name=(per_recipe_unique_job_name or self.job_name),
                     # FIXME: Bring this in from meta.yaml?
                     container_image=self.container_image,
                     extra_options=extra_options,
@@ -251,9 +302,7 @@ class Bake(BaseCommand):
                         ("cache", "metadata"),
                         (input_cache_storage, metadata_cache_storage),
                     ):
-                        # `.root_path` is an empty string by default, so if the user has not setup this
-                        # optional storage type in config, this block is skipped.
-                        if optional_storage.root_path:
+                        if not optional_storage.is_default():
                             setattr(
                                 recipe.storage_config,
                                 attrname,
@@ -267,7 +316,10 @@ class Bake(BaseCommand):
                 # Some bakeries are blocking - if Beam is configured to use them, calling
                 # pipeline.run() blocks. Some are not. We handle that here, and provide
                 # appropriate feedback to the user too.
-                extra = {"recipe": name, "job_name": self.job_name}
+                extra = {
+                    "recipe": name,
+                    "job_name": (per_recipe_unique_job_name or self.job_name),
+                }
                 if bakery.blocking:
                     self.log.info(
                         f"Running job for recipe {name}\n",
