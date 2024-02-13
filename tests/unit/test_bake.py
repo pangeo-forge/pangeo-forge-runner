@@ -250,7 +250,7 @@ def test_gpcp_bake(
             # TODO: I have no idea how/if these are actually running on `main`
             # dictobj runs do not generate any datasets b/c they are not recipes
             # so we've asserted what we can already, just move on
-            if recipes_version_ref.endswith('dictobj'):
+            if recipes_version_ref.endswith("dictobj"):
                 return
 
             # Open the generated datasets with xarray!
