@@ -29,7 +29,7 @@ class LocalDirectBakery(Bakery):
     )
 
     direct_running_mode = Unicode(
-        "multi_threading",
+        "multi_processing",
         config=True,
         help="""
         One of 'in_memory', 'multi_threading', 'multi_processing'.
@@ -39,7 +39,9 @@ class LocalDirectBakery(Bakery):
         multi_processing: Runner and workers communicate through gRPC and each worker runs in a subprocess.
 
         multi_processing is closest to most production runners, as it enables real usage of multiple
-        CPUs on the host machine. **However**, it can mess up logging, so is not the default here.
+        CPUs on the host machine and therefore has a real serialization boundary. Thus, it is the default here.
+        For debugging purposes, it is sometimes advisable to select one of `in_memory` or `multi_threading` to
+        avoid logs being swallowed
 
         https://beam.apache.org/documentation/runners/direct/#setting-parallelism has more
         information.
