@@ -72,6 +72,7 @@ There are three parts of injections:
 
    This is what is actually injected into the recipes in the end.
 """
+
 # Use the backported importlib_metadata as we still support Python 3.9
 # Once we're on 3.10 we can remove this dependency and use the built in
 # importlib.metadata
