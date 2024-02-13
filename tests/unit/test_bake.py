@@ -14,6 +14,8 @@ from packaging.version import parse as parse_version
 
 from pangeo_forge_runner.commands.bake import Bake
 
+TEST_DATA_DIR = Path(__file__).parent.parent / "test-data"
+
 
 @pytest.fixture
 def recipes_uninstalled():
@@ -245,11 +247,9 @@ def test_gpcp_bake(
             "pangeo-forge-runner",
             "bake",
             "--repo",
-            "https://github.com/pforgetest/gpcp-from-gcs-feedstock.git",
-            "--ref",
-            # in the test feedstock, tags are named for the recipes version
-            # which was used to write the recipe module
-            recipes_version_ref,
+            str(TEST_DATA_DIR / "gpcp-from-gcs"),
+            "--feedstock-subdir",
+            f"feedstock-{recipes_version_ref}",
             "--json",
             "-f",
             f.name,
@@ -274,7 +274,7 @@ def test_gpcp_bake(
                 if custom_job_name:
                     assert job_name.startswith(custom_job_name)
                 else:
-                    assert job_name.startswith("gh-pforgetest-gpcp-from-gcs-")
+                    assert job_name.startswith("local-gpcp-2dfrom-2dgcs-feedstock-")
 
                 if "dictobj" in recipes_version_ref:
                     assert job_name.endswith(
@@ -297,6 +297,11 @@ def test_gpcp_bake(
                 ]
             else:
                 zarr_store_full_paths = [config["TargetStorage"]["root_path"]]
+
+            # dictobj runs do not generate any datasets b/c they are not recipes
+            # so we've asserted what we can already, just move on
+            if recipes_version_ref.endswith("dictobj"):
+                return
 
             # Open the generated datasets with xarray!
             for path in zarr_store_full_paths:
