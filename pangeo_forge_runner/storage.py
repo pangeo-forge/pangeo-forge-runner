@@ -75,7 +75,6 @@ class StorageTargetConfig(LoggingConfigurable):
 
         cls = getattr(storage, self.pangeo_forge_target_class)
 
-
         # pangeo-forge-recipes >=0.10.5 have a new `fsspec_kwargs` kwarg
         if any(field.name == "fsspec_kwargs" for field in fields(cls)):
             return cls(
