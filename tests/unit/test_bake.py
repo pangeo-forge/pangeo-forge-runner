@@ -14,8 +14,6 @@ from packaging.version import parse as parse_version
 from pangeo_forge_runner.commands.bake import Bake
 
 TEST_DATA_DIR = Path(__file__).parent.parent / "test-data"
-print("########################################")
-print(TEST_DATA_DIR)
 
 
 @pytest.fixture
@@ -225,7 +223,7 @@ def test_gpcp_bake(
                 if custom_job_name:
                     assert job_name.startswith(custom_job_name)
                 else:
-                    assert job_name.startswith("gh-pforgetest-gpcp-from-gcs-")
+                    assert job_name.startswith("local-gpcp-2dfrom-2dgcs-feedstock-")
 
                 if "dictobj" in recipes_version_ref:
                     assert job_name.endswith(
