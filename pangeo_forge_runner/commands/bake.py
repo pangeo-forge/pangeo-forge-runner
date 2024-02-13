@@ -245,8 +245,9 @@ class Bake(BaseCommand):
                 )
 
                 self.log.info("Parsing recipes...", extra={"status": "running"})
-                with redirect_stderr(self.log, {"status": "running"}), redirect_stdout(
-                    self.log, {"status": "running"}
+                with (
+                    redirect_stderr(self.log, {"status": "running"}),
+                    redirect_stdout(self.log, {"status": "running"}),
                 ):
                     recipes = feedstock.parse_recipes()
 
