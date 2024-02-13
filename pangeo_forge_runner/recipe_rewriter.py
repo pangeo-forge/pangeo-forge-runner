@@ -115,20 +115,46 @@ class RecipeRewriter(NodeTransformer):
             keywords=[],
         )
 
+    def inject_keywords(self, node: Call) -> Call:
+        """Inject keywords into calls."""
+        for name, params in self.callable_args_injections.items():
+            if hasattr(node.func, "id") and name == node.func.id:
+                # this is a non-chained call, so append to top-level `.keywords`
+                node.keywords += [
+                    keyword(
+                        arg=k,
+                        value=self._make_injected_get(
+                            "_CALLABLE_ARGS_INJECTIONS", name, k
+                        ),
+                    )
+                    for k in params
+                ]
+
+            elif hasattr(node.func, "value") and name == node.func.value.func.id:
+                # this is a *chained* call, so append to `.func.value.keywords`
+                node.func.value.keywords += [
+                    keyword(
+                        arg=k,
+                        value=self._make_injected_get(
+                            "_CALLABLE_ARGS_INJECTIONS", name, k
+                        ),
+                    )
+                    for k in params
+                ]
+        return node
+
     def visit_Call(self, node: Call) -> Call:
         """
         Rewrite calls that return a FilePattern if we need to prune them
         """
         if isinstance(node.func, Attribute):
-            # FIXME: Support it being imported as from apache_beam import Create too
-            if "apache_beam" not in self._import_aliases.values():
+            if (
+                # FIXME: Support it being imported as from apache_beam import Create too
                 # if beam hasn't been imported, don't rewrite anything
-                return node
-
-            # Only rewrite parameters to apache_beam.Create, regardless
-            # of how it is imported as
-            if node.func.attr == "Create" and (
-                self._import_aliases.get(node.func.value.id) == "apache_beam"
+                "apache_beam" in self._import_aliases.values()
+                # Rewrite parameters to apache_beam.Create, regardless of how it is imported
+                and node.func.attr == "Create"
+                and self._import_aliases.get(node.func.value.id) == "apache_beam"
             ):
                 # If there is a single argument pased to beam.Create, and it is <something>.items()
                 # This is the heurestic we use for figuring out that we are in fact operating on a FilePattern object
@@ -138,19 +164,11 @@ class RecipeRewriter(NodeTransformer):
                     and node.args[0].func.attr == "items"
                 ):
                     return fix_missing_locations(self.transform_prune(node))
+            elif node.func.attr == "with_resource_hints":
+                return fix_missing_locations(self.inject_keywords(node))
+
         elif isinstance(node.func, Name):
             # FIXME: Support importing in other ways
-            for name, params in self.callable_args_injections.items():
-                if name == node.func.id:
-                    node.keywords += [
-                        keyword(
-                            arg=k,
-                            value=self._make_injected_get(
-                                "_CALLABLE_ARGS_INJECTIONS", name, k
-                            ),
-                        )
-                        for k in params
-                    ]
-            return fix_missing_locations(node)
+            return fix_missing_locations(self.inject_keywords(node))
 
         return node
