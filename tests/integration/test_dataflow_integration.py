@@ -3,16 +3,19 @@ import subprocess
 import tempfile
 import time
 from importlib.metadata import version
+from pathlib import Path
 
 import pytest
 import xarray as xr
 from packaging.version import parse as parse_version
 
+TEST_DATA_DIR = Path(__file__).parent.parent / "test-data"
+
 
 def test_dataflow_integration():
     pfr_version = parse_version(version("pangeo-forge-recipes"))
     if pfr_version >= parse_version("0.10"):
-        recipe_version_ref = str(pfr_version)
+        recipe_version_ref = "0.10.x"
     else:
         recipe_version_ref = "0.9.x"
     bucket = "gs://pangeo-forge-runner-ci-testing"
@@ -43,7 +46,9 @@ def test_dataflow_integration():
             "pangeo-forge-runner",
             "bake",
             "--repo",
-            f"../test_data/gpcp-from-gcs/feedstock-{recipe_version_ref}",
+            str(TEST_DATA_DIR / "gpcp-from-gcs"),
+            "--feedstock-subdir",
+            f"feedstock-{recipe_version_ref}",
             "--json",
             "-f",
             f.name,
