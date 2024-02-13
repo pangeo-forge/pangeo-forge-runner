@@ -5,12 +5,17 @@ import subprocess
 import sys
 import tempfile
 from importlib.metadata import distributions, version
+from pathlib import Path
 
 import pytest
 import xarray as xr
 from packaging.version import parse as parse_version
 
 from pangeo_forge_runner.commands.bake import Bake
+
+TEST_DATA_DIR = Path(__file__).parent.parent / "test-data"
+print("########################################")
+print(TEST_DATA_DIR)
 
 
 @pytest.fixture
@@ -193,7 +198,7 @@ def test_gpcp_bake(
             "pangeo-forge-runner",
             "bake",
             "--repo",
-            "../test-data/gpcp-from-gcs",
+            str(TEST_DATA_DIR / "gpcp-from-gcs"),
             "--feedstock-subdir",
             f"feedstock-{recipes_version_ref}",
             "--json",
