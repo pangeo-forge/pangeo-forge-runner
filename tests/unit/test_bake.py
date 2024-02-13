@@ -120,54 +120,54 @@ def recipes_version_ref(request):
     )
 
 
-@pytest.skip()
-@pytest.mark.parametrize(
-    ("checkout_path, expected_path, subprocess_success, expected_exception"),
-    (
-        (
-            Path("/path/to/repo"),
-            Path("/path/to/repo/feedstock_subdir/requirements.txt"),
-            True,
-            None,
-        ),
-        (
-            Path("/path/to/repo"),
-            Path("/path/to/repo/feedstock_subdir/requirements.txt"),
-            False,
-            Exception,
-        ),
-        (
-            Path("/path/to/repo"),
-            Path("/path/to/repo/feedstock_subdir/requirements.txt"),
-            None,
-            ValueError,
-        ),
-    ),
-)
-def test_pip_install_recipe_deps(
-    checkout_path, expected_path, subprocess_success, expected_exception
-):
-    # Mocking Path.is_file
-    with patch.object(Path, "is_file", return_value=(subprocess_success is not None)):
-        # Mocking subprocess.run
-        with patch("subprocess.run", MagicMock()) as mock_run:
-            if subprocess_success is False:
-                mock_run.side_effect = subprocess.CalledProcessError(
-                    returncode=1, cmd="cmd"
-                )
-
-            bake = Bake()
-            if expected_exception:
-                with pytest.raises(expected_exception):
-                    bake._pip_install_recipe_deps(checkout_path)
-            else:
-                assert bake._pip_install_recipe_deps(checkout_path) == expected_path
-
-            if subprocess_success is not None:
-                mock_run.assert_called_with(
-                    ["pip", "install", "--no-deps", "-q", "-r", expected_path],
-                    check=True,
-                )
+# @pytest.skip()
+# @pytest.mark.parametrize(
+#     ("checkout_path, expected_path, subprocess_success, expected_exception"),
+#     (
+#         (
+#             Path("/path/to/repo"),
+#             Path("/path/to/repo/feedstock_subdir/requirements.txt"),
+#             True,
+#             None,
+#         ),
+#         (
+#             Path("/path/to/repo"),
+#             Path("/path/to/repo/feedstock_subdir/requirements.txt"),
+#             False,
+#             Exception,
+#         ),
+#         (
+#             Path("/path/to/repo"),
+#             Path("/path/to/repo/feedstock_subdir/requirements.txt"),
+#             None,
+#             ValueError,
+#         ),
+#     ),
+# )
+# def test_pip_install_recipe_deps(
+#     checkout_path, expected_path, subprocess_success, expected_exception
+# ):
+#     # Mocking Path.is_file
+#     with patch.object(Path, "is_file", return_value=(subprocess_success is not None)):
+#         # Mocking subprocess.run
+#         with patch("subprocess.run", MagicMock()) as mock_run:
+#             if subprocess_success is False:
+#                 mock_run.side_effect = subprocess.CalledProcessError(
+#                     returncode=1, cmd="cmd"
+#                 )
+#
+#             bake = Bake()
+#             if expected_exception:
+#                 with pytest.raises(expected_exception):
+#                     bake._pip_install_recipe_deps(checkout_path)
+#             else:
+#                 assert bake._pip_install_recipe_deps(checkout_path) == expected_path
+#
+#             if subprocess_success is not None:
+#                 mock_run.assert_called_with(
+#                     ["pip", "install", "--no-deps", "-q", "-r", expected_path],
+#                     check=True,
+#                 )
 
 
 @pytest.mark.parametrize(
