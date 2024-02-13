@@ -193,7 +193,9 @@ def test_gpcp_bake(
             "pangeo-forge-runner",
             "bake",
             "--repo",
-            f"../test_data/gpcp-from-gcs/feedstock-{recipes_version_ref}",
+            "../test-data/gpcp-from-gcs",
+            "--feedstock-subdir",
+            f"feedstock-{recipes_version_ref}",
             "--json",
             "-f",
             f.name,
@@ -208,6 +210,7 @@ def test_gpcp_bake(
             # no_input_cache is only supported in 0.10.x and above
             assert proc.returncode == 1
         else:
+            import pdb; pdb.set_trace()
             assert proc.returncode == 0
 
             job_name_logs = [
