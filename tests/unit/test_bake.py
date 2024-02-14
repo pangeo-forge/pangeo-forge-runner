@@ -2,11 +2,9 @@ import hashlib
 import json
 import re
 import subprocess
-import sys
 import tempfile
 from importlib.metadata import distributions, version
 from pathlib import Path
-from unittest.mock import MagicMock, patch
 
 import pytest
 import xarray as xr
@@ -19,9 +17,27 @@ TEST_DATA_DIR = Path(__file__).parent.parent / "test-data"
 
 @pytest.fixture
 def recipes_uninstalled():
-    """just test the biggest 'bake' requirements that a job needs"""
+    """Uninstall `pangeo-forge-recipes` for `test_bake_requires_recipes_installed`."""
+    # first confirm that it's installed to begin with
+    assert "pangeo-forge-recipes" in [d.metadata["Name"] for d in distributions()]
+    # and capture the version, which we'll reinstall after the test
+    recipes_version = parse_version(version("pangeo-forge-recipes"))
+    # now uninstall it
+    uninstall = subprocess.run(
+        f"{sys.executable} -m pip uninstall pangeo-forge-recipes -y".split()
+    )
+    assert uninstall.returncode == 0
     assert "pangeo-forge-recipes" not in [d.metadata["Name"] for d in distributions()]
-    return True
+    # and yield to the test
+    yield True
+    # test is complete, now reinstall pangeo-forge-recipes in the test env
+    reinstall = subprocess.run(
+        f"{sys.executable} -m pip install pangeo-forge-recipes=={recipes_version}".split()
+    )
+    assert reinstall.returncode == 0
+    # make sure it's there, and in the expected version
+    assert "pangeo-forge-recipes" in [d.metadata["Name"] for d in distributions()]
+    assert parse_version(version("pangeo-forge-recipes")) == recipes_version
 
 
 def test_bake_requires_recipes_installed(recipes_uninstalled):
@@ -102,56 +118,6 @@ def recipes_version_ref(request):
         if not request.param == "dict_object"
         else f"{recipes_version_ref}-dictobj"
     )
-
-
-# @pytest.skip()
-# @pytest.mark.parametrize(
-#     ("checkout_path, expected_path, subprocess_success, expected_exception"),
-#     (
-#         (
-#             Path("/path/to/repo"),
-#             Path("/path/to/repo/feedstock_subdir/requirements.txt"),
-#             True,
-#             None,
-#         ),
-#         (
-#             Path("/path/to/repo"),
-#             Path("/path/to/repo/feedstock_subdir/requirements.txt"),
-#             False,
-#             Exception,
-#         ),
-#         (
-#             Path("/path/to/repo"),
-#             Path("/path/to/repo/feedstock_subdir/requirements.txt"),
-#             None,
-#             ValueError,
-#         ),
-#     ),
-# )
-# def test_pip_install_recipe_deps(
-#     checkout_path, expected_path, subprocess_success, expected_exception
-# ):
-#     # Mocking Path.is_file
-#     with patch.object(Path, "is_file", return_value=(subprocess_success is not None)):
-#         # Mocking subprocess.run
-#         with patch("subprocess.run", MagicMock()) as mock_run:
-#             if subprocess_success is False:
-#                 mock_run.side_effect = subprocess.CalledProcessError(
-#                     returncode=1, cmd="cmd"
-#                 )
-#
-#             bake = Bake()
-#             if expected_exception:
-#                 with pytest.raises(expected_exception):
-#                     bake._pip_install_recipe_deps(checkout_path)
-#             else:
-#                 assert bake._pip_install_recipe_deps(checkout_path) == expected_path
-#
-#             if subprocess_success is not None:
-#                 mock_run.assert_called_with(
-#                     ["pip", "install", "--no-deps", "-q", "-r", expected_path],
-#                     check=True,
-#                 )
 
 
 @pytest.mark.parametrize(
