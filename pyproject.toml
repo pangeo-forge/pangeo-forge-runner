@@ -42,6 +42,8 @@ test = [
     # These are used by the gpcp feedstock integration tests
     "gcsfs",
     "s3fs",
+    # used in some unit tests
+    "apache-beam",
 ]
 
 [project.scripts]
