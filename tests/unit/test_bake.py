@@ -2,6 +2,7 @@ import hashlib
 import json
 import re
 import subprocess
+import sys
 import tempfile
 from importlib.metadata import distributions, version
 from pathlib import Path
