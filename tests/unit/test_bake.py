@@ -170,11 +170,6 @@ def test_gpcp_bake(
             "fsspec_args": fsspec_args,
             "root_path": "s3://gpcp/input-cache/",
         },
-        "MetadataCacheStorage": {
-            "fsspec_class": "s3fs.S3FileSystem",
-            "fsspec_args": fsspec_args,
-            "root_path": "s3://gpcp/metadata-cache/",
-        },
     }
 
     if no_input_cache:

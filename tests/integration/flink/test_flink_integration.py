@@ -40,11 +40,6 @@ def test_flink_bake(minio_service, flinkversion, pythonversion, beamversion):
             "fsspec_args": fsspec_args,
             "root_path": bucket + "/input-cache/{job_name}",
         },
-        "MetadataCacheStorage": {
-            "fsspec_class": "s3fs.S3FileSystem",
-            "fsspec_args": fsspec_args,
-            "root_path": bucket + "/metadata-cache/{job_name}",
-        },
         "FlinkOperatorBakery": {
             "flink_version": flinkversion,
             "job_manager_resources": {"memory": "1024m", "cpu": 0.30},

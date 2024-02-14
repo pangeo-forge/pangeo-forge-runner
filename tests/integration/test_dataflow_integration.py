@@ -32,10 +32,6 @@ def test_dataflow_integration():
             "fsspec_class": "gcsfs.GCSFileSystem",
             "root_path": bucket + "/input-cache/{job_name}",
         },
-        "MetadataCacheStorage": {
-            "fsspec_class": "gcsfs.GCSFileSystem",
-            "root_path": bucket + "/metadata-cache/{job_name}",
-        },
     }
 
     with tempfile.NamedTemporaryFile("w", suffix=".json") as f:

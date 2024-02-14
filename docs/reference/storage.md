@@ -14,9 +14,3 @@ where `pangeo-forge-runner` puts intermediate & final data products.
 ```{eval-rst}
 .. autoconfigurable::  pangeo_forge_runner.storage.InputCacheStorage
 ```
-
-## MetadataCacheStorage
-
-```{eval-rst}
-.. autoconfigurable::  pangeo_forge_runner.storage.MetadataCacheStorage
-```
