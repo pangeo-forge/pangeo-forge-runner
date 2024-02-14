@@ -189,7 +189,7 @@ class Bake(BaseCommand):
                         missing_deps.append(dep)
                 if missing_deps:
                     raise ValueError(
-                        f"To use the `bake` command, the packages `{missing_deps}` must be listed in your recipe's requirements.txt"
+                        f"To use the 'bake' command, the packages {missing_deps} must be listed in your recipe's requirements.txt"
                     )
 
                 # now we can safely do the dynamic recipe imports
