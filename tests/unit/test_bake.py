@@ -19,27 +19,9 @@ TEST_DATA_DIR = Path(__file__).parent.parent / "test-data"
 
 @pytest.fixture
 def recipes_uninstalled():
-    """Uninstall `pangeo-forge-recipes` for `test_bake_requires_recipes_installed`."""
-    # first confirm that it's installed to begin with
-    assert "pangeo-forge-recipes" in [d.metadata["Name"] for d in distributions()]
-    # and capture the version, which we'll reinstall after the test
-    recipes_version = parse_version(version("pangeo-forge-recipes"))
-    # now uninstall it
-    uninstall = subprocess.run(
-        f"{sys.executable} -m pip uninstall pangeo-forge-recipes -y".split()
-    )
-    assert uninstall.returncode == 0
+    """just test the biggest 'bake' requirements that a job needs"""
     assert "pangeo-forge-recipes" not in [d.metadata["Name"] for d in distributions()]
-    # and yield to the test
-    yield True
-    # test is complete, now reinstall pangeo-forge-recipes in the test env
-    reinstall = subprocess.run(
-        f"{sys.executable} -m pip install pangeo-forge-recipes=={recipes_version}".split()
-    )
-    assert reinstall.returncode == 0
-    # make sure it's there, and in the expected version
-    assert "pangeo-forge-recipes" in [d.metadata["Name"] for d in distributions()]
-    assert parse_version(version("pangeo-forge-recipes")) == recipes_version
+    return True
 
 
 def test_bake_requires_recipes_installed(recipes_uninstalled):
@@ -49,9 +31,11 @@ def test_bake_requires_recipes_installed(recipes_uninstalled):
     """
     assert recipes_uninstalled
     bake = Bake()
+    bake.repo = str(TEST_DATA_DIR / 'gpcp-from-gcs')
+    bake.feedstock_subdir = 'feedstock-0.10.x-norequirements'
     with pytest.raises(
         ValueError,
-        match="To use the `bake` command, `pangeo-forge-recipes` must be installed.",
+        match="To use the `bake` command, the packages `pangeo-forge-recipes` must be listed in your recipe's requirements.txt",
     ):
         bake.start()
 
