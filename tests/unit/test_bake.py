@@ -31,8 +31,8 @@ def test_bake_requires_recipes_installed(recipes_uninstalled):
     """
     assert recipes_uninstalled
     bake = Bake()
-    bake.repo = str(TEST_DATA_DIR / 'gpcp-from-gcs')
-    bake.feedstock_subdir = 'feedstock-0.10.x-norequirements'
+    bake.repo = str(TEST_DATA_DIR / "gpcp-from-gcs")
+    bake.feedstock_subdir = "feedstock-0.10.x-norequirements"
     with pytest.raises(
         ValueError,
         match="To use the `bake` command, the packages `pangeo-forge-recipes` must be listed in your recipe's requirements.txt",
