@@ -11,7 +11,7 @@ from importlib.metadata import distributions
 from pathlib import Path
 
 import escapism
-from apache_beam import Pipeline, PTransform
+from apache_beam import Pipeline
 from traitlets import Bool, Type, Unicode, validate
 
 from .. import Feedstock
@@ -19,13 +19,9 @@ from ..bakery.base import Bakery
 from ..bakery.flink import FlinkOperatorBakery
 from ..bakery.local import LocalDirectBakery
 from ..plugin import get_injections, get_injectionspecs_from_entrypoints
-from ..storage import InputCacheStorage, MetadataCacheStorage, TargetStorage
+from ..storage import InputCacheStorage, TargetStorage
 from ..stream_capture import redirect_stderr, redirect_stdout
 from .base import BaseCommand, common_aliases, common_flags
-
-PFR_0_9_REQUIREMENTS_FILE_PATH = (
-    Path(__file__).parent / "pangeo-forge-recipes-0.9-requirements.txt"
-)
 
 
 class Bake(BaseCommand):
@@ -184,17 +180,12 @@ class Bake(BaseCommand):
         # with appropriate config from config file / commandline / defaults.
         target_storage = TargetStorage(parent=self)
         input_cache_storage = InputCacheStorage(parent=self)
-        metadata_cache_storage = MetadataCacheStorage(parent=self)
 
         self.log.info(
             f"Target Storage is {target_storage}\n", extra={"status": "setup"}
         )
         self.log.info(
             f"Input Cache Storage is {input_cache_storage}\n", extra={"status": "setup"}
-        )
-        self.log.info(
-            f"Metadata Cache Storage is {metadata_cache_storage}\n",
-            extra={"status": "setup"},
         )
 
         injection_specs = get_injectionspecs_from_entrypoints()
@@ -236,17 +227,17 @@ class Bake(BaseCommand):
                 self.log.info(f"Baking only recipe_id='{self.recipe_id}'")
                 recipes = {k: r for k, r in recipes.items() if k == self.recipe_id}
 
-            if self.prune:
-                # Prune recipes to only run on certain items if we are asked to
-                if hasattr(next(iter(recipes.values())), "copy_pruned"):
-                    # pangeo-forge-recipes version < 0.10 has a `copy_pruned` method
-                    recipes = {k: r.copy_pruned() for k, r in recipes.items()}
-
             bakery: Bakery = self.bakery_class(parent=self)
 
             extra_options = {}
 
             for name, recipe in recipes.items():
+                if hasattr(recipe, "to_beam"):
+                    # Catch recipes following pre-0.10 conventions and throw
+                    raise ValueError(
+                        "Unsupported recipe: please update to support pfr >=0.10 conventions."
+                    )
+
                 if len(recipes) > 1:
                     recipe_name_hash = hashlib.sha256(name.encode()).hexdigest()[:5]
                     per_recipe_unique_job_name = (
@@ -261,16 +252,9 @@ class Bake(BaseCommand):
                 else:
                     per_recipe_unique_job_name = None
 
-                # if pangeo-forge-recipes is <=0.9, we have to specify a requirements.txt
-                # file even if it isn't present, as the image used otherwise will not have pangeo-forge-recipes
-                if isinstance(recipe, PTransform):
-                    requirements_path = feedstock.feedstock_dir / "requirements.txt"
-                    if requirements_path.exists():
-                        extra_options["requirements_file"] = str(requirements_path)
-                else:
-                    extra_options["requirements_file"] = str(
-                        PFR_0_9_REQUIREMENTS_FILE_PATH
-                    )
+                requirements_path = feedstock.feedstock_dir / "requirements.txt"
+                if requirements_path.exists():
+                    extra_options["requirements_file"] = str(requirements_path)
 
                 pipeline_options = bakery.get_pipeline_options(
                     job_name=(per_recipe_unique_job_name or self.job_name),
@@ -285,33 +269,7 @@ class Bake(BaseCommand):
                 # Chain our recipe to the pipeline. This mutates the `pipeline` object!
                 # We expect `recipe` to either be a beam PTransform, or an object with a 'to_beam'
                 # method that returns a transform.
-                if isinstance(recipe, PTransform):
-                    # This means we are in pangeo-forge-recipes >=0.9
-                    pipeline | recipe
-                elif hasattr(recipe, "to_beam"):
-                    # We are in pangeo-forge-recipes <=0.9
-                    # The import has to be here, as this import is not valid in pangeo-forge-recipes>=0.9
-                    # NOTE: `StorageConfig` only requires a target; input and metadata caches are optional,
-                    # so those are handled conditionally if provided.
-                    from pangeo_forge_recipes.storage import StorageConfig
-
-                    recipe.storage_config = StorageConfig(
-                        target_storage.get_forge_target(job_name=self.job_name),
-                    )
-                    for attrname, optional_storage in zip(
-                        ("cache", "metadata"),
-                        (input_cache_storage, metadata_cache_storage),
-                    ):
-                        if not optional_storage.is_default():
-                            setattr(
-                                recipe.storage_config,
-                                attrname,
-                                optional_storage.get_forge_target(
-                                    job_name=self.job_name
-                                ),
-                            )
-                    # with configured storage now attached, compile recipe to beam
-                    pipeline | recipe.to_beam()
+                pipeline | recipe
 
                 # Some bakeries are blocking - if Beam is configured to use them, calling
                 # pipeline.run() blocks. Some are not. We handle that here, and provide

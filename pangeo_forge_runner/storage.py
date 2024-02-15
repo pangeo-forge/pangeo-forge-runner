@@ -105,11 +105,3 @@ class InputCacheStorage(StorageTargetConfig):
     """
 
     pangeo_forge_target_class = "CacheFSSpecTarget"
-
-
-class MetadataCacheStorage(StorageTargetConfig):
-    """
-    Storage configuration for caching metadata during recipe baking
-    """
-
-    pangeo_forge_target_class = "MetadataTarget"

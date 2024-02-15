@@ -5,7 +5,6 @@ import time
 from importlib.metadata import version
 from pathlib import Path
 
-import pytest
 import xarray as xr
 from packaging.version import parse as parse_version
 
@@ -22,12 +21,6 @@ def test_flink_bake(minio_service, flinkversion, pythonversion, beamversion):
     pfr_version = parse_version(version("pangeo-forge-recipes"))
     if pfr_version >= parse_version("0.10"):
         recipe_version_ref = "0.10.x"
-    else:
-        recipe_version_ref = "0.9.x"
-        pytest.xfail(
-            f"{pfr_version = }, which is < 0.10. "
-            "Flink tests timeout with this recipes version, so we xfail this test."
-        )
 
     bucket = "s3://gpcp-out"
     config = {
@@ -49,11 +42,6 @@ def test_flink_bake(minio_service, flinkversion, pythonversion, beamversion):
             "fsspec_class": "s3fs.S3FileSystem",
             "fsspec_args": fsspec_args,
             "root_path": bucket + "/input-cache/{job_name}",
-        },
-        "MetadataCacheStorage": {
-            "fsspec_class": "s3fs.S3FileSystem",
-            "fsspec_args": fsspec_args,
-            "root_path": bucket + "/metadata-cache/{job_name}",
         },
         "FlinkOperatorBakery": {
             "flink_version": flinkversion,
