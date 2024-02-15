@@ -18,12 +18,12 @@ from ..bakery.base import Bakery
 from ..bakery.flink import FlinkOperatorBakery
 from ..bakery.local import LocalDirectBakery
 from ..plugin import get_injections, get_injectionspecs_from_entrypoints
+<<<<<<< HEAD
+=======
+from ..storage import InputCacheStorage, TargetStorage
+>>>>>>> main
 from ..stream_capture import redirect_stderr, redirect_stdout
 from .base import BaseCommand, common_aliases, common_flags
-
-PFR_0_9_REQUIREMENTS_FILE_PATH = (
-    Path(__file__).parent / "pangeo-forge-recipes-0.9-requirements.txt"
-)
 
 
 class Bake(BaseCommand):
@@ -197,7 +197,6 @@ class Bake(BaseCommand):
 
                 from ..storage import (
                     InputCacheStorage,
-                    MetadataCacheStorage,
                     TargetStorage,
                 )
 
@@ -205,17 +204,12 @@ class Bake(BaseCommand):
                 # with appropriate config from config file / commandline / defaults.
                 target_storage = TargetStorage(parent=self)
                 input_cache_storage = InputCacheStorage(parent=self)
-                metadata_cache_storage = MetadataCacheStorage(parent=self)
 
                 self.log.info(
                     f"Target Storage is {target_storage}\n", extra={"status": "setup"}
                 )
                 self.log.info(
                     f"Input Cache Storage is {input_cache_storage}\n",
-                    extra={"status": "setup"},
-                )
-                self.log.info(
-                    f"Metadata Cache Storage is {metadata_cache_storage}\n",
                     extra={"status": "setup"},
                 )
 

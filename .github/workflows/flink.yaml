@@ -32,7 +32,6 @@ jobs:
             "pangeo-forge-recipes==0.10.0",
             # save some cycles and infer it might
             # work on all versions between lowest and highest
-            # "pangeo-forge-recipes==0.10.0",
             # "pangeo-forge-recipes==0.10.3",
             "pangeo-forge-recipes==0.10.4",
         ]
