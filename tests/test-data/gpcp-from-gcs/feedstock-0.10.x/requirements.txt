@@ -1,4 +1,5 @@
 apache-beam==2.52.0
+apache-beam[gcp]==2.52.0
 gcsfs
 pangeo-forge-recipes>=0.10.0,<0.11
 s3fs
