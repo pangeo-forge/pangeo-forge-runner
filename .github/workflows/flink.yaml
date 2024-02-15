@@ -112,7 +112,7 @@ jobs:
     - name: Install dependencies & our package
       run: |
         python -m pip install --upgrade pip
-        python -m pip install -e .[test,flink]
+        python -m pip install -e .[test]
         python -m pip install -U ${{ matrix.recipes-version }}
 
     - name: Set up min.io as a k3s service

@@ -51,7 +51,7 @@ def test_dataflow_integration():
             "--repo",
             str(TEST_DATA_DIR / "gpcp-from-gcs"),
             "--feedstock-subdir",
-            f"feedstock-{recipe_version_ref}",
+            f"feedstock-{recipe_version_ref}-dataflow",
             "--json",
             "-f",
             f.name,
