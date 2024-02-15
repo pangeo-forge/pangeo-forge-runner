@@ -18,9 +18,11 @@ from ..bakery.base import Bakery
 from ..bakery.flink import FlinkOperatorBakery
 from ..bakery.local import LocalDirectBakery
 from ..plugin import get_injections, get_injectionspecs_from_entrypoints
+
 <<<<<<< HEAD
 =======
 from ..storage import InputCacheStorage, TargetStorage
+
 >>>>>>> main
 from ..stream_capture import redirect_stderr, redirect_stdout
 from .base import BaseCommand, common_aliases, common_flags
@@ -195,10 +197,7 @@ class Bake(BaseCommand):
                 # now we can safely do the dynamic recipe imports
                 from apache_beam import Pipeline, PTransform
 
-                from ..storage import (
-                    InputCacheStorage,
-                    TargetStorage,
-                )
+                from ..storage import InputCacheStorage, TargetStorage
 
                 # Create our storage configurations. Traitlets will do its magic, populate these
                 # with appropriate config from config file / commandline / defaults.
