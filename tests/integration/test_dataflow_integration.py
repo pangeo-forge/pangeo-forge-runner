@@ -29,7 +29,7 @@ def test_dataflow_integration():
         "Bake": {
             "prune": True,
             "bakery_class": "pangeo_forge_runner.bakery.dataflow.DataflowBakery",
-            "job_name": f"gpcp-from-gcs-py{python_version.replace('.','')}-v{recipe_version_ref.replace('.','')}",
+            "job_name": f"gpcp-from-gcs-py{python_version.replace('.','')}-v{''.join([str(i) for i in pfr_version.release])}",
         },
         "DataflowBakery": {"temp_gcs_location": bucket + "/temp"},
         "TargetStorage": {
