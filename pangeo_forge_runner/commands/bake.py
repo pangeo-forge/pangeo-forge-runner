@@ -18,10 +18,6 @@ from ..bakery.base import Bakery
 from ..bakery.flink import FlinkOperatorBakery
 from ..bakery.local import LocalDirectBakery
 from ..plugin import get_injections, get_injectionspecs_from_entrypoints
-<<<<<<< HEAD
-=======
-from ..storage import InputCacheStorage, TargetStorage
->>>>>>> main
 from ..stream_capture import redirect_stderr, redirect_stdout
 from .base import BaseCommand, common_aliases, common_flags
 
