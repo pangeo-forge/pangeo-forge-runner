@@ -14,7 +14,9 @@ def test_dataflow_integration():
     if pfr_version >= parse_version("0.10"):
         recipe_version_ref = str(pfr_version)
     else:
-        recipe_version_ref = "0.9.x"
+        raise ValueError(
+            f"Unsupported pfr_version: {pfr_version}. Please upgrade to 0.10 or newer."
+        )
     bucket = "gs://pangeo-forge-runner-ci-testing"
     config = {
         "Bake": {
@@ -29,10 +31,6 @@ def test_dataflow_integration():
         "InputCacheStorage": {
             "fsspec_class": "gcsfs.GCSFileSystem",
             "root_path": bucket + "/input-cache/{job_name}",
-        },
-        "MetadataCacheStorage": {
-            "fsspec_class": "gcsfs.GCSFileSystem",
-            "root_path": bucket + "/metadata-cache/{job_name}",
         },
     }
 

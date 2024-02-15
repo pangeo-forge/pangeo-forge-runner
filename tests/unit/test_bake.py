@@ -108,7 +108,9 @@ def recipes_version_ref(request):
     if pfr_version >= parse_version("0.10"):
         recipes_version_ref = "0.10.x"
     else:
-        recipes_version_ref = "0.9.x"
+        raise ValueError(
+            f"Unsupported pfr_version: {pfr_version}. Please upgrade to 0.10 or newer."
+        )
     return (
         recipes_version_ref
         if not request.param == "dict_object"
@@ -168,11 +170,6 @@ def test_gpcp_bake(
             "fsspec_args": fsspec_args,
             "root_path": "s3://gpcp/input-cache/",
         },
-        "MetadataCacheStorage": {
-            "fsspec_class": "s3fs.S3FileSystem",
-            "fsspec_args": fsspec_args,
-            "root_path": "s3://gpcp/metadata-cache/",
-        },
     }
 
     if no_input_cache:
@@ -208,9 +205,6 @@ def test_gpcp_bake(
         if expected_error:
             assert proc.returncode == 1
             stdout[-1] == expected_error
-        elif no_input_cache and recipes_version_ref == "0.9.x":
-            # no_input_cache is only supported in 0.10.x and above
-            assert proc.returncode == 1
         else:
             assert proc.returncode == 0
 
