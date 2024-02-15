@@ -191,10 +191,7 @@ class Bake(BaseCommand):
                 # now we can safely do the dynamic recipe imports
                 from apache_beam import Pipeline, PTransform
 
-                from ..storage import (
-                    InputCacheStorage,
-                    TargetStorage,
-                )
+                from ..storage import InputCacheStorage, TargetStorage
 
                 # Create our storage configurations. Traitlets will do its magic, populate these
                 # with appropriate config from config file / commandline / defaults.
