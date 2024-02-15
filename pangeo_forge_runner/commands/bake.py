@@ -269,16 +269,9 @@ class Bake(BaseCommand):
                     else:
                         per_recipe_unique_job_name = None
 
-                    # if pangeo-forge-recipes is >=0.9, we have to specify a requirements.txt
-                    # file even if it isn't present, as the image used otherwise will not have pangeo-forge-recipes
-                    if isinstance(recipe, PTransform):
-                        requirements_path = feedstock.feedstock_dir / "requirements.txt"
-                        if requirements_path.exists():
-                            extra_options["requirements_file"] = str(requirements_path)
-                    else:
-                        extra_options["requirements_file"] = str(
-                            PFR_0_9_REQUIREMENTS_FILE_PATH
-                        )
+                    requirements_path = feedstock.feedstock_dir / "requirements.txt"
+                    if requirements_path.exists():
+                        extra_options["requirements_file"] = str(requirements_path)
 
                     pipeline_options = bakery.get_pipeline_options(
                         job_name=(per_recipe_unique_job_name or self.job_name),
@@ -290,36 +283,13 @@ class Bake(BaseCommand):
                     # Set argv explicitly to empty so Apache Beam doesn't try to parse the commandline
                     # for pipeline options - we have traitlets doing that for us.
                     pipeline = Pipeline(options=pipeline_options, argv=[])
-                    # Chain our recipe to the pipeline. This mutates the `pipeline` object!
-                    # We expect `recipe` to either be a beam PTransform, or an object with a 'to_beam'
-                    # method that returns a transform.
-                    if isinstance(recipe, PTransform):
-                        # This means we are in pangeo-forge-recipes >=0.9
-                        pipeline | recipe
-                    elif hasattr(recipe, "to_beam"):
-                        # We are in pangeo-forge-recipes <=0.9
-                        # The import has to be here, as this import is not valid in pangeo-forge-recipes>=0.9
-                        # NOTE: `StorageConfig` only requires a target; input and metadata caches are optional,
-                        # so those are handled conditionally if provided.
-                        from pangeo_forge_recipes.storage import StorageConfig
 
-                        recipe.storage_config = StorageConfig(
-                            target_storage.get_forge_target(job_name=self.job_name),
-                        )
-                        for attrname, optional_storage in zip(
-                            ("cache", "metadata"),
-                            (input_cache_storage, metadata_cache_storage),
-                        ):
-                            if not optional_storage.is_default():
-                                setattr(
-                                    recipe.storage_config,
-                                    attrname,
-                                    optional_storage.get_forge_target(
-                                        job_name=self.job_name
-                                    ),
-                                )
-                        # with configured storage now attached, compile recipe to beam
-                        pipeline | recipe.to_beam()
+                    # Chain our recipe to the pipeline. This mutates the `pipeline` object!
+                    # We expect `recipe` to be 1) a beam PTransform or 2) or a a string that leverages the
+                    # `dict_object:` see `tests/test-data/gpcp-from-gcs/feedstock-0.10.x-dictobj/meta.yaml`
+                    # as an example
+                    if isinstance(recipe, PTransform):
+                        pipeline | recipe
 
                     # Some bakeries are blocking - if Beam is configured to use them, calling
                     # pipeline.run() blocks. Some are not. We handle that here, and provide
