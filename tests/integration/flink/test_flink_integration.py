@@ -2,7 +2,6 @@ import json
 import subprocess
 import tempfile
 import time
-from importlib.metadata import version
 from pathlib import Path
 
 import xarray as xr
@@ -11,14 +10,14 @@ from packaging.version import parse as parse_version
 TEST_DATA_DIR = Path(__file__).parent.parent.parent / "test-data"
 
 
-def test_flink_bake(minio_service, flinkversion, pythonversion, beamversion):
+def test_flink_bake(minio_service, flinkversion, pythonversion, beamversion, recipesversion):
     fsspec_args = {
         "key": minio_service["username"],
         "secret": minio_service["password"],
         "client_kwargs": {"endpoint_url": minio_service["endpoint"]},
     }
 
-    pfr_version = parse_version(version("pangeo-forge-recipes"))
+    pfr_version = parse_version(recipesversion)
     if pfr_version >= parse_version("0.10"):
         recipe_version_ref = "0.10.x"
 

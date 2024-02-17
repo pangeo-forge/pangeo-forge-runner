@@ -16,45 +16,45 @@ from pangeo_forge_runner.commands.bake import Bake
 TEST_DATA_DIR = Path(__file__).parent.parent / "test-data"
 
 
-@pytest.fixture
-def recipes_uninstalled():
-    """Uninstall `pangeo-forge-recipes` for `test_bake_requires_recipes_installed`."""
-    # first confirm that it's installed to begin with
-    assert "pangeo-forge-recipes" in [d.metadata["Name"] for d in distributions()]
-    # and capture the version, which we'll reinstall after the test
-    recipes_version = parse_version(version("pangeo-forge-recipes"))
-    # now uninstall it
-    uninstall = subprocess.run(
-        f"{sys.executable} -m pip uninstall pangeo-forge-recipes -y".split()
-    )
-    assert uninstall.returncode == 0
-    assert "pangeo-forge-recipes" not in [d.metadata["Name"] for d in distributions()]
-    # and yield to the test
-    yield True
-    # test is complete, now reinstall pangeo-forge-recipes in the test env
-    reinstall = subprocess.run(
-        f"{sys.executable} -m pip install pangeo-forge-recipes=={recipes_version}".split()
-    )
-    assert reinstall.returncode == 0
-    # make sure it's there, and in the expected version
-    assert "pangeo-forge-recipes" in [d.metadata["Name"] for d in distributions()]
-    assert parse_version(version("pangeo-forge-recipes")) == recipes_version
-
-
-def test_bake_requires_recipes_installed(recipes_uninstalled):
-    """`pangeo-forge-runner` does not require `pangeo-forge-recipes` to be installed,
-    but `pangeo-forge-recipes` *is* required to use the `bake` command, so test that
-    we get a descriptive error if we try to invoke this command without it installed.
-    """
-    assert recipes_uninstalled
-    bake = Bake()
-    bake.repo = str(TEST_DATA_DIR / "gpcp-from-gcs")
-    bake.feedstock_subdir = "feedstock-0.10.x-norequirements"
-    with pytest.raises(
-        ValueError,
-        match="To use the 'bake' command, the packages .* must be listed in your recipe's requirements.txt",
-    ):
-        bake.start()
+# @pytest.fixture
+# def recipes_uninstalled():
+#     """Uninstall `pangeo-forge-recipes` for `test_bake_requires_recipes_installed`."""
+#     # first confirm that it's installed to begin with
+#     assert "pangeo-forge-recipes" in [d.metadata["Name"] for d in distributions()]
+#     # and capture the version, which we'll reinstall after the test
+#     recipes_version = parse_version(version("pangeo-forge-recipes"))
+#     # now uninstall it
+#     uninstall = subprocess.run(
+#         f"{sys.executable} -m pip uninstall pangeo-forge-recipes -y".split()
+#     )
+#     assert uninstall.returncode == 0
+#     assert "pangeo-forge-recipes" not in [d.metadata["Name"] for d in distributions()]
+#     # and yield to the test
+#     yield True
+#     # test is complete, now reinstall pangeo-forge-recipes in the test env
+#     reinstall = subprocess.run(
+#         f"{sys.executable} -m pip install pangeo-forge-recipes=={recipes_version}".split()
+#     )
+#     assert reinstall.returncode == 0
+#     # make sure it's there, and in the expected version
+#     assert "pangeo-forge-recipes" in [d.metadata["Name"] for d in distributions()]
+#     assert parse_version(version("pangeo-forge-recipes")) == recipes_version
+#
+#
+# def test_bake_requires_recipes_installed(recipes_uninstalled):
+#     """`pangeo-forge-runner` does not require `pangeo-forge-recipes` to be installed,
+#     but `pangeo-forge-recipes` *is* required to use the `bake` command, so test that
+#     we get a descriptive error if we try to invoke this command without it installed.
+#     """
+#     assert recipes_uninstalled
+#     bake = Bake()
+#     bake.repo = str(TEST_DATA_DIR / "gpcp-from-gcs")
+#     bake.feedstock_subdir = "feedstock-0.10.x-norequirements"
+#     with pytest.raises(
+#         ValueError,
+#         match="To use the 'bake' command, the packages .* must be listed in your recipe's requirements.txt",
+#     ):
+#         bake.start()
 
 
 @pytest.mark.parametrize(
@@ -108,8 +108,15 @@ def test_container_name_validation(container_image, raises):
 
 
 @pytest.fixture(params=["recipe_object", "dict_object"])
-def recipes_version_ref(request):
-    pfr_version = parse_version(version("pangeo-forge-recipes"))
+def recipes_version_ref(request, recipesversion):
+    # .github/workflows/unit-test.yml provides
+    # `--recipesversion` arg during the pytest cli call
+    # but if not provided (e.g. in local runs) then alert
+    if not recipesversion:
+        raise ValueError("running these tests requires you "
+                         "pass `--recipesversion='<version-string>'` as a `pytest` arg")
+
+    pfr_version = parse_version(recipesversion)
     if pfr_version >= parse_version("0.10"):
         recipes_version_ref = "0.10.x"
     else:

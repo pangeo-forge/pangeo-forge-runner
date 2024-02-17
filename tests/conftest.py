@@ -103,9 +103,14 @@ def minio_service():
 
 
 def pytest_addoption(parser):
-    parser.addoption("--flinkversion", action="store", default="1.16")
-    parser.addoption("--pythonversion", action="store", default="3.9")
-    parser.addoption("--beamversion", action="store", default="2.47.0")
+    parser.addoption("--flinkversion", action="store")
+    parser.addoption("--pythonversion", action="store")
+    parser.addoption("--beamversion", action="store")
+    parser.addoption("--recipesversion", action="store")
+
+@pytest.fixture
+def recipesversion(request):
+    return request.config.getoption("--recipesversion")
 
 
 @pytest.fixture

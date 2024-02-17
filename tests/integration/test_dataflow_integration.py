@@ -3,7 +3,6 @@ import subprocess
 import sys
 import tempfile
 import time
-from importlib.metadata import version
 from pathlib import Path
 
 import pytest
@@ -13,11 +12,11 @@ from packaging.version import parse as parse_version
 TEST_DATA_DIR = Path(__file__).parent.parent / "test-data"
 
 
-def test_dataflow_integration():
+def test_dataflow_integration(recipesversion):
     python_version = (
         f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
     )
-    pfr_version = parse_version(version("pangeo-forge-recipes"))
+    pfr_version = parse_version(recipesversion)
     if pfr_version >= parse_version("0.10"):
         recipe_version_ref = "0.10.x"
     else:
