@@ -15,7 +15,7 @@ from pangeo_forge_runner.commands.bake import Bake
 TEST_DATA_DIR = Path(__file__).parent.parent / "test-data"
 
 
-def test_bake_requires_recipes_installed(recipes_uninstalled):
+def test_bake_requires_recipes_installed():
     """`pangeo-forge-runner` does not require `pangeo-forge-recipes` to be installed,
     but `pangeo-forge-recipes` *is* required to use the `bake` command, so test that
     we get a descriptive error if we try to invoke this command without it installed.
