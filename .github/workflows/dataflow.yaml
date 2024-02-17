@@ -54,5 +54,6 @@ jobs:
 
     - name: 'Run Dataflow Integration Test'
       run: |
+        recipesversion=$(echo ${{ matrix.recipes-version }} | cut -d"=" -f3)
         pytest -vvvxs tests/integration/test_dataflow_integration.py \
-          --recipesversion=${{ matrix.recipes-version }}
+          --recipesversion=$recipesversion

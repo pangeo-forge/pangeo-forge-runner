@@ -50,7 +50,8 @@ jobs:
 
     - name: Test with pytest
       run: |
-        pytest -vvv -s --cov=pangeo_forge_runner tests/unit/ --recipesversion=${{ matrix.recipes-version }}
+        recipesversion=$(echo ${{ matrix.recipes-version }} | cut -d"=" -f3)
+        pytest -vvv -s --cov=pangeo_forge_runner tests/unit/ --recipesversion=$recipesversion
 
     - name: Upload Coverage to Codecov
       uses: codecov/codecov-action@v2
