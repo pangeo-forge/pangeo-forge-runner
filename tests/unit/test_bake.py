@@ -41,6 +41,7 @@ TEST_DATA_DIR = Path(__file__).parent.parent / "test-data"
 #     assert parse_version(version("pangeo-forge-recipes")) == recipes_version
 #
 
+
 def test_bake_requires_recipes_installed(recipes_uninstalled):
     """`pangeo-forge-runner` does not require `pangeo-forge-recipes` to be installed,
     but `pangeo-forge-recipes` *is* required to use the `bake` command, so test that
