@@ -44,6 +44,7 @@ test = [
     "s3fs",
     # used in some unit tests
     "apache-beam",
+    "zarr",
     "xarray",
 ]
 
