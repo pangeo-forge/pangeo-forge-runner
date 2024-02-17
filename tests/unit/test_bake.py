@@ -146,10 +146,7 @@ def test_gpcp_bake(
     no_input_cache,
     recipes_version_ref,
 ):
-    if recipes_version_ref == "0.9.x-dictobj" or (
-        recipes_version_ref == "0.10.x-dictobj" and recipe_id
-    ):
-        # TODO: clarify fixturing story to avoid this hackiness
+    if recipes_version_ref == "0.10.x-dictobj" and recipe_id:
         pytest.skip(
             "We only test dictobjs for recipes >0.10.0, and without recipe_id's"
         )

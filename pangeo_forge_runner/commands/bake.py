@@ -244,12 +244,6 @@ class Bake(BaseCommand):
                     self.log.info(f"Baking only recipe_id='{self.recipe_id}'")
                     recipes = {k: r for k, r in recipes.items() if k == self.recipe_id}
 
-                if self.prune:
-                    # Prune recipes to only run on certain items if we are asked to
-                    if hasattr(next(iter(recipes.values())), "copy_pruned"):
-                        # pangeo-forge-recipes version < 0.10 has a `copy_pruned` method
-                        recipes = {k: r.copy_pruned() for k, r in recipes.items()}
-
                 bakery: Bakery = self.bakery_class(parent=self)
 
                 extra_options = {}
