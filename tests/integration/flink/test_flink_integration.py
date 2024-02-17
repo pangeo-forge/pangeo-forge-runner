@@ -10,7 +10,9 @@ from packaging.version import parse as parse_version
 TEST_DATA_DIR = Path(__file__).parent.parent.parent / "test-data"
 
 
-def test_flink_bake(minio_service, flinkversion, pythonversion, beamversion, recipesversion):
+def test_flink_bake(
+    minio_service, flinkversion, pythonversion, beamversion, recipesversion
+):
     fsspec_args = {
         "key": minio_service["username"],
         "secret": minio_service["password"],
