@@ -11,8 +11,17 @@ TEST_DATA_DIR = Path(__file__).parent.parent.parent / "test-data"
 
 
 def test_flink_bake(
-    minio_service, flinkversion, pythonversion, beamversion, recipesversion
+    minio_service, flink_version, python_version, beam_version, recipes_version
 ):
+    # .github/workflows/flink.yml provides
+    # `--recipes-version` arg with pytest cli call
+    # but if not provided (e.g. in local runs) then alert
+    if not recipes_version:
+        raise ValueError(
+            "running these tests requires you "
+            "pass `--recipes-version='<version-string>'` as a `pytest` arg"
+        )
+
     fsspec_args = {
         "key": minio_service["username"],
         "secret": minio_service["password"],

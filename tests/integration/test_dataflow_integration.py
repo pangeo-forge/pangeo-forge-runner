@@ -12,7 +12,16 @@ from packaging.version import parse as parse_version
 TEST_DATA_DIR = Path(__file__).parent.parent / "test-data"
 
 
-def test_dataflow_integration(recipesversion):
+def test_dataflow_integration(recipes_version):
+    # .github/workflows/dataflow.yml provides
+    # `--recipes-version` arg with pytest cli call
+    # but if not provided (e.g. in local runs) then alert
+    if not recipes_version:
+        raise ValueError(
+            "running these tests requires you "
+            "pass `--recipes-version='<version-string>'` as a `pytest` arg"
+        )
+
     python_version = (
         f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
     )

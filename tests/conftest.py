@@ -103,27 +103,27 @@ def minio_service():
 
 
 def pytest_addoption(parser):
-    parser.addoption("--flinkversion", action="store")
-    parser.addoption("--pythonversion", action="store")
-    parser.addoption("--beamversion", action="store")
-    parser.addoption("--recipesversion", action="store")
+    parser.addoption("--flink-version", action="store")
+    parser.addoption("--python-version", action="store")
+    parser.addoption("--beam-version", action="store")
+    parser.addoption("--recipes-version", action="store")
 
 
 @pytest.fixture
-def recipesversion(request):
-    return request.config.getoption("--recipesversion")
+def recipes_version(request):
+    return request.config.getoption("--recipes-version")
 
 
 @pytest.fixture
-def flinkversion(request):
-    return request.config.getoption("--flinkversion")
+def flink_version(request):
+    return request.config.getoption("--flink-version")
 
 
 @pytest.fixture
-def pythonversion(request):
-    return request.config.getoption("--pythonversion")
+def python_version(request):
+    return request.config.getoption("--python-version")
 
 
 @pytest.fixture
-def beamversion(request):
-    return request.config.getoption("--beamversion")
+def beam_version(request):
+    return request.config.getoption("--beam-version")

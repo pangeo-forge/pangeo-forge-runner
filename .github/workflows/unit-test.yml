@@ -51,7 +51,7 @@ jobs:
     - name: Test with pytest
       run: |
         pfrv=$(echo ${{ matrix.recipes-version }} | cut -d"=" -f3)
-        pytest -vvv -s --cov=pangeo_forge_runner tests/unit/ --recipesversion=$pfrv
+        pytest -vvv -s --cov=pangeo_forge_runner tests/unit/ --recipes-version=$pfrv
 
     - name: Upload Coverage to Codecov
       uses: codecov/codecov-action@v2

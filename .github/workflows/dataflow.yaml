@@ -56,4 +56,4 @@ jobs:
       run: |
         pfrv=$(echo ${{ matrix.recipes-version }} | cut -d"=" -f3)
         pytest -vvvxs tests/integration/test_dataflow_integration.py \
-          --recipesversion=$pfrv
+          --recipes-version=$pfrv

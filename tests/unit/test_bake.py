@@ -108,17 +108,17 @@ def test_container_name_validation(container_image, raises):
 
 
 @pytest.fixture(params=["recipe_object", "dict_object"])
-def recipes_version_ref(request, recipesversion):
+def recipes_version_ref(request, recipes_version):
     # .github/workflows/unit-test.yml provides
-    # `--recipesversion` arg during the pytest cli call
+    # `--recipes-version` arg with pytest cli call
     # but if not provided (e.g. in local runs) then alert
-    if not recipesversion:
+    if not recipes_version:
         raise ValueError(
             "running these tests requires you "
-            "pass `--recipesversion='<version-string>'` as a `pytest` arg"
+            "pass `--recipes-version='<version-string>'` as a `pytest` arg"
         )
 
-    pfr_version = parse_version(recipesversion)
+    pfr_version = parse_version(recipes_version)
     if pfr_version >= parse_version("0.10"):
         recipes_version_ref = "0.10.x"
     else:

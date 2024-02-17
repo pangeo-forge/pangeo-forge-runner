@@ -133,10 +133,10 @@ jobs:
         beamversion=$(echo ${{ matrix.beam-version }} | cut -d"=" -f3)
         pfrv=$(echo ${{ matrix.recipes-version }} | cut -d"=" -f3)
         pytest -vvv -s --cov=pangeo_forge_runner tests/integration/flink/test_flink_integration.py \
-          --flinkversion=${{ matrix.flink-version }} \
-          --pythonversion=${{ matrix.python-version }} \
-          --beamversion=$beamversion \
-          --recipesversion=$pfrv
+          --flink-version=${{ matrix.flink-version }} \
+          --python-version=${{ matrix.python-version }} \
+          --beam-version=$beamversion \
+          --recipes-version=$pfrv
 
     - name: Dump logs from pods after failure so we don't have ssh
       if: steps.testrunner.outcome == 'failure'
