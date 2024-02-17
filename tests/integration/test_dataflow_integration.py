@@ -25,7 +25,7 @@ def test_dataflow_integration(recipes_version):
     python_version = (
         f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
     )
-    pfr_version = parse_version(recipesversion)
+    pfr_version = parse_version(recipes_version)
     if pfr_version >= parse_version("0.10"):
         recipe_version_ref = "0.10.x"
     else:
