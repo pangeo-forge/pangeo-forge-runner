@@ -41,7 +41,7 @@ def test_flink_bake(
             # there must be a job-server jar available for the matching
             # `apache-beam` and `FlinkOperatorBakery.flink_version` here:
             # https://repo.maven.apache.org/maven2/org/apache/beam/beam-runners-flink-1.16-job-server/
-            "container_image": f"apache/beam_python{pythonversion}_sdk:{beamversion}",
+            "container_image": f"apache/beam_python{python_version}_sdk:{beam_version}",
         },
         "TargetStorage": {
             "fsspec_class": "s3fs.S3FileSystem",
@@ -54,7 +54,7 @@ def test_flink_bake(
             "root_path": bucket + "/input-cache/{job_name}",
         },
         "FlinkOperatorBakery": {
-            "flink_version": flinkversion,
+            "flink_version": flink_version,
             "job_manager_resources": {"memory": "1024m", "cpu": 0.30},
             "task_manager_resources": {"memory": "2048m", "cpu": 0.30},
             "parallelism": 1,
