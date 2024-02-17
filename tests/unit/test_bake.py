@@ -113,8 +113,10 @@ def recipes_version_ref(request, recipesversion):
     # `--recipesversion` arg during the pytest cli call
     # but if not provided (e.g. in local runs) then alert
     if not recipesversion:
-        raise ValueError("running these tests requires you "
-                         "pass `--recipesversion='<version-string>'` as a `pytest` arg")
+        raise ValueError(
+            "running these tests requires you "
+            "pass `--recipesversion='<version-string>'` as a `pytest` arg"
+        )
 
     pfr_version = parse_version(recipesversion)
     if pfr_version >= parse_version("0.10"):

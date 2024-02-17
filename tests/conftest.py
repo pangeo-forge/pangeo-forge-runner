@@ -108,6 +108,7 @@ def pytest_addoption(parser):
     parser.addoption("--beamversion", action="store")
     parser.addoption("--recipesversion", action="store")
 
+
 @pytest.fixture
 def recipesversion(request):
     return request.config.getoption("--recipesversion")
