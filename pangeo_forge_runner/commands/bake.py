@@ -11,7 +11,7 @@ from importlib.metadata import distributions
 from pathlib import Path
 
 import escapism
-from apache_beam import Pipeline
+from apache_beam import Pipeline, PTransform
 from traitlets import Bool, Type, Unicode, validate
 
 from .. import Feedstock
@@ -266,10 +266,13 @@ class Bake(BaseCommand):
                 # Set argv explicitly to empty so Apache Beam doesn't try to parse the commandline
                 # for pipeline options - we have traitlets doing that for us.
                 pipeline = Pipeline(options=pipeline_options, argv=[])
+
                 # Chain our recipe to the pipeline. This mutates the `pipeline` object!
-                # We expect `recipe` to either be a beam PTransform, or an object with a 'to_beam'
-                # method that returns a transform.
-                pipeline | recipe
+                # We expect `recipe` to be 1) a beam PTransform or 2) or a a string that leverages the
+                # `dict_object:` see `tests/test-data/gpcp-from-gcs/feedstock-0.10.x-dictobj/meta.yaml`
+                # as an example
+                if isinstance(recipe, PTransform):
+                    pipeline | recipe
 
                 # Some bakeries are blocking - if Beam is configured to use them, calling
                 # pipeline.run() blocks. Some are not. We handle that here, and provide
