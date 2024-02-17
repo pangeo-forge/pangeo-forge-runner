@@ -40,21 +40,21 @@ TEST_DATA_DIR = Path(__file__).parent.parent / "test-data"
 #     assert "pangeo-forge-recipes" in [d.metadata["Name"] for d in distributions()]
 #     assert parse_version(version("pangeo-forge-recipes")) == recipes_version
 #
-#
-# def test_bake_requires_recipes_installed(recipes_uninstalled):
-#     """`pangeo-forge-runner` does not require `pangeo-forge-recipes` to be installed,
-#     but `pangeo-forge-recipes` *is* required to use the `bake` command, so test that
-#     we get a descriptive error if we try to invoke this command without it installed.
-#     """
-#     assert recipes_uninstalled
-#     bake = Bake()
-#     bake.repo = str(TEST_DATA_DIR / "gpcp-from-gcs")
-#     bake.feedstock_subdir = "feedstock-0.10.x-norequirements"
-#     with pytest.raises(
-#         ValueError,
-#         match="To use the 'bake' command, the packages .* must be listed in your recipe's requirements.txt",
-#     ):
-#         bake.start()
+
+def test_bake_requires_recipes_installed(recipes_uninstalled):
+    """`pangeo-forge-runner` does not require `pangeo-forge-recipes` to be installed,
+    but `pangeo-forge-recipes` *is* required to use the `bake` command, so test that
+    we get a descriptive error if we try to invoke this command without it installed.
+    """
+    assert recipes_uninstalled
+    bake = Bake()
+    bake.repo = str(TEST_DATA_DIR / "gpcp-from-gcs")
+    bake.feedstock_subdir = "feedstock-0.10.x-norequirements"
+    with pytest.raises(
+        ValueError,
+        match="To use the 'bake' command, the packages .* must be listed in your recipe's requirements.txt",
+    ):
+        bake.start()
 
 
 @pytest.mark.parametrize(
