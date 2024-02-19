@@ -3,10 +3,12 @@ import subprocess
 import tempfile
 import time
 from importlib.metadata import version
+from pathlib import Path
 
-import pytest
 import xarray as xr
 from packaging.version import parse as parse_version
+
+TEST_DATA_DIR = Path(__file__).parent.parent.parent / "test-data"
 
 
 def test_flink_bake(minio_service, flinkversion, pythonversion, beamversion):
@@ -18,13 +20,7 @@ def test_flink_bake(minio_service, flinkversion, pythonversion, beamversion):
 
     pfr_version = parse_version(version("pangeo-forge-recipes"))
     if pfr_version >= parse_version("0.10"):
-        recipe_version_ref = str(pfr_version)
-    else:
-        recipe_version_ref = "0.9.x"
-        pytest.xfail(
-            f"{pfr_version = }, which is < 0.10. "
-            "Flink tests timeout with this recipes version, so we xfail this test."
-        )
+        recipe_version_ref = "0.10.x"
 
     bucket = "s3://gpcp-out"
     config = {
@@ -47,11 +43,6 @@ def test_flink_bake(minio_service, flinkversion, pythonversion, beamversion):
             "fsspec_args": fsspec_args,
             "root_path": bucket + "/input-cache/{job_name}",
         },
-        "MetadataCacheStorage": {
-            "fsspec_class": "s3fs.S3FileSystem",
-            "fsspec_args": fsspec_args,
-            "root_path": bucket + "/metadata-cache/{job_name}",
-        },
         "FlinkOperatorBakery": {
             "flink_version": flinkversion,
             "job_manager_resources": {"memory": "1024m", "cpu": 0.30},
@@ -71,11 +62,9 @@ def test_flink_bake(minio_service, flinkversion, pythonversion, beamversion):
             "pangeo-forge-runner",
             "bake",
             "--repo",
-            "https://github.com/pforgetest/gpcp-from-gcs-feedstock.git",
-            "--ref",
-            # in the test feedstock, tags are named for
-            # the recipe version used to write the recipe module
-            recipe_version_ref,
+            str(TEST_DATA_DIR / "gpcp-from-gcs"),
+            "--feedstock-subdir",
+            f"feedstock-{recipe_version_ref}",
             "-f",
             f.name,
         ]

@@ -1,2 +1,1 @@
 include LICENSE
-include pangeo_forge_runner/commands/pangeo-forge-recipes-0.9-requirements.txt
