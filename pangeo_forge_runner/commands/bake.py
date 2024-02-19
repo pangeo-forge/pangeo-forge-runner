@@ -5,6 +5,7 @@ Command to run a pangeo-forge recipe
 import hashlib
 import os
 import re
+import secrets
 import string
 import time
 from importlib.metadata import distributions
@@ -168,6 +169,21 @@ class Bake(BaseCommand):
 
         return job_name
 
+    def add_unique_suffix_to_flink_jobs(self, per_recipe_unique_job_name):
+        """FlinkOperatorBakery job names always need to be unique
+
+        to accommodate reruns and race conditions (two users running same recipe)
+        """
+        if self.bakery_class == FlinkOperatorBakery:
+            unique_suffix = "".join(
+                secrets.choice(string.ascii_letters + string.digits) for _ in range(5)
+            )
+            # character length limitations for k8s is already handled downstream
+            # in FlinkOperatorBakery.get_pipeline_options
+            return self.job_name + "-" + unique_suffix
+        else:
+            return per_recipe_unique_job_name
+
     def start(self):
         """
         Start the baking process
@@ -251,6 +267,11 @@ class Bake(BaseCommand):
                     )
                 else:
                     per_recipe_unique_job_name = None
+
+                # no-op here if self.bakery_class != FlinkOperatorBakery
+                per_recipe_unique_job_name = self.add_unique_suffix_to_flink_jobs(
+                    per_recipe_unique_job_name
+                )
 
                 requirements_path = feedstock.feedstock_dir / "requirements.txt"
                 if requirements_path.exists():
