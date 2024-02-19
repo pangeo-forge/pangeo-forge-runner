@@ -46,6 +46,14 @@ class StorageTargetConfig(LoggingConfigurable):
         """,
     )
 
+    pangeo_forge_target_class_args = Dict(
+        {},
+        config=True,
+        help="""
+        Args to pass to pangeo_forge_target_class during instantiation
+        """,
+    )
+
     def is_default(self):
         """
         Return if `root_path` is an empty string
@@ -73,11 +81,13 @@ class StorageTargetConfig(LoggingConfigurable):
                 self.fsspec_class(**self.fsspec_args),
                 root_path=self.root_path.format(job_name=job_name),
                 fsspec_kwargs=self.fsspec_args,
+                **self.pangeo_forge_target_class_args,
             )
         else:
             return cls(
                 self.fsspec_class(**self.fsspec_args),
                 root_path=self.root_path.format(job_name=job_name),
+                **self.pangeo_forge_target_class_args,
             )
 
     def __str__(self):
@@ -88,7 +98,14 @@ class StorageTargetConfig(LoggingConfigurable):
         fsspec_args_filtered = ", ".join(
             f"{k}=<{type(v).__name__}>" for k, v in self.fsspec_args.items()
         )
-        return f'{self.pangeo_forge_target_class}({self.fsspec_class.__name__}({fsspec_args_filtered}, root_path="{self.root_path}")'
+        base = (
+            f"{self.pangeo_forge_target_class}("
+            f'{self.fsspec_class.__name__}({fsspec_args_filtered}), root_path="{self.root_path}"'
+        )
+        target_cls_args_str = ", ".join(
+            f"{k}={v}" for k, v in self.pangeo_forge_target_class_args.items()
+        )
+        return base + (f", {target_cls_args_str}" if target_cls_args_str else "") + ")"
 
 
 class TargetStorage(StorageTargetConfig):
