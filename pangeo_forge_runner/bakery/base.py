@@ -1,7 +1,7 @@
 from typing import List
 
 from apache_beam.pipeline import Pipeline, PipelineOptions
-from traitlets import Bool, TraitError
+from traitlets import TraitError
 from traitlets.config import LoggingConfigurable
 
 from ..commands.bake import Bake, ExecutionMetadata

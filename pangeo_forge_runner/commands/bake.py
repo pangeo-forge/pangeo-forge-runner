@@ -133,7 +133,7 @@ class Bake(BaseCommand):
         """
         validating_regex = r"^[a-z][-_0-9a-z]{0,62}$"
         if not re.match(validating_regex, proposal.value):
-            raise ValueError(
+            raise TraitError(
                 f"job_name must match the regex {validating_regex}, instead found {proposal.value}"
             )
         return proposal.value
