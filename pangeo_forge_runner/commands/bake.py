@@ -7,7 +7,6 @@ import os
 import re
 import string
 import time
-from dataclasses import asdict, dataclass
 from importlib.metadata import distributions
 from pathlib import Path
 
@@ -17,28 +16,12 @@ from traitlets import Bool, TraitError, Type, Unicode, validate
 
 from .. import Feedstock
 from ..bakery.base import Bakery
+from ..bakery.execution_metadata import ExecutionMetadata
 from ..bakery.local import LocalDirectBakery
 from ..plugin import get_injections, get_injectionspecs_from_entrypoints
 from ..storage import InputCacheStorage, TargetStorage
 from ..stream_capture import redirect_stderr, redirect_stdout
 from .base import BaseCommand, common_aliases, common_flags
-
-
-@dataclass
-class ExecutionMetadata:
-    """
-    Holds metadata for an execution instance, including recipe and job names.
-
-    Attributes:
-        recipe_name (str): Name of the recipe being executed.
-        job_name (str): Unique name for the job execution.
-    """
-
-    recipe_name: str
-    job_name: str
-
-    def to_dict(self) -> dict:
-        return asdict(self)
 
 
 class Bake(BaseCommand):
@@ -138,8 +121,7 @@ class Bake(BaseCommand):
             )
         return proposal.value
 
-    @validate("bakery_class")
-    def _bakery_impl_validation(self, proposal):
+    def bakery_impl_validation(self):
         """
         Validates the 'bakery_class' trait using class-specific validation logic.
 
@@ -150,8 +132,11 @@ class Bake(BaseCommand):
         Raises:
         - TraitError: If multiple validation errors are encountered, a single TraitError
         is raised containing a summary of all error messages.
+
+        Note: Traitlets has no convenient way to set initialization hooks (???) so we have
+        to run this manually.
         """
-        klass = proposal["value"]
+        klass = self.bakery_class
         if errors := klass.validate_bake_command(self):
             if len(errors) == 1:
                 raise errors[0]
@@ -202,6 +187,9 @@ class Bake(BaseCommand):
         """
         Start the baking process
         """
+        # Validate bakery-specific requirements of this class. Yes, we have to do it here.
+        self.bakery_impl_validation()
+
         if not "pangeo-forge-recipes" in [d.metadata["Name"] for d in distributions()]:
             raise ValueError(
                 "To use the `bake` command, `pangeo-forge-recipes` must be installed."

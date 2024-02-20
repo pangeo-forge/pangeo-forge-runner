@@ -5,8 +5,8 @@ Bakery for baking pangeo-forge recipes in Direct Runner
 from apache_beam.pipeline import Pipeline, PipelineOptions
 from traitlets import Integer
 
-from ..commands.bake import ExecutionMetadata
 from .base import Bakery
+from .execution_metadata import ExecutionMetadata
 
 
 class LocalDirectBakery(Bakery):
@@ -54,7 +54,7 @@ class LocalDirectBakery(Bakery):
         meta (ExecutionMetadata): An instance of BakeMetadata containing metadata about the bake process.
         """
         self.log.info(
-            f"Running local job for recipe {meta.name}\n",
+            f"Running local job for recipe {meta.recipe_name}\n",
             extra=meta.to_dict() | {"status": "running"},
         )
         pipeline.run()

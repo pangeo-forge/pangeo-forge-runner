@@ -1,10 +1,10 @@
 from typing import List
 
 from apache_beam.pipeline import Pipeline, PipelineOptions
-from traitlets import TraitError
+from traitlets import HasTraits, TraitError
 from traitlets.config import LoggingConfigurable
 
-from ..commands.bake import Bake, ExecutionMetadata
+from .execution_metadata import ExecutionMetadata
 
 
 class Bakery(LoggingConfigurable):
@@ -40,12 +40,12 @@ class Bakery(LoggingConfigurable):
         result = pipeline.run()
         job_id = result.job_id()
         self.log.info(
-            f"Submitted job {meta.job_id} for recipe {meta.name}",
+            f"Submitted job {meta.job_id} for recipe {meta.recipe_name}",
             extra=meta.to_dict() | {"job_id": job_id, "status": "submitted"},
         )
 
     @classmethod
-    def validate_bake_command(cls, bake_command: Bake) -> List[TraitError]:
+    def validate_bake_command(cls, bake_command: HasTraits) -> List[TraitError]:
         """
         Validates the given bake_command and collects any validation errors.
 

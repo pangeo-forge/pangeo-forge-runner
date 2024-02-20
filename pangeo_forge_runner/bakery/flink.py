@@ -13,10 +13,10 @@ from typing import List
 
 import escapism
 from apache_beam.pipeline import Pipeline, PipelineOptions
-from traitlets import Bool, Dict, Integer, TraitError, Unicode
+from traitlets import Bool, Dict, HasTraits, Integer, TraitError, Unicode
 
-from ..commands.bake import Bake, ExecutionMetadata
 from .base import Bakery
+from .execution_metadata import ExecutionMetadata
 
 
 # Copied from https://github.com/jupyterhub/kubespawner/blob/7d6d82c2be469dd76f770d6f6ed0d1dade6b24a7/kubespawner/utils.py#L8
@@ -380,15 +380,15 @@ class FlinkOperatorBakery(Bakery):
         meta (ExecutionMetadata): An instance of BakeMetadata containing metadata about the bake process.
         """
         self.log.info(
-            f"Running flink job for recipe {meta.name}\n",
+            f"Running flink job for recipe {meta.recipe_name}\n",
             extra=meta.to_dict() | {"status": "running"},
         )
         pipeline.run()
 
     @classmethod
-    def validate_bake_command(cls, bake_command: Bake) -> List[TraitError]:
+    def validate_bake_command(cls, bake_command: HasTraits) -> List[TraitError]:
         errors = []
-        if not bake_command.container_image:
+        if not bake_command._trait_values["container_image"]:
             errors.append(
                 TraitError(
                     "'container_image' is required when using the 'FlinkOperatorBakery' "
