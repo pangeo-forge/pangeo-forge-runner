@@ -15,8 +15,7 @@ import escapism
 from apache_beam.pipeline import Pipeline, PipelineOptions
 from traitlets import Bool, Dict, Integer, TraitError, Unicode
 
-from ..commands.bake import Bake
-from ..job_metadata import JobMetadata
+from ..commands.bake import Bake, ExecutionMetadata
 from .base import Bakery
 
 
@@ -373,12 +372,12 @@ class FlinkOperatorBakery(Bakery):
         )
         return PipelineOptions(**opts)
 
-    def bake(self, pipeline: Pipeline, meta: JobMetadata) -> None:
+    def bake(self, pipeline: Pipeline, meta: ExecutionMetadata) -> None:
         """
         Executes the given pipeline using the provided for logs as appropriate.
 
         pipeline (Pipeline): The pipeline object to be executed.
-        meta (BakeMetadata): An instance of BakeMetadata containing metadata about the bake process.
+        meta (ExecutionMetadata): An instance of BakeMetadata containing metadata about the bake process.
         """
         self.log.info(
             f"Running job for recipe {meta.name}\n",

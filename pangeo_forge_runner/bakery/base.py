@@ -4,8 +4,7 @@ from apache_beam.pipeline import Pipeline, PipelineOptions
 from traitlets import Bool, TraitError
 from traitlets.config import LoggingConfigurable
 
-from ..commands.bake import Bake
-from ..job_metadata import JobMetadata
+from ..commands.bake import Bake, ExecutionMetadata
 
 
 class Bakery(LoggingConfigurable):
@@ -41,12 +40,12 @@ class Bakery(LoggingConfigurable):
         """
         raise NotImplementedError("Override get_pipeline_options in subclass")
 
-    def bake(self, pipeline: Pipeline, meta: JobMetadata) -> None:
+    def bake(self, pipeline: Pipeline, meta: ExecutionMetadata) -> None:
         """
         Executes the given pipeline using the provided for logs as appropriate.
 
         pipeline (Pipeline): The pipeline object to be executed.
-        meta (BakeMetadata): An instance of BakeMetadata containing metadata about the bake process.
+        meta (ExecutionMetadata): An instance of BakeMetadata containing metadata about the bake process.
         """
         result = pipeline.run()
         job_id = result.job_id()

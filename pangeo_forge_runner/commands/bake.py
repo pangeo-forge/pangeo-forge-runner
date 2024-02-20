@@ -7,6 +7,7 @@ import os
 import re
 import string
 import time
+from dataclasses import asdict, dataclass
 from importlib.metadata import distributions
 from pathlib import Path
 
@@ -17,11 +18,27 @@ from traitlets import Bool, TraitError, Type, Unicode, validate
 from .. import Feedstock
 from ..bakery.base import Bakery
 from ..bakery.local import LocalDirectBakery
-from ..job_metadata import JobMetadata
 from ..plugin import get_injections, get_injectionspecs_from_entrypoints
 from ..storage import InputCacheStorage, TargetStorage
 from ..stream_capture import redirect_stderr, redirect_stdout
 from .base import BaseCommand, common_aliases, common_flags
+
+
+@dataclass
+class ExecutionMetadata:
+    """
+    Holds metadata for an execution instance, including recipe and job names.
+
+    Attributes:
+        recipe_name (str): Name of the recipe being executed.
+        job_name (str): Unique name for the job execution.
+    """
+
+    recipe_name: str
+    job_name: str
+
+    def to_dict(self) -> dict:
+        return asdict(self)
 
 
 class Bake(BaseCommand):
@@ -287,7 +304,7 @@ class Bake(BaseCommand):
                 if isinstance(recipe, PTransform):
                     pipeline | recipe
 
-                metadata = JobMetadata(
+                metadata = ExecutionMetadata(
                     recipe_name=name,
                     job_name=(per_recipe_unique_job_name or self.job_name),
                 )
