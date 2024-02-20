@@ -380,7 +380,7 @@ class FlinkOperatorBakery(Bakery):
         meta (ExecutionMetadata): An instance of BakeMetadata containing metadata about the bake process.
         """
         self.log.info(
-            f"Running job for recipe {meta.name}\n",
+            f"Running flink job for recipe {meta.name}\n",
             extra=meta.to_dict() | {"status": "running"},
         )
         pipeline.run()

@@ -16,16 +16,6 @@ class Bakery(LoggingConfigurable):
     and the Bakery takes care of the rest.
     """
 
-    blocking = Bool(
-        False,
-        config=False,
-        help="""
-        Set to True if this Bakery will default block calls to pipeline.run()
-
-        Not configurable, should be overriden only by subclasses.
-        """,
-    )
-
     def get_pipeline_options(
         self, job_name: str, container_image: str, extra_options: dict
     ) -> PipelineOptions:
