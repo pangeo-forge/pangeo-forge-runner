@@ -5,8 +5,8 @@ Bakery for baking pangeo-forge recipes in Direct Runner
 from apache_beam.pipeline import Pipeline, PipelineOptions
 from traitlets import Integer
 
-from .base import Bakery
 from ..commands.bake import ExecutionMetadata
+from .base import Bakery
 
 
 class LocalDirectBakery(Bakery):
