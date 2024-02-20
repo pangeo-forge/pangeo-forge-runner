@@ -9,11 +9,14 @@ import shutil
 import subprocess
 import tempfile
 import time
+from typing import List
 
 import escapism
-from apache_beam.pipeline import PipelineOptions
-from traitlets import Bool, Dict, Integer, Unicode
+from apache_beam.pipeline import Pipeline, PipelineOptions
+from traitlets import Bool, Dict, Integer, TraitError, Unicode
 
+from ..commands.bake import Bake
+from ..job_metadata import JobMetadata
 from .base import Bakery
 
 
@@ -51,10 +54,6 @@ class FlinkOperatorBakery(Bakery):
     Requires a kubernetes cluster with https://github.com/apache/flink-kubernetes-operator
     installed
     """
-
-    # Not actually, but we don't have a job_id to return.
-    # that looks like just a dataflow concept, we'll have to refactor
-    blocking = True
 
     flink_version = Unicode(
         "1.16",
@@ -373,3 +372,29 @@ class FlinkOperatorBakery(Bakery):
             **extra_options,
         )
         return PipelineOptions(**opts)
+
+    def bake(self, pipeline: Pipeline, meta: JobMetadata) -> None:
+        """
+        Executes the given pipeline using the provided for logs as appropriate.
+
+        pipeline (Pipeline): The pipeline object to be executed.
+        meta (BakeMetadata): An instance of BakeMetadata containing metadata about the bake process.
+        """
+        self.log.info(
+            f"Running job for recipe {meta.name}\n",
+            extra=meta.to_dict() | {"status": "running"},
+        )
+        pipeline.run()
+
+    @classmethod
+    def validate_bake_command(cls, bake_command: Bake) -> List[TraitError]:
+        errors = []
+        if not bake_command.container_image:
+            errors.append(
+                TraitError(
+                    "'container_image' is required when using the 'FlinkOperatorBakery' "
+                    "for the version of python and apache-beam you are targeting. "
+                    "See the sdk images available: https://hub.docker.com/layers/apache/"
+                )
+            )
+        return errors

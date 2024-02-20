@@ -12,12 +12,12 @@ from pathlib import Path
 
 import escapism
 from apache_beam import Pipeline, PTransform
-from traitlets import Bool, Type, Unicode, validate
+from traitlets import Bool, TraitError, Type, Unicode, validate
 
 from .. import Feedstock
 from ..bakery.base import Bakery
-from ..bakery.flink import FlinkOperatorBakery
 from ..bakery.local import LocalDirectBakery
+from ..job_metadata import JobMetadata
 from ..plugin import get_injections, get_injectionspecs_from_entrypoints
 from ..storage import InputCacheStorage, TargetStorage
 from ..stream_capture import redirect_stderr, redirect_stdout
@@ -84,24 +84,6 @@ class Bake(BaseCommand):
         """,
     )
 
-    @validate("job_name")
-    def _validate_job_name(self, proposal):
-        """
-        Validate that job_name conforms to ^[a-z][-_0-9a-z]{0,62}$ regex.
-
-        That's what is valid in dataflow job names, so let's keep everyone
-        in that range.
-
-        Dataflow job names adhere to the following GCP cloud labels requirements:
-        https://cloud.google.com/resource-manager/docs/creating-managing-labels#requirements
-        """
-        validating_regex = r"^[a-z][-_0-9a-z]{0,62}$"
-        if not re.match(validating_regex, proposal.value):
-            raise ValueError(
-                f"job_name must match the regex {validating_regex}, instead found {proposal.value}"
-            )
-        return proposal.value
-
     container_image = Unicode(
         "",
         config=True,
@@ -121,15 +103,46 @@ class Bake(BaseCommand):
         """,
     )
 
-    @validate("container_image")
-    def _validate_container_image(self, proposal):
-        if self.bakery_class == FlinkOperatorBakery and not proposal.value:
+    @validate("job_name")
+    def _validate_job_name(self, proposal):
+        """
+        Validate that job_name conforms to ^[a-z][-_0-9a-z]{0,62}$ regex.
+
+        That's what is valid in dataflow job names, so let's keep everyone
+        in that range.
+
+        Dataflow job names adhere to the following GCP cloud labels requirements:
+        https://cloud.google.com/resource-manager/docs/creating-managing-labels#requirements
+        """
+        validating_regex = r"^[a-z][-_0-9a-z]{0,62}$"
+        if not re.match(validating_regex, proposal.value):
             raise ValueError(
-                "'container_name' is required when using the 'FlinkOperatorBakery' "
-                "for the version of python and apache-beam you are targeting. "
-                "See the sdk images available: https://hub.docker.com/layers/apache/"
+                f"job_name must match the regex {validating_regex}, instead found {proposal.value}"
             )
         return proposal.value
+
+    @validate("bakery_class")
+    def _bakery_impl_validation(self, proposal):
+        """
+        Validates the 'bakery_class' trait using class-specific validation logic.
+
+        It leverages the class-specific 'validate_bake_command' method to perform
+        validation checks. If any validation errors are found, they are aggregated and
+        raised as a single exception. If there is only one error, it is raised directly.
+
+        Raises:
+        - TraitError: If multiple validation errors are encountered, a single TraitError
+        is raised containing a summary of all error messages.
+        """
+        klass = proposal["value"]
+        if errors := klass.validate_bake_command(self):
+            if len(errors) == 1:
+                raise errors[0]
+            error_messages = "\n".join([str(error) for error in errors])
+            raise TraitError(
+                f"Multiple errors encountered during {klass.__name__} validation of the {type(self).__name__} command:\n{error_messages}"
+            )
+        return klass
 
     def autogenerate_job_name(self):
         """
@@ -274,23 +287,8 @@ class Bake(BaseCommand):
                 if isinstance(recipe, PTransform):
                     pipeline | recipe
 
-                # Some bakeries are blocking - if Beam is configured to use them, calling
-                # pipeline.run() blocks. Some are not. We handle that here, and provide
-                # appropriate feedback to the user too.
-                extra = {
-                    "recipe": name,
-                    "job_name": (per_recipe_unique_job_name or self.job_name),
-                }
-                if bakery.blocking:
-                    self.log.info(
-                        f"Running job for recipe {name}\n",
-                        extra=extra | {"status": "running"},
-                    )
-                    pipeline.run()
-                else:
-                    result = pipeline.run()
-                    job_id = result.job_id()
-                    self.log.info(
-                        f"Submitted job {job_id} for recipe {name}",
-                        extra=extra | {"job_id": job_id, "status": "submitted"},
-                    )
+                metadata = JobMetadata(
+                    recipe_name=name,
+                    job_name=(per_recipe_unique_job_name or self.job_name),
+                )
+                bakery.bake(pipeline, metadata)
