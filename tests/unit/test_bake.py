@@ -10,6 +10,7 @@ from pathlib import Path
 import pytest
 import xarray as xr
 from packaging.version import parse as parse_version
+from traitlets import TraitError
 
 from pangeo_forge_runner.commands.bake import Bake
 
@@ -72,12 +73,13 @@ def test_job_name_validation(job_name, raises):
     bake = Bake()
     if raises:
         with pytest.raises(
-            ValueError,
+            TraitError,
             match=re.escape(
                 f"job_name must match the regex ^[a-z][-_0-9a-z]{{0,62}}$, instead found {job_name}"
             ),
         ):
             bake.job_name = job_name
+            bake.bakery_impl_validation()
     else:
         bake.job_name = job_name
         assert bake.job_name == job_name
@@ -90,15 +92,16 @@ def test_job_name_validation(job_name, raises):
         ["apache/beam_python3.10_sdk:2.51.0", False],
     ),
 )
-def test_container_name_validation(container_image, raises):
+def test_container_image_validation(container_image, raises):
     bake = Bake()
     if raises:
         with pytest.raises(
-            ValueError,
-            match=r"^'container_name' is required.*",
+            TraitError,
+            match=r"^'container_image' is required.*",
         ):
             bake.bakery_class = "pangeo_forge_runner.bakery.flink.FlinkOperatorBakery"
             bake.container_image = container_image
+            bake.bakery_impl_validation()
     else:
         bake.bakery_class = "pangeo_forge_runner.bakery.flink.FlinkOperatorBakery"
         bake.container_image = container_image

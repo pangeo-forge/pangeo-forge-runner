@@ -2,10 +2,11 @@
 Bakery for baking pangeo-forge recipes in Direct Runner
 """
 
-from apache_beam.pipeline import PipelineOptions
+from apache_beam.pipeline import Pipeline, PipelineOptions
 from traitlets import Integer
 
 from .base import Bakery
+from .execution_metadata import ExecutionMetadata
 
 
 class LocalDirectBakery(Bakery):
@@ -14,9 +15,6 @@ class LocalDirectBakery(Bakery):
 
     Uses the Apache Beam DirectRunner
     """
-
-    # DirectRunner blocks the pipeline.run() call until run is completed
-    blocking = True
 
     num_workers = Integer(
         0,
@@ -47,3 +45,16 @@ class LocalDirectBakery(Bakery):
             pickle_library="cloudpickle",
             **extra_options,
         )
+
+    def bake(self, pipeline: Pipeline, meta: ExecutionMetadata) -> None:
+        """
+        Executes the given pipeline using the provided for logs as appropriate.
+
+        pipeline (Pipeline): The pipeline object to be executed.
+        meta (ExecutionMetadata): An instance of BakeMetadata containing metadata about the bake process.
+        """
+        self.log.info(
+            f"Running local job for recipe {meta.recipe_name}\n",
+            extra=meta.to_dict() | {"status": "running"},
+        )
+        pipeline.run()

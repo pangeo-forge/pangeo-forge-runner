@@ -241,7 +241,7 @@ class BaseCommand(Application):
         # Calling logging.getLogger gives us the *root* logger, which we
         # then futz with. Ideally, we'll call getLogger(__name__) which
         # will give us a scoped logger. Unfortunately, apache_beam doesn't
-        # do this correctly and fucks with the root logger, and so must we
+        # do this correctly and modifies the root logger, and so must we
         # if we want to be able to control all stdout from our CLI (to be JSON or
         # otherwise). FIXME: No extra comes out here, just message
         self.log = logging.getLogger()
@@ -250,7 +250,7 @@ class BaseCommand(Application):
         self.log.handlers = []
         self.log.addHandler(logHandler)
         self.log.setLevel(self.log_level)
-        # Don't propagate these to the root logger - Apache Beam fucks with the root logger,
+        # Don't propagate these to the root logger - Apache Beam modifies the root logger,
         # and we don't want duplicates
         self.log.propagate = False
 

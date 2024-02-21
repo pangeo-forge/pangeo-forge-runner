@@ -9,12 +9,14 @@ import shutil
 import subprocess
 import tempfile
 import time
+from typing import List
 
 import escapism
-from apache_beam.pipeline import PipelineOptions
-from traitlets import Bool, Dict, Integer, Unicode
+from apache_beam.pipeline import Pipeline, PipelineOptions
+from traitlets import Bool, Dict, HasTraits, Integer, TraitError, Unicode
 
 from .base import Bakery
+from .execution_metadata import ExecutionMetadata
 
 
 # Copied from https://github.com/jupyterhub/kubespawner/blob/7d6d82c2be469dd76f770d6f6ed0d1dade6b24a7/kubespawner/utils.py#L8
@@ -51,10 +53,6 @@ class FlinkOperatorBakery(Bakery):
     Requires a kubernetes cluster with https://github.com/apache/flink-kubernetes-operator
     installed
     """
-
-    # Not actually, but we don't have a job_id to return.
-    # that looks like just a dataflow concept, we'll have to refactor
-    blocking = True
 
     flink_version = Unicode(
         "1.16",
@@ -373,3 +371,29 @@ class FlinkOperatorBakery(Bakery):
             **extra_options,
         )
         return PipelineOptions(**opts)
+
+    def bake(self, pipeline: Pipeline, meta: ExecutionMetadata) -> None:
+        """
+        Executes the given pipeline using the provided for logs as appropriate.
+
+        pipeline (Pipeline): The pipeline object to be executed.
+        meta (ExecutionMetadata): An instance of BakeMetadata containing metadata about the bake process.
+        """
+        self.log.info(
+            f"Running flink job for recipe {meta.recipe_name}\n",
+            extra=meta.to_dict() | {"status": "running"},
+        )
+        pipeline.run()
+
+    @classmethod
+    def validate_bake_command(cls, bake_command: HasTraits) -> List[TraitError]:
+        errors = []
+        if not bake_command._trait_values["container_image"]:
+            errors.append(
+                TraitError(
+                    "'container_image' is required when using the 'FlinkOperatorBakery' "
+                    "for the version of python and apache-beam you are targeting. "
+                    "See the sdk images available: https://hub.docker.com/layers/apache/"
+                )
+            )
+        return errors
