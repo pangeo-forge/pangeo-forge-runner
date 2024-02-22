@@ -17,11 +17,6 @@ def test_flink_bake(
     recipes_version_ref = recipes_version.split("==")[1]
     beam_version_ref = beam_version.split("==")[1]
 
-    # we need to add the versions from the CLI matrix to the requirements for tests
-    with open(str(TEST_GPCP_DATA_DIR / f"feedstock-{recipes_version_ref}-flink" / "requirements.txt"), "w") as f:
-        for r in [recipes_version, beam_version]:
-            f.write(r)
-
     # .github/workflows/flink.yml provides
     # `--recipes-version` arg with pytest cli call
     # but if not provided (e.g. in local runs) then alert
@@ -40,6 +35,12 @@ def test_flink_bake(
     pfr_version = parse_version(recipes_version_ref)
     if pfr_version >= parse_version("0.10"):
         recipe_version_ref = "0.10.x"
+
+    # we need to add the versions from the CLI matrix to the requirements for tests
+    with open(str(TEST_GPCP_DATA_DIR / f"feedstock-{recipes_version_ref}-flink" / "requirements.txt"), "w") as f:
+        for r in [recipes_version, beam_version]:
+            f.write(r)
+
 
     bucket = "s3://gpcp-out"
     config = {

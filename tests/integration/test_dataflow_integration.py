@@ -16,11 +16,6 @@ def test_dataflow_integration(recipes_version, beam_version):
     # just grab the version part
     recipes_version_ref = recipes_version.split("==")[1]
 
-    # we need to add the versions from the CLI matrix to the requirements for tests
-    with open(str(TEST_GPCP_DATA_DIR / f"feedstock-{recipes_version_ref}-dataflow" / "requirements.txt"), "w") as f:
-        for r in [recipes_version, beam_version]:
-            f.write(r)
-
     # .github/workflows/dataflow.yml provides
     # `--recipes-version` arg with pytest cli call
     # but if not provided (e.g. in local runs) then alert
@@ -40,6 +35,12 @@ def test_dataflow_integration(recipes_version, beam_version):
         raise ValueError(
             f"Unsupported pfr_version: {pfr_version}. Please upgrade to 0.10 or newer."
         )
+
+    # we need to add the versions from the CLI matrix to the requirements for tests
+    with open(str(TEST_GPCP_DATA_DIR / f"feedstock-{recipes_version_ref}-dataflow" / "requirements.txt"), "w") as f:
+        for r in [recipes_version, beam_version]:
+            f.write(r)
+
     bucket = "gs://pangeo-forge-runner-ci-testing"
     config = {
         "Bake": {
