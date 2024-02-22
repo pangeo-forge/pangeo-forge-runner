@@ -152,9 +152,7 @@ def test_gpcp_bake(
 
     with open(
         str(
-            TEST_GPCP_DATA_DIR
-            / f"feedstock-{recipes_version_ref}"
-            / "requirements.txt"
+            TEST_GPCP_DATA_DIR / f"feedstock-{recipes_version_ref}" / "requirements.txt"
         ),
         "w",
     ) as f:
