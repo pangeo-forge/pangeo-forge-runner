@@ -47,7 +47,7 @@ def test_flink_bake(
         "w",
     ) as f:
         for r in [recipes_version, beam_version]:
-            f.write(r)
+            f.write(f"{r}\n")
 
     bucket = "s3://gpcp-out"
     config = {

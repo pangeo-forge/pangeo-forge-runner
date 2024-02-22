@@ -148,7 +148,7 @@ def test_gpcp_bake(
         "w",
     ) as f:
         for r in [recipes_version, beam_version]:
-            f.write(r)
+            f.write(f"{r}\n")
 
     fsspec_args = {
         "key": minio["username"],

@@ -47,7 +47,7 @@ def test_dataflow_integration(recipes_version, beam_version):
         "w",
     ) as f:
         for r in [recipes_version, beam_version]:
-            f.write(r)
+            f.write(f"{r}\n")
 
     bucket = "gs://pangeo-forge-runner-ci-testing"
     config = {
