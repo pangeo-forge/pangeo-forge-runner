@@ -44,7 +44,7 @@ def test_flink_bake(
             / f"feedstock-{recipes_version_ref}-flink"
             / "requirements.txt"
         ),
-        "w",
+        "a",
     ) as f:
         for r in [recipes_version, beam_version]:
             f.write(f"{r}\n")

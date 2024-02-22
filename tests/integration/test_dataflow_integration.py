@@ -44,7 +44,7 @@ def test_dataflow_integration(recipes_version, beam_version):
             / f"feedstock-{recipes_version_ref}-dataflow"
             / "requirements.txt"
         ),
-        "w",
+        "a",
     ) as f:
         for r in [recipes_version, beam_version]:
             f.write(f"{r}\n")
