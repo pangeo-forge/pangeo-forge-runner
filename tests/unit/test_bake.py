@@ -141,11 +141,23 @@ def test_gpcp_bake(
         )
 
     # we need to add the versions from the CLI matrix to the requirements for tests
-    with open(str(TEST_GPCP_DATA_DIR / f"feedstock-{recipes_version_ref}" / "requirements.txt"), "w") as f:
+    with open(
+        str(
+            TEST_GPCP_DATA_DIR / f"feedstock-{recipes_version_ref}" / "requirements.txt"
+        ),
+        "w",
+    ) as f:
         for r in [recipes_version, beam_version]:
             f.write(r)
 
-    with open(str(TEST_GPCP_DATA_DIR / f"feedstock-{recipes_version_ref}" / "requirements.txt"), "w") as f:
+    with open(
+        str(
+            TEST_GPCP_DATA_DIR
+            / f"feedstock-{recipes_version_ref}"
+            / "requirements.txt"
+        ),
+        "w",
+    ) as f:
         for r in [recipes_version, beam_version]:
             f.write(r)
 

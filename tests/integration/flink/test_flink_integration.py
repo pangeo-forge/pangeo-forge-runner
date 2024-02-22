@@ -10,6 +10,7 @@ from packaging.version import parse as parse_version
 TEST_DATA_DIR = Path(__file__).parent.parent.parent / "test-data"
 TEST_GPCP_DATA_DIR = TEST_DATA_DIR / "gpcp-from-gcs"
 
+
 def test_flink_bake(
     minio_service, flink_version, python_version, beam_version, recipes_version
 ):

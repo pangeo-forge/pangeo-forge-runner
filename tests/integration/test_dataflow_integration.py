@@ -12,6 +12,7 @@ from packaging.version import parse as parse_version
 TEST_DATA_DIR = Path(__file__).parent.parent / "test-data"
 TEST_GPCP_DATA_DIR = TEST_DATA_DIR / "gpcp-from-gcs"
 
+
 def test_dataflow_integration(recipes_version, beam_version):
     # just grab the version part
     recipes_version_ref = recipes_version.split("==")[1]
