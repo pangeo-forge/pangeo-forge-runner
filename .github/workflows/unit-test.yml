@@ -15,9 +15,6 @@ jobs:
       matrix:
         python-version: ["3.9", "3.10", "3.11"]
         recipes-version: [
-          # save some cycles and infer it might
-          # work on all versions between lowest and highest
-          # "pangeo-forge-recipes==0.10.3",
           "pangeo-forge-recipes==0.10.4",
         ]
         beam-version: [
@@ -52,17 +49,9 @@ jobs:
 
     - name: Test with pytest
       run: |
-        # setup
-        # we need to make sure our matrix versions get added to target requirements.txt
-        # so that the dynamic temp virtualenv stuff is targeting the correct version
-        echo ${{ matrix.recipes-version }} >> tests/test-data/gpcp-from-gcs/feedstock-0.10.x/requirements.txt
-        echo ${{ matrix.beam-version }} >> tests/test-data/gpcp-from-gcs/feedstock-0.10.x/requirements.txt
-        # don't forget dictobj(s)
-        echo ${{ matrix.recipes-version }} >> tests/test-data/gpcp-from-gcs/feedstock-0.10.x-dictobj/requirements.txt
-        echo ${{ matrix.beam-version }} >> tests/test-data/gpcp-from-gcs/feedstock-0.10.x-dictobj/requirements.txt
-        # kick it off
-        pfrv=$(echo ${{ matrix.recipes-version }} | cut -d"=" -f3)
-        pytest -vvv -s --cov=pangeo_forge_runner tests/unit/ --recipes-version=$pfrv
+        pytest -vvv -s --cov=pangeo_forge_runner tests/unit/ \
+          --recipes-version=${{ matrix.recipes-version }} \
+          --beam-version=${{ matrix.beam-version }}
 
     - name: Upload Coverage to Codecov
       uses: codecov/codecov-action@v2

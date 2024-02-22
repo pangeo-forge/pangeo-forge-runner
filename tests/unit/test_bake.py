@@ -13,6 +13,7 @@ from packaging.version import parse as parse_version
 from pangeo_forge_runner.commands.bake import Bake
 
 TEST_DATA_DIR = Path(__file__).parent.parent / "test-data"
+TEST_GPCP_DATA_DIR = TEST_DATA_DIR / "gpcp-from-gcs"
 
 
 def test_bake_requires_recipes_installed():
@@ -83,6 +84,9 @@ def test_container_name_validation(container_image, raises):
 
 @pytest.fixture(params=["recipe_object", "dict_object"])
 def recipes_version_ref(request, recipes_version):
+    # just grab the version part
+    recipes_version = recipes_version.split("==")[1]
+
     # .github/workflows/unit-test.yml provides
     # `--recipes-version` arg with pytest cli call
     # but if not provided (e.g. in local runs) then alert
@@ -128,11 +132,22 @@ def test_gpcp_bake(
     custom_job_name,
     no_input_cache,
     recipes_version_ref,
+    recipes_version,
+    beam_version,
 ):
     if recipes_version_ref == "0.10.x-dictobj" and recipe_id:
         pytest.skip(
             "We only test dictobjs for recipes >0.10.0, and without recipe_id's"
         )
+
+    # we need to add the versions from the CLI matrix to the requirements for tests
+    with open(str(TEST_GPCP_DATA_DIR / f"feedstock-{recipes_version_ref}" / "requirements.txt"), "w") as f:
+        for r in [recipes_version, beam_version]:
+            f.write(r)
+
+    with open(str(TEST_GPCP_DATA_DIR / f"feedstock-{recipes_version_ref}-dictobj" / "requirements.txt"), "w") as f:
+        for r in [recipes_version, beam_version]:
+            f.write(r)
 
     fsspec_args = {
         "key": minio["username"],
@@ -168,8 +183,6 @@ def test_gpcp_bake(
     if custom_job_name:
         config["Bake"].update({"job_name": custom_job_name})
 
-    # we need
-
     with tempfile.NamedTemporaryFile("w", suffix=".json") as f:
         json.dump(config, f)
         f.flush()
@@ -177,7 +190,7 @@ def test_gpcp_bake(
             "pangeo-forge-runner",
             "bake",
             "--repo",
-            str(TEST_DATA_DIR / "gpcp-from-gcs"),
+            TEST_GPCP_DATA_DIR,
             "--feedstock-subdir",
             f"feedstock-{recipes_version_ref}",
             "--json",

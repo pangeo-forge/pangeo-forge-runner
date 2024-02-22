@@ -10,13 +10,21 @@ import xarray as xr
 from packaging.version import parse as parse_version
 
 TEST_DATA_DIR = Path(__file__).parent.parent / "test-data"
+TEST_GPCP_DATA_DIR = TEST_DATA_DIR / "gpcp-from-gcs"
 
+def test_dataflow_integration(recipes_version, beam_version):
+    # just grab the version part
+    recipes_version_ref = recipes_version.split("==")[1]
 
-def test_dataflow_integration(recipes_version):
+    # we need to add the versions from the CLI matrix to the requirements for tests
+    with open(str(TEST_GPCP_DATA_DIR / f"feedstock-{recipes_version_ref}-dataflow" / "requirements.txt"), "w") as f:
+        for r in [recipes_version, beam_version]:
+            f.write(r)
+
     # .github/workflows/dataflow.yml provides
     # `--recipes-version` arg with pytest cli call
     # but if not provided (e.g. in local runs) then alert
-    if not recipes_version:
+    if not recipes_version_ref:
         raise ValueError(
             "running these tests requires you "
             "pass `--recipes-version='<version-string>'` as a `pytest` arg"
@@ -25,7 +33,7 @@ def test_dataflow_integration(recipes_version):
     python_version = (
         f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
     )
-    pfr_version = parse_version(recipes_version)
+    pfr_version = parse_version(recipes_version_ref)
     if pfr_version >= parse_version("0.10"):
         recipe_version_ref = "0.10.x"
     else:
@@ -57,7 +65,7 @@ def test_dataflow_integration(recipes_version):
             "pangeo-forge-runner",
             "bake",
             "--repo",
-            str(TEST_DATA_DIR / "gpcp-from-gcs"),
+            TEST_GPCP_DATA_DIR,
             "--feedstock-subdir",
             f"feedstock-{recipe_version_ref}-dataflow",
             "--json",
