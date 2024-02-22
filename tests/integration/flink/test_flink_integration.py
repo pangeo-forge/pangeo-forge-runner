@@ -35,7 +35,7 @@ def test_flink_bake(
 
     pfr_version = parse_version(recipes_version_ref)
     if pfr_version >= parse_version("0.10"):
-        recipe_version_ref = "0.10.x"
+        recipes_version_ref = "0.10.x"
 
     # we need to add the versions from the CLI matrix to the requirements for tests
     with open(str(TEST_GPCP_DATA_DIR / f"feedstock-{recipes_version_ref}-flink" / "requirements.txt"), "w") as f:
@@ -85,7 +85,7 @@ def test_flink_bake(
             "--repo",
             TEST_GPCP_DATA_DIR,
             "--feedstock-subdir",
-            f"feedstock-{recipe_version_ref}-flink",
+            f"feedstock-{recipes_version_ref}-flink",
             "-f",
             f.name,
         ]

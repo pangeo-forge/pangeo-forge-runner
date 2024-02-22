@@ -31,7 +31,7 @@ def test_dataflow_integration(recipes_version, beam_version):
     )
     pfr_version = parse_version(recipes_version_ref)
     if pfr_version >= parse_version("0.10"):
-        recipe_version_ref = "0.10.x"
+        recipes_version_ref = "0.10.x"
     else:
         raise ValueError(
             f"Unsupported pfr_version: {pfr_version}. Please upgrade to 0.10 or newer."
@@ -69,7 +69,7 @@ def test_dataflow_integration(recipes_version, beam_version):
             "--repo",
             TEST_GPCP_DATA_DIR,
             "--feedstock-subdir",
-            f"feedstock-{recipe_version_ref}-dataflow",
+            f"feedstock-{recipes_version_ref}-dataflow",
             "--json",
             "-f",
             f.name,
