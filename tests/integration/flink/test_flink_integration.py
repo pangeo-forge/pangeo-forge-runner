@@ -10,6 +10,7 @@ from packaging.version import parse as parse_version
 TEST_DATA_DIR = Path(__file__).parent.parent.parent / "test-data"
 TEST_GPCP_DATA_DIR = TEST_DATA_DIR / "gpcp-from-gcs"
 
+
 def test_flink_bake(
     minio_service, flink_version, python_version, beam_version, recipes_version
 ):
@@ -18,7 +19,14 @@ def test_flink_bake(
     beam_version_ref = beam_version.split("==")[1]
 
     # we need to add the versions from the CLI matrix to the requirements for tests
-    with open(str(TEST_GPCP_DATA_DIR / f"feedstock-{recipes_version_ref}-flink" / "requirements.txt"), "w") as f:
+    with open(
+        str(
+            TEST_GPCP_DATA_DIR
+            / f"feedstock-{recipes_version_ref}-flink"
+            / "requirements.txt"
+        ),
+        "w",
+    ) as f:
         for r in [recipes_version, beam_version]:
             f.write(r)
 

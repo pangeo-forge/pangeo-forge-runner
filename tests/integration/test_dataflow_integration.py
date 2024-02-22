@@ -12,12 +12,20 @@ from packaging.version import parse as parse_version
 TEST_DATA_DIR = Path(__file__).parent.parent / "test-data"
 TEST_GPCP_DATA_DIR = TEST_DATA_DIR / "gpcp-from-gcs"
 
+
 def test_dataflow_integration(recipes_version, beam_version):
     # just grab the version part
     recipes_version_ref = recipes_version.split("==")[1]
 
     # we need to add the versions from the CLI matrix to the requirements for tests
-    with open(str(TEST_GPCP_DATA_DIR / f"feedstock-{recipes_version_ref}-dataflow" / "requirements.txt"), "w") as f:
+    with open(
+        str(
+            TEST_GPCP_DATA_DIR
+            / f"feedstock-{recipes_version_ref}-dataflow"
+            / "requirements.txt"
+        ),
+        "w",
+    ) as f:
         for r in [recipes_version, beam_version]:
             f.write(r)
 
