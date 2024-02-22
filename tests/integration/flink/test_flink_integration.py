@@ -74,7 +74,7 @@ def test_flink_bake(
             "--repo",
             str(TEST_DATA_DIR / "gpcp-from-gcs"),
             "--feedstock-subdir",
-            f"feedstock-{recipe_version_ref}",
+            f"feedstock-{recipe_version_ref}-flink",
             "-f",
             f.name,
         ]

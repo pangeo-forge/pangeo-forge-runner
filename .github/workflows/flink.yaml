@@ -29,7 +29,6 @@ jobs:
       matrix:
         python-version: [ "3.9", "3.10", "3.11" ]
         recipes-version: [
-            "pangeo-forge-recipes==0.10.0",
             # save some cycles and infer it might
             # work on all versions between lowest and highest
             # "pangeo-forge-recipes==0.10.3",
@@ -130,6 +129,12 @@ jobs:
       id: testrunner
       continue-on-error: true
       run: |
+        # setup
+        # we need to make sure our matrix versions get added to target requirements.txt
+        # so that the dynamic temp virtualenv stuff is targeting the correct version
+        echo ${{ matrix.recipes-version }} >> tests/test-data/gpcp-from-gcs/feedstock-0.10.x-flink/requirements.txt
+        echo ${{ matrix.beam-version }} >> tests/test-data/gpcp-from-gcs/feedstock-0.10.x-flink/requirements.txt
+        # kick it off
         beamversion=$(echo ${{ matrix.beam-version }} | cut -d"=" -f3)
         pfrv=$(echo ${{ matrix.recipes-version }} | cut -d"=" -f3)
         pytest -vvv -s --cov=pangeo_forge_runner tests/integration/flink/test_flink_integration.py \
