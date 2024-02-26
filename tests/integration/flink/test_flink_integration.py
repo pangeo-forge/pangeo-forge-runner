@@ -2,25 +2,52 @@ import json
 import subprocess
 import tempfile
 import time
-from importlib.metadata import version
 from pathlib import Path
 
 import xarray as xr
 from packaging.version import parse as parse_version
 
 TEST_DATA_DIR = Path(__file__).parent.parent.parent / "test-data"
+TEST_GPCP_DATA_DIR = TEST_DATA_DIR / "gpcp-from-gcs"
 
 
-def test_flink_bake(minio_service, flinkversion, pythonversion, beamversion):
+def test_flink_bake(
+    minio_service, flink_version, python_version, beam_version, recipes_version
+):
+    # just grab the version part
+    recipes_version_ref = recipes_version.split("==")[1]
+    beam_version_ref = beam_version.split("==")[1]
+
+    # .github/workflows/flink.yml provides
+    # `--recipes-version` arg with pytest cli call
+    # but if not provided (e.g. in local runs) then alert
+    if not recipes_version_ref:
+        raise ValueError(
+            "running these tests requires you "
+            "pass `--recipes-version='<version-string>'` as a `pytest` arg"
+        )
+
     fsspec_args = {
         "key": minio_service["username"],
         "secret": minio_service["password"],
         "client_kwargs": {"endpoint_url": minio_service["endpoint"]},
     }
 
-    pfr_version = parse_version(version("pangeo-forge-recipes"))
+    pfr_version = parse_version(recipes_version_ref)
     if pfr_version >= parse_version("0.10"):
-        recipe_version_ref = "0.10.x"
+        recipes_version_ref = "0.10.x"
+
+    # we need to add the versions from the CLI matrix to the requirements for tests
+    with open(
+        str(
+            TEST_GPCP_DATA_DIR
+            / f"feedstock-{recipes_version_ref}-flink"
+            / "requirements.txt"
+        ),
+        "a",
+    ) as f:
+        for r in [recipes_version, beam_version]:
+            f.write(f"{r}\n")
 
     bucket = "s3://gpcp-out"
     config = {
@@ -31,7 +58,7 @@ def test_flink_bake(minio_service, flinkversion, pythonversion, beamversion):
             # there must be a job-server jar available for the matching
             # `apache-beam` and `FlinkOperatorBakery.flink_version` here:
             # https://repo.maven.apache.org/maven2/org/apache/beam/beam-runners-flink-1.16-job-server/
-            "container_image": f"apache/beam_python{pythonversion}_sdk:{beamversion}",
+            "container_image": f"apache/beam_python{python_version}_sdk:{beam_version_ref}",
         },
         "TargetStorage": {
             "fsspec_class": "s3fs.S3FileSystem",
@@ -44,7 +71,7 @@ def test_flink_bake(minio_service, flinkversion, pythonversion, beamversion):
             "root_path": bucket + "/input-cache/{job_name}",
         },
         "FlinkOperatorBakery": {
-            "flink_version": flinkversion,
+            "flink_version": flink_version,
             "job_manager_resources": {"memory": "1024m", "cpu": 0.30},
             "task_manager_resources": {"memory": "2048m", "cpu": 0.30},
             "parallelism": 1,
@@ -62,9 +89,9 @@ def test_flink_bake(minio_service, flinkversion, pythonversion, beamversion):
             "pangeo-forge-runner",
             "bake",
             "--repo",
-            str(TEST_DATA_DIR / "gpcp-from-gcs"),
+            TEST_GPCP_DATA_DIR,
             "--feedstock-subdir",
-            f"feedstock-{recipe_version_ref}",
+            f"feedstock-{recipes_version_ref}-flink",
             "-f",
             f.name,
         ]

@@ -2,9 +2,8 @@ import hashlib
 import json
 import re
 import subprocess
-import sys
 import tempfile
-from importlib.metadata import distributions, version
+from importlib.metadata import distributions
 from pathlib import Path
 
 import pytest
@@ -14,43 +13,21 @@ from packaging.version import parse as parse_version
 from pangeo_forge_runner.commands.bake import Bake
 
 TEST_DATA_DIR = Path(__file__).parent.parent / "test-data"
+TEST_GPCP_DATA_DIR = TEST_DATA_DIR / "gpcp-from-gcs"
 
 
-@pytest.fixture
-def recipes_uninstalled():
-    """Uninstall `pangeo-forge-recipes` for `test_bake_requires_recipes_installed`."""
-    # first confirm that it's installed to begin with
-    assert "pangeo-forge-recipes" in [d.metadata["Name"] for d in distributions()]
-    # and capture the version, which we'll reinstall after the test
-    recipes_version = parse_version(version("pangeo-forge-recipes"))
-    # now uninstall it
-    uninstall = subprocess.run(
-        f"{sys.executable} -m pip uninstall pangeo-forge-recipes -y".split()
-    )
-    assert uninstall.returncode == 0
-    assert "pangeo-forge-recipes" not in [d.metadata["Name"] for d in distributions()]
-    # and yield to the test
-    yield True
-    # test is complete, now reinstall pangeo-forge-recipes in the test env
-    reinstall = subprocess.run(
-        f"{sys.executable} -m pip install pangeo-forge-recipes=={recipes_version}".split()
-    )
-    assert reinstall.returncode == 0
-    # make sure it's there, and in the expected version
-    assert "pangeo-forge-recipes" in [d.metadata["Name"] for d in distributions()]
-    assert parse_version(version("pangeo-forge-recipes")) == recipes_version
-
-
-def test_bake_requires_recipes_installed(recipes_uninstalled):
+def test_bake_requires_recipes_installed():
     """`pangeo-forge-runner` does not require `pangeo-forge-recipes` to be installed,
     but `pangeo-forge-recipes` *is* required to use the `bake` command, so test that
     we get a descriptive error if we try to invoke this command without it installed.
     """
-    assert recipes_uninstalled
+    assert "pangeo-forge-recipes" not in [d.metadata["Name"] for d in distributions()]
     bake = Bake()
+    bake.repo = str(TEST_DATA_DIR / "gpcp-from-gcs")
+    bake.feedstock_subdir = "feedstock-0.10.x-norequirements"
     with pytest.raises(
         ValueError,
-        match="To use the `bake` command, `pangeo-forge-recipes` must be installed.",
+        match="To use the 'bake' command, the packages .* must be listed in your recipe's requirements.txt",
     ):
         bake.start()
 
@@ -106,8 +83,20 @@ def test_container_name_validation(container_image, raises):
 
 
 @pytest.fixture(params=["recipe_object", "dict_object"])
-def recipes_version_ref(request):
-    pfr_version = parse_version(version("pangeo-forge-recipes"))
+def recipes_version_ref(request, recipes_version):
+    # just grab the version part
+    recipes_version = recipes_version.split("==")[1]
+
+    # .github/workflows/unit-test.yml provides
+    # `--recipes-version` arg with pytest cli call
+    # but if not provided (e.g. in local runs) then alert
+    if not recipes_version:
+        raise ValueError(
+            "running these tests requires you "
+            "pass `--recipes-version='<version-string>'` as a `pytest` arg"
+        )
+
+    pfr_version = parse_version(recipes_version)
     if pfr_version >= parse_version("0.10"):
         recipes_version_ref = "0.10.x"
     else:
@@ -143,11 +132,23 @@ def test_gpcp_bake(
     custom_job_name,
     no_input_cache,
     recipes_version_ref,
+    recipes_version,
+    beam_version,
 ):
     if recipes_version_ref == "0.10.x-dictobj" and recipe_id:
         pytest.skip(
             "We only test dictobjs for recipes >0.10.0, and without recipe_id's"
         )
+
+    # we need to add the versions from the CLI matrix to the requirements for tests
+    with open(
+        str(
+            TEST_GPCP_DATA_DIR / f"feedstock-{recipes_version_ref}" / "requirements.txt"
+        ),
+        "a",
+    ) as f:
+        for r in [recipes_version, beam_version]:
+            f.write(f"{r}\n")
 
     fsspec_args = {
         "key": minio["username"],
@@ -190,7 +191,7 @@ def test_gpcp_bake(
             "pangeo-forge-runner",
             "bake",
             "--repo",
-            str(TEST_DATA_DIR / "gpcp-from-gcs"),
+            TEST_GPCP_DATA_DIR,
             "--feedstock-subdir",
             f"feedstock-{recipes_version_ref}",
             "--json",

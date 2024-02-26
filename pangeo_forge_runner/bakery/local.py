@@ -2,9 +2,9 @@
 Bakery for baking pangeo-forge recipes in Direct Runner
 """
 
-from apache_beam.pipeline import PipelineOptions
 from traitlets import Integer
 
+from ..dtypes import ApacheBeamPipelineOptions
 from .base import Bakery
 
 
@@ -31,12 +31,14 @@ class LocalDirectBakery(Bakery):
 
     def get_pipeline_options(
         self, job_name: str, container_image: str, extra_options: dict
-    ) -> PipelineOptions:
+    ) -> ApacheBeamPipelineOptions:
         """
         Return PipelineOptions for use with this Bakery
         """
         # Set flags explicitly to empty so Apache Beam doesn't try to parse the commandline
         # for pipeline options - we have traitlets doing that for us.
+        from apache_beam.pipeline import PipelineOptions
+
         return PipelineOptions(
             flags=[],
             runner="DirectRunner",
