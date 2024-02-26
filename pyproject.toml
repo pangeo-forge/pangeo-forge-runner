@@ -30,7 +30,7 @@ dependencies = [
     "jupyter-repo2docker",
     "ruamel.yaml",
     "traitlets",
-    "venvception>=0.0.4",
+    "venvception>=0.0.5",
     "fsspec",
 ]
 
