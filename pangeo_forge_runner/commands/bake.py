@@ -178,11 +178,9 @@ class Bake(BaseCommand):
                 # alert if deps in requirements.txt are missing things
                 from importlib.metadata import distributions
 
-                deps = ["pangeo-forge-recipes", "fsspec", "apache-beam"]
-                missing_deps = []
-                for dep in deps:
-                    if not dep in [d.metadata["Name"] for d in distributions()]:
-                        missing_deps.append(dep)
+                deps_set = set(["pangeo-forge-recipes", "fsspec", "apache-beam"])
+                dist_set = set([d.metadata["Name"] for d in distributions()])
+                missing_deps = deps_set - dist_set
                 if missing_deps:
                     raise ValueError(
                         f"To use the 'bake' command, the packages {missing_deps} must be listed in your recipe's requirements.txt"
