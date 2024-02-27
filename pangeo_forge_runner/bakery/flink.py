@@ -301,6 +301,7 @@ class FlinkOperatorBakery(Bakery):
 
         # Flink cluster names have a 45 char limit, and can only contain - special char
         # And no uppercase characters are allowed
+        # XXX
         cluster_name = generate_hashed_slug(
             escapism.escape(job_name, escape_char="-").lower(), 45
         )
@@ -379,6 +380,10 @@ class FlinkSessionBakery(Bakery):
     """
     Bake a Pangeo Forge recipe on a Flink cluster based on the Apache Flink k8s Operator
     """
+
+    # Not actually, but we don't have a job_id to return.
+    # that looks like just a dataflow concept, we'll have to refactor
+    blocking = True
 
     parallelism = Integer(
         -1,
