@@ -257,7 +257,7 @@ class FlinkOperatorBakery(Bakery):
                 "serviceAccount": "flink",
                 "jobManager": {
                     "resource": self.job_manager_resources,
-                    "jobTemplate": {
+                    "podTemplate": {
                         "metadata": {
                             "annotations": {
                                 "prometheus.io/port": "9999",
