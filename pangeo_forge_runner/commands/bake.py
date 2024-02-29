@@ -265,6 +265,9 @@ class Bake(BaseCommand):
                     if requirements_path.exists():
                         extra_options["requirements_file"] = str(requirements_path)
 
+                    self.log.info(
+                        f"Job name is {per_recipe_unique_job_name or self.job_name}"
+                    )
                     pipeline_options = bakery.get_pipeline_options(
                         job_name=(per_recipe_unique_job_name or self.job_name),
                         # FIXME: Bring this in from meta.yaml?
