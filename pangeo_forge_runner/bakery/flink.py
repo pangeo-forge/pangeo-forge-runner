@@ -257,17 +257,46 @@ class FlinkOperatorBakery(Bakery):
                 "serviceAccount": "flink",
                 "jobManager": {
                     "resource": self.job_manager_resources,
+                    "jobTemplate": {
+                        "metadata": {
+                            "annotations": {
+                                "prometheus.io/port": "9999",
+                                "prometheus.io/scrape": "true"
+                            }
+                        },
+                        "spec": {
+                            "containers": [
+                                {
+                                    "ports": [{
+                                        "containerPort": 9999,
+                                        "name": "metrics",
+                                    }]
+                                }
+                            ]
+                        },
+                    },
                 },
                 "taskManager": {
                     "replicas": 5,
                     "resource": self.task_manager_resources,
                     "podTemplate": {
+                        "metadata": {
+                            "annotations": {
+                                "prometheus.io/port": "9999",
+                                "prometheus.io/scrape": "true"
+                            }
+                        },
                         "spec": {
                             "containers": [
                                 {
                                     "name": "beam-worker-pool",
                                     "image": worker_image,
-                                    "ports": [{"containerPort": 50000}],
+                                    "ports": [{
+                                        "containerPort": 50000
+                                    }, {
+                                        "containerPort": 9999,
+                                        "name": "metrics",
+                                    }],
                                     "readinessProbe": {
                                         # Don't mark this container as ready until the beam SDK harnass starts
                                         "tcpSocket": {"port": 50000},
