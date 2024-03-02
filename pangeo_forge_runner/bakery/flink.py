@@ -265,7 +265,7 @@ class FlinkOperatorBakery(Bakery):
                         "metadata": {
                             "annotations": {
                                 "prometheus.io/port": "9999",
-                                "prometheus.io/scrape": "true"
+                                "prometheus.io/scrape": "true",
                             }
                         },
                         "spec": {
@@ -273,12 +273,13 @@ class FlinkOperatorBakery(Bakery):
                                 {
                                     "name": "beam-worker-pool",
                                     "image": worker_image,
-                                    "ports": [{
-                                        "containerPort": 50000
-                                    },{
-                                        "containerPort": 9999,
-                                        "name": "metrics",
-                                    }],
+                                    "ports": [
+                                        {"containerPort": 50000},
+                                        {
+                                            "containerPort": 9999,
+                                            "name": "metrics",
+                                        },
+                                    ],
                                     "readinessProbe": {
                                         # Don't mark this container as ready until the beam SDK harnass starts
                                         "tcpSocket": {"port": 50000},
@@ -291,13 +292,15 @@ class FlinkOperatorBakery(Bakery):
                                 {
                                     "name": "flink-main-container",
                                     "image": f"flink:{self.flink_version}",
-                                    "ports": [{
-                                        "containerPort": 9999,
-                                        "name": "metrics",
-                                    }]
-                                }
+                                    "ports": [
+                                        {
+                                            "containerPort": 9999,
+                                            "name": "metrics",
+                                        }
+                                    ],
+                                },
                             ]
-                        }
+                        },
                     },
                 },
             },
