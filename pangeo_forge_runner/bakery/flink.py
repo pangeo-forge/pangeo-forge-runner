@@ -257,26 +257,6 @@ class FlinkOperatorBakery(Bakery):
                 "serviceAccount": "flink",
                 "jobManager": {
                     "resource": self.job_manager_resources,
-                    "podTemplate": {
-                        "metadata": {
-                            "annotations": {
-                                "prometheus.io/port": "9999",
-                                "prometheus.io/scrape": "true"
-                            }
-                        },
-                        "spec": {
-                            "containers": [
-                                {
-                                    "name": "flink-main-container",
-                                    "image": f"flink:{self.flink_version}",
-                                    "ports": [{
-                                        "containerPort": 9999,
-                                        "name": "metrics",
-                                    }]
-                                }
-                            ]
-                        },
-                    },
                 },
                 "taskManager": {
                     "replicas": 5,
