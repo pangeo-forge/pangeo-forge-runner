@@ -293,9 +293,6 @@ class FlinkOperatorBakery(Bakery):
                                     "image": worker_image,
                                     "ports": [{
                                         "containerPort": 50000
-                                    }, {
-                                        "containerPort": 9999,
-                                        "name": "metrics",
                                     }],
                                     "readinessProbe": {
                                         # Don't mark this container as ready until the beam SDK harnass starts
@@ -305,6 +302,14 @@ class FlinkOperatorBakery(Bakery):
                                     "resources": self.beam_executor_resources,
                                     "command": ["/opt/apache/beam/boot"],
                                     "args": ["--worker_pool"],
+                                },
+                                {
+                                    "name": "flink-main-container",
+                                    "image": f"flink:{self.flink_version}",
+                                    "ports": [{
+                                        "containerPort": 9999,
+                                        "name": "metrics",
+                                    }]
                                 }
                             ]
                         }
