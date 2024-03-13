@@ -1,7 +1,7 @@
 from dataclasses import fields
 
 from fsspec import AbstractFileSystem
-from traitlets import Dict, Type, Unicode
+from traitlets import Dict, Type, Unicode, Bool
 from traitlets.config import LoggingConfigurable
 
 
@@ -37,6 +37,24 @@ class StorageTargetConfig(LoggingConfigurable):
         """,
     )
 
+    enable_assume_role = Bool(
+        False,
+        config=True,
+        help="""
+        Whether to enable assuming roles when inside running jobs 
+        'pangeo_forge_recipes.storage.FSSpecTarget.fsspec_kwargs' is accessed
+        """,
+    )
+
+    assume_role_credential_kwargs = Dict(
+        {},
+        config=True,
+        help="""
+        kwargs (default {}) to call 'aws sts --assume-role' role with 
+        such as '{"RoleArn": str, "RoleSessionName": str, "DurationSeconds: int}'
+        """,
+    )
+
     pangeo_forge_target_class = Unicode(
         config=False,
         help="""
@@ -67,8 +85,17 @@ class StorageTargetConfig(LoggingConfigurable):
 
         cls = getattr(storage, self.pangeo_forge_target_class)
 
-        # pangeo-forge-recipes >=0.10.5 have a new `fsspec_kwargs` kwarg
-        if any(field.name == "fsspec_kwargs" for field in fields(cls)):
+        # pangeo-forge-recipes >=0.10.6 have a new `enable_assume_role` kwarg
+        if any(field.name == "enable_assume_role" for field in fields(cls)):
+            return cls(
+                self.fsspec_class(**self.fsspec_args),
+                root_path=self.root_path.format(job_name=job_name),
+                _fsspec_kwargs=self.fsspec_args,
+                enable_assume_role=self.enable_assume_role,
+                assume_role_credential_kwargs=self.assume_role_credential_kwargs
+            )
+        # pangeo-forge-recipes 0.10.5,<=0.10.6 have a new `fsspec_kwargs` kwarg
+        elif any(field.name == "fsspec_kwargs" for field in fields(cls)):
             return cls(
                 self.fsspec_class(**self.fsspec_args),
                 root_path=self.root_path.format(job_name=job_name),
