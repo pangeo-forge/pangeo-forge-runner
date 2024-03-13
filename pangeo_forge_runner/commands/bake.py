@@ -189,13 +189,17 @@ class Bake(BaseCommand):
                 # now we can safely do the dynamic recipe imports
                 from apache_beam import Pipeline, PTransform
 
-                from ..storage import InputCacheStorage, TargetStorage
+                from ..storage import InputCacheStorage, TargetStorage, InputTargetStorage
 
                 # Create our storage configurations. Traitlets will do its magic, populate these
                 # with appropriate config from config file / commandline / defaults.
                 target_storage = TargetStorage(parent=self)
                 input_cache_storage = InputCacheStorage(parent=self)
+                input_target_storage = InputTargetStorage(parent=self)
 
+                self.log.info(
+                    f"Input Target Storage is {input_target_storage}\n", extra={"status": "setup"}
+                )
                 self.log.info(
                     f"Target Storage is {target_storage}\n", extra={"status": "setup"}
                 )
@@ -214,6 +218,12 @@ class Bake(BaseCommand):
                         job_name=self.job_name
                     ),
                 }
+
+                if not input_target_storage.is_default():
+                    input_target = input_target_storage.get_forge_target(
+                        job_name=self.job_name
+                    )
+                    injection_values |= {"TARGET_INPUT": input_target}
 
                 if not input_cache_storage.is_default():
                     cache_target = input_cache_storage.get_forge_target(

@@ -118,6 +118,14 @@ class StorageTargetConfig(LoggingConfigurable):
         return f'{self.pangeo_forge_target_class}({self.fsspec_class.__name__}({fsspec_args_filtered}, root_path="{self.root_path}")'
 
 
+class InputTargetStorage(StorageTargetConfig):
+    """
+    Storage configuration for where the baked data should be stored
+    """
+
+    pangeo_forge_target_class = "FSSpecInputTarget"
+
+
 class TargetStorage(StorageTargetConfig):
     """
     Storage configuration for where the baked data should be stored
