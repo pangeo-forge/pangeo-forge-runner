@@ -57,6 +57,18 @@ class DataflowBakery(Bakery):
         Ignored if use_dataflow_prime is set.
         """,
     )
+    
+    disk_size_gb = Integer(
+        None,
+        allow_none=True,
+        config=True,
+        help="""
+        The disk size, in gigabytes, to use on each remote Compute Engine worker instance.
+
+        Set to None (default) for default sizing 
+        (see https://cloud.google.com/dataflow/docs/reference/pipeline-options#worker-level_options for details).
+        """,
+    )
 
     use_dataflow_prime = Bool(
         False,
@@ -181,6 +193,7 @@ class DataflowBakery(Bakery):
             project=self.project_id,
             job_name=job_name,
             max_num_workers=self.max_num_workers,
+            disk_size_gb=self.disk_size_gb,
             temp_location=self.temp_gcs_location,
             use_public_ips=self.use_public_ips,
             region=self.region,
