@@ -57,7 +57,7 @@ class DataflowBakery(Bakery):
         Ignored if use_dataflow_prime is set.
         """,
     )
-    
+
     disk_size_gb = Integer(
         None,
         allow_none=True,
