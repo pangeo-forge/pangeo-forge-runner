@@ -53,7 +53,10 @@ class StorageTargetConfig(LoggingConfigurable):
         `.root_path` is an empty string by default. For optional storage targets,
         this is used to mean it's unconfigured.
         """
-        return self.fsspec_class == AbstractFileSystem and not self.root_path
+
+        # disable caching for good so we don't go down certain paths
+        #return self.fsspec_class == AbstractFileSystem and not self.root_path
+        return True
 
     def get_forge_target(self, job_name: str):
         """
