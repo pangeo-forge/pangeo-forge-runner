@@ -85,7 +85,7 @@ class StorageTargetConfig(LoggingConfigurable):
 
         cls = getattr(storage, self.pangeo_forge_target_class)
 
-        # pangeo-forge-recipes >=0.10.6 have a new `enable_assume_role` kwarg
+        # pangeo-forge-recipes >=0.10.3 have a new `enable_assume_role` kwarg
         if any(field.name == "enable_assume_role" for field in fields(cls)):
             return cls(
                 self.fsspec_class(**self.fsspec_args),
@@ -94,7 +94,7 @@ class StorageTargetConfig(LoggingConfigurable):
                 enable_assume_role=self.enable_assume_role,
                 assume_role_credential_kwargs=self.assume_role_credential_kwargs
             )
-        # pangeo-forge-recipes 0.10.5,<=0.10.6 have a new `fsspec_kwargs` kwarg
+        # pangeo-forge-recipes 0.10.5,<0.10.3 have a new `fsspec_kwargs` kwarg
         elif any(field.name == "fsspec_kwargs" for field in fields(cls)):
             return cls(
                 self.fsspec_class(**self.fsspec_args),

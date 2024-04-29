@@ -92,7 +92,7 @@ INJECTION_SPEC_SCHEMA = {
                 # Value of the second level keys is restricted to just these two
                 ".+": {
                     "type": "string",
-                    "enum": ["TARGET_STORAGE", "INPUT_CACHE_STORAGE", "TARGET_INPUT"],
+                    "enum": ["TARGET_STORAGE", "INPUT_CACHE_STORAGE"],
                 }
             },
         }
@@ -129,18 +129,10 @@ def get_injectionspecs_from_entrypoints():
             "StoreToZarr": {
                 "target_root": "TARGET_STORAGE",
             },
-            "WriteReference": {
-                "target_root": "TARGET_STORAGE",
-            },
             "WriteCombinedReference": {
                 "target_root": "TARGET_STORAGE",
             },
-            "OpenURLWithFSSpec": {
-                "cache": "INPUT_CACHE_STORAGE"
-            },
-            "OpenWithKerchunk": {
-                "input_root": "TARGET_INPUT",
-            }
+            "OpenURLWithFSSpec": {"cache": "INPUT_CACHE_STORAGE"},
         }
 
     return injection_specs
