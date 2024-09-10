@@ -1,0 +1,14 @@
+coverage:
+  precision: 2
+  round: down
+  status:
+    project:
+      default:
+        target: 95
+        informational: true
+    patch: off
+    changes: off
+ignore:
+  - "setup.py"
+  - "tests/*"
+  - "**/__init__.py"

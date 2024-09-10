@@ -1,3 +1,4 @@
+import base64
 import os
 import secrets
 import signal
@@ -57,3 +58,72 @@ def minio(local_ip):
         proc.wait()
 
         assert proc.returncode == 0
+
+
+@pytest.fixture(scope="session")
+def minio_service():
+    cmd = [
+        "kubectl",
+        "get",
+        "service/minio-service",
+        "-o=jsonpath='{.spec.clusterIP}:{.spec.ports[0].port}'",
+    ]
+    proc = subprocess.run(cmd, capture_output=True, text=True)
+    assert proc.returncode == 0
+    svc_address = proc.stdout.strip('"').strip("'")
+    endpoint = f"http://{svc_address}"
+
+    cmd = [
+        "kubectl",
+        "get",
+        "secret/minio-secrets",
+        "-o=jsonpath='{.data.MINIO_ACCESS_KEY}'",
+    ]
+    proc = subprocess.run(cmd, capture_output=True, text=True)
+    assert proc.returncode == 0
+    myaccesskey = proc.stdout
+    myaccesskey = base64.b64decode(myaccesskey).decode()
+
+    cmd = [
+        "kubectl",
+        "get",
+        "secret/minio-secrets",
+        "-o=jsonpath='{.data.MINIO_SECRET_KEY}'",
+    ]
+    proc = subprocess.run(cmd, capture_output=True, text=True)
+    assert proc.returncode == 0
+    mysecretkey = proc.stdout
+    mysecretkey = base64.b64decode(mysecretkey).decode()
+
+    # enter
+    yield {"endpoint": endpoint, "username": myaccesskey, "password": mysecretkey}
+
+    # exit
+    return
+
+
+def pytest_addoption(parser):
+    parser.addoption("--flink-version", action="store")
+    parser.addoption("--python-version", action="store")
+    parser.addoption("--beam-version", action="store")
+    parser.addoption("--recipes-version", action="store")
+
+
+@pytest.fixture
+def recipes_version(request):
+    return request.config.getoption("--recipes-version")
+
+
+@pytest.fixture
+def flink_version(request):
+    return request.config.getoption("--flink-version")
+
+
+@pytest.fixture
+def python_version(request):
+    return request.config.getoption("--python-version")
+
+
+@pytest.fixture
+def beam_version(request):
+    return request.config.getoption("--beam-version")

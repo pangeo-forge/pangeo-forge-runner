@@ -1,25 +1,60 @@
 import json
 import subprocess
+import sys
 import tempfile
 import time
-from importlib.metadata import version
+from pathlib import Path
 
 import pytest
 import xarray as xr
 from packaging.version import parse as parse_version
 
+TEST_DATA_DIR = Path(__file__).parent.parent / "test-data"
+TEST_GPCP_DATA_DIR = TEST_DATA_DIR / "gpcp-from-gcs"
 
-def test_dataflow_integration():
-    pfr_version = parse_version(version("pangeo-forge-recipes"))
+
+def test_dataflow_integration(recipes_version, beam_version):
+    # just grab the version part
+    recipes_version_ref = recipes_version.split("==")[1]
+
+    # .github/workflows/dataflow.yml provides
+    # `--recipes-version` arg with pytest cli call
+    # but if not provided (e.g. in local runs) then alert
+    if not recipes_version_ref:
+        raise ValueError(
+            "running these tests requires you "
+            "pass `--recipes-version='<version-string>'` as a `pytest` arg"
+        )
+
+    python_version = (
+        f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+    )
+    pfr_version = parse_version(recipes_version_ref)
     if pfr_version >= parse_version("0.10"):
-        recipe_version_ref = str(pfr_version)
+        recipes_version_ref = "0.10.x"
     else:
-        recipe_version_ref = "0.9.x"
+        raise ValueError(
+            f"Unsupported pfr_version: {pfr_version}. Please upgrade to 0.10 or newer."
+        )
+
+    # we need to add the versions from the CLI matrix to the requirements for tests
+    with open(
+        str(
+            TEST_GPCP_DATA_DIR
+            / f"feedstock-{recipes_version_ref}-dataflow"
+            / "requirements.txt"
+        ),
+        "a",
+    ) as f:
+        for r in [recipes_version, beam_version]:
+            f.write(f"{r}\n")
+
     bucket = "gs://pangeo-forge-runner-ci-testing"
     config = {
         "Bake": {
             "prune": True,
             "bakery_class": "pangeo_forge_runner.bakery.dataflow.DataflowBakery",
+            "job_name": f"gpcp-from-gcs-py{python_version.replace('.','')}-v{''.join([str(i) for i in pfr_version.release])}",
         },
         "DataflowBakery": {"temp_gcs_location": bucket + "/temp"},
         "TargetStorage": {
@@ -30,10 +65,6 @@ def test_dataflow_integration():
             "fsspec_class": "gcsfs.GCSFileSystem",
             "root_path": bucket + "/input-cache/{job_name}",
         },
-        "MetadataCacheStorage": {
-            "fsspec_class": "gcsfs.GCSFileSystem",
-            "root_path": bucket + "/metadata-cache/{job_name}",
-        },
     }
 
     with tempfile.NamedTemporaryFile("w", suffix=".json") as f:
@@ -43,11 +74,9 @@ def test_dataflow_integration():
             "pangeo-forge-runner",
             "bake",
             "--repo",
-            "https://github.com/pforgetest/gpcp-from-gcs-feedstock.git",
-            "--ref",
-            # in the test feedstock, tags are named for the recipes version
-            # which was used to write the recipe module
-            recipe_version_ref,
+            TEST_GPCP_DATA_DIR,
+            "--feedstock-subdir",
+            f"feedstock-{recipes_version_ref}-dataflow",
             "--json",
             "-f",
             f.name,
@@ -72,6 +101,15 @@ def test_dataflow_integration():
 
         # okay, time to start checking if the job is done
         show_job = f"gcloud dataflow jobs show {job_id} --format=json".split()
+        show_job_errors = [
+            "gcloud",
+            "logging",
+            "read",
+            f'resource.type="dataflow_step" AND resource.labels.job_id="{job_id}" AND severity>=ERROR',
+            "--limit",
+            "500",
+            "--format=json",
+        ]
         while True:
             elapsed = time.time() - start
             print(f"Time {elapsed = }")
@@ -95,6 +133,10 @@ def test_dataflow_integration():
                 # still running, let's give it another 30s then check again
                 time.sleep(30)
             else:
+                # try to get some output to the stdout so we don't have to log into the GCP console
+                state_proc = subprocess.run(show_job_errors, capture_output=True)
+                assert state_proc.returncode == 0
+                print(json.loads(state_proc.stdout))
                 # consider any other state a failure
                 pytest.fail(f"{state = } is neither 'Done' nor 'Running'")
 

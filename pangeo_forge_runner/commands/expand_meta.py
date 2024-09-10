@@ -20,8 +20,9 @@ class ExpandMeta(BaseCommand):
     def start(self):
         with self.fetch() as checkout_dir:
             feedstock = Feedstock(Path(checkout_dir) / self.feedstock_subdir)
-            with redirect_stderr(self.log, {"status": "running"}), redirect_stdout(
-                self.log, {"status": "running"}
+            with (
+                redirect_stderr(self.log, {"status": "running"}),
+                redirect_stdout(self.log, {"status": "running"}),
             ):
                 expanded = feedstock.get_expanded_meta()
             if self.json_logs:

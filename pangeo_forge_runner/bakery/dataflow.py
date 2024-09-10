@@ -1,12 +1,13 @@
 """
 Bakery for baking pangeo-forge recipes in GCP DataFlow
 """
+
 import shutil
 import subprocess
 
-from apache_beam.pipeline import PipelineOptions
 from traitlets import Bool, Integer, TraitError, Unicode, default, validate
 
+from ..dtypes import ApacheBeamPipelineOptions
 from .base import Bakery
 
 
@@ -54,6 +55,18 @@ class DataflowBakery(Bakery):
         GCP Machine type to use for the Dataflow jobs.
 
         Ignored if use_dataflow_prime is set.
+        """,
+    )
+
+    disk_size_gb = Integer(
+        None,
+        allow_none=True,
+        config=True,
+        help="""
+        The disk size, in gigabytes, to use on each remote Compute Engine worker instance.
+
+        Set to None (default) for default sizing 
+        (see https://cloud.google.com/dataflow/docs/reference/pipeline-options#worker-level_options for details).
         """,
     )
 
@@ -147,7 +160,7 @@ class DataflowBakery(Bakery):
 
     def get_pipeline_options(
         self, job_name: str, container_image: str, extra_options: dict
-    ) -> PipelineOptions:
+    ) -> ApacheBeamPipelineOptions:
         """
         Return PipelineOptions for use with this Bakery
         """
@@ -156,33 +169,44 @@ class DataflowBakery(Bakery):
         if self.project_id is None:
             raise ValueError("DataflowBakery.project_id must be set")
 
+        experiments = ["use_runner_v2"]
+
         if self.use_dataflow_prime:
             # dataflow prime does not support setting machine types explicitly!
             sizing_options = {"dataflow_service_options": ["enable_prime"]}
+            # Enable vertical autoscaling https://cloud.google.com/dataflow/docs/vertical-autoscaling#batch
+            experiments += [
+                "enable_batch_vmr",
+                "enable_vertical_memory_autoscaling",
+                "auto_use_sibling_sdk_workers=false",
+            ]
         else:
             sizing_options = {"machine_type": self.machine_type}
 
         # Set flags explicitly to empty so Apache Beam doesn't try to parse the commandline
         # for pipeline options - we have traitlets doing that for us.
+        from apache_beam.pipeline import PipelineOptions
+
         opts = dict(
             flags=[],
             runner="DataflowRunner",
             project=self.project_id,
             job_name=job_name,
             max_num_workers=self.max_num_workers,
+            disk_size_gb=self.disk_size_gb,
             temp_location=self.temp_gcs_location,
             use_public_ips=self.use_public_ips,
             region=self.region,
             # The v2 Runner is required to use custom container images
             # https://cloud.google.com/dataflow/docs/guides/using-custom-containers#usage
-            experiments=["use_runner_v2"],
+            experiments=experiments,
             sdk_container_image=container_image,
             sdk_location="container",
             # https://cloud.google.com/dataflow/docs/resources/faq#how_do_i_handle_nameerrors
             save_main_session=True,
             # this might solve serialization issues; cf. https://beam.apache.org/blog/beam-2.36.0/
             pickle_library="cloudpickle",
-            **(sizing_options | extra_options)
+            **(sizing_options | extra_options),
         )
         if self.service_account_email:
             opts.update({"service_account_email": self.service_account_email})

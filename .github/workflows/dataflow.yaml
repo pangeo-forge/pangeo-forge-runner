@@ -29,9 +29,10 @@ jobs:
       matrix:
         python-version: ["3.9", "3.10", "3.11"]
         recipes-version: [
-          "pangeo-forge-recipes==0.9.4",
-          "pangeo-forge-recipes==0.10.0",
-          "pangeo-forge-recipes==0.10.3",
+          "pangeo-forge-recipes==0.10.4",
+        ]
+        beam-version: [
+          "apache-beam[gcp]==2.52.0",
         ]
 
     steps:
@@ -48,15 +49,10 @@ jobs:
     - name: Install dependencies & our package
       run: |
         python -m pip install --upgrade pip
-        python -m pip install -r dev-requirements.txt
-        python -m pip install -e .
-        python -m pip install -U ${{ matrix.recipes-version }}
-
-    # FIXME: should gcsfs actually be part of some optional installs in setup.py?
-    - name: Install gcsfs
-      run: |
-        python -m pip install 'gcsfs>=2023.4.0'
+        python -m pip install -e .[test]
 
     - name: 'Run Dataflow Integration Test'
       run: |
-        pytest -vvvxs tests/integration/test_dataflow_integration.py
+        pytest -vvvxs tests/integration/test_dataflow_integration.py \
+          --recipes-version=${{ matrix.recipes-version }} \
+          --beam-version=${{ matrix.beam-version }}
