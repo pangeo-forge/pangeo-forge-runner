@@ -93,7 +93,7 @@ class Bake(BaseCommand):
         Dataflow job names adhere to the following GCP cloud labels requirements:
         https://cloud.google.com/resource-manager/docs/creating-managing-labels#requirements
         """
-        validating_regex = r"^[a-z][-_0-9a-z]{0,62}$"
+        validating_regex = r"^[a-z](?:[-0-9a-z]{0,38}[a-z0-9])?$"
         if not re.match(validating_regex, proposal.value):
             raise ValueError(
                 f"job_name must match the regex {validating_regex}, instead found {proposal.value}"

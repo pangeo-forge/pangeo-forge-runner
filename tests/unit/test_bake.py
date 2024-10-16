@@ -51,7 +51,7 @@ def test_job_name_validation(job_name, raises):
         with pytest.raises(
             ValueError,
             match=re.escape(
-                f"job_name must match the regex ^[a-z][-_0-9a-z]{{0,62}}$, instead found {job_name}"
+                f"job_name must match the regex ^[a-z](?:[-0-9a-z]{0,38}[a-z0-9])?$, instead found {job_name}"
             ),
         ):
             bake.job_name = job_name
