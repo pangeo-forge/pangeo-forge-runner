@@ -13,55 +13,43 @@ yaml = YAML()
 def tmp_feedstock(request, tmp_path_factory: pytest.TempPathFactory):
     tmpdir = tmp_path_factory.mktemp("feedstock")
     if request.param == "recipe_object":
-        meta_yaml = dedent(
-            """\
+        meta_yaml = dedent("""\
         recipes:
           - id: aws-noaa-sea-surface-temp-whoi
             object: 'recipe:recipe'
-        """
-        )
-        recipe_py = dedent(
-            """\
+        """)
+        recipe_py = dedent("""\
         class Recipe:
           pass
 
         recipe = Recipe()
-        """
-        )
+        """)
     elif request.param == "dict_object":
-        meta_yaml = dedent(
-            """\
+        meta_yaml = dedent("""\
         recipes:
           - dict_object: 'recipe:recipes'
-        """
-        )
-        recipe_py = dedent(
-            """\
+        """)
+        recipe_py = dedent("""\
         class Recipe:
           pass
 
         recipes = {"my_recipe": Recipe()}
-        """
-        )
+        """)
 
     elif request.param == "both":
-        meta_yaml = dedent(
-            """\
+        meta_yaml = dedent("""\
         recipes:
           - id: aws-noaa-sea-surface-temp-whoi
             object: 'recipe:recipe'
           - dict_object: 'recipe:recipes'
-        """
-        )
-        recipe_py = dedent(
-            """\
+        """)
+        recipe_py = dedent("""\
         class Recipe:
           pass
 
         recipe = Recipe()
         recipes = {"my_recipe": Recipe()}
-        """
-        )
+        """)
 
     with open(tmpdir / "meta.yaml", mode="w") as f:
         f.write(meta_yaml)
