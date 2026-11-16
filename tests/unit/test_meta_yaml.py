@@ -12,8 +12,7 @@ yaml = YAML()
 
 @pytest.fixture
 def with_recipes_list() -> str:
-    return dedent(
-        """\
+    return dedent("""\
     title: 'AWS NOAA WHOI SST'
     description: 'Analysis-ready datasets derived from AWS NOAA WHOI NetCDF'
     recipes:
@@ -32,8 +31,7 @@ def with_recipes_list() -> str:
       - name: 'Jo Contributor'
         orcid: '0000-0000-0000-0000'
         github: jocontributor123
-    """  # noqa: E501
-    )
+    """)  # noqa: E501
 
 
 @pytest.fixture
@@ -44,19 +42,15 @@ def valid_meta_yaml(with_recipes_list: str) -> dict:
 @pytest.fixture
 def valid_meta_yaml_dict_object(with_recipes_list: str) -> dict:
     with_dict_object = with_recipes_list.replace(
-        dedent(
-            """\
+        dedent("""\
         recipes:
           - id: aws-noaa-sea-surface-temp-whoi
             object: 'recipe:recipe'
-        """
-        ),
-        dedent(
-            """\
+        """),
+        dedent("""\
         recipes:
           - dict_object: 'recipe:recipes'
-        """
-        ),
+        """),
     )
     return yaml.load(with_dict_object)
 
